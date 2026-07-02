@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3-Sort 밸런스 대시보드</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>3-Sort 밸런스 대시보드</h1>
+      <p id="data-status">데이터 확인 중</p>
+    </div>
+    <button id="reset-filters" type="button">필터 초기화</button>
+  </header>
+
+  <section class="filters" aria-label="로그 필터">
+    <label>빌드<select id="filter-build"></select></label>
+    <label>밸런스 스냅샷<select id="filter-snapshot"></select></label>
+    <label>결과<select id="filter-result"></select></label>
+    <label>기기<select id="filter-device"></select></label>
+  </section>
+
+  <nav class="tabs" aria-label="대시보드 보기">
+    <button class="tab active" data-view="overview" type="button">종합</button>
+    <button class="tab" data-view="towers" type="button">포탑</button>
+    <button class="tab" data-view="waves" type="button">웨이브</button>
+    <button class="tab" data-view="perks" type="button">특전</button>
+    <button class="tab" data-view="diagnostics" type="button">진단</button>
+    <button class="tab" data-view="versions" type="button">버전 비교</button>
+    <button class="tab" data-view="sessions" type="button">세션</button>
+  </nav>
+
+  <main id="dashboard"></main>
+
+  <template id="empty-template">
+    <section class="empty-state">
+      <h2>표시할 로그가 없습니다</h2>
+      <p>Apps Script 배포 후 테스트 플레이를 완료하고 대시보드 갱신 파일을 다시 실행하세요.</p>
+    </section>
+  </template>
+
+  <script src="../assets/data/generated/game-data.generated.js"></script>
+  <script src="data/dashboard-data.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>
