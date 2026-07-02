@@ -107,6 +107,30 @@ function loadBalanceSnapshot() {
   };
 }
 
+function loadExistingDashboard(output) {
+  if (!fs.existsSync(output)) return null;
+  try {
+    const context = { window: {} };
+    vm.createContext(context);
+    vm.runInContext(fs.readFileSync(output, "utf8"), context, { filename: output });
+    return context.window.BALANCE_DASHBOARD_DATA || null;
+  } catch {
+    return null;
+  }
+}
+
+function buildBalanceHistory(existing, current) {
+  const candidates = [
+    ...(existing?.balanceHistory || []),
+    existing?.balance,
+    current,
+  ].filter((snapshot) => snapshot?.snapshotId);
+  const byId = new Map(candidates.map((snapshot) => [snapshot.snapshotId, snapshot]));
+  return [...byId.values()]
+    .sort((a, b) => String(a.generatedAt || "").localeCompare(String(b.generatedAt || "")))
+    .slice(-30);
+}
+
 async function fetchTab(spreadsheetId, tabName) {
   const url = `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
   const response = await fetch(url, { redirect: "follow" });
@@ -229,7 +253,11 @@ async function main() {
     return;
   }
   const balance = loadBalanceSnapshot();
-  const logs = Object.fromEntries(LOG_TABS.map((name) => [name, []]));
+  const existing = loadExistingDashboard(options.output);
+  const logs = Object.fromEntries(LOG_TABS.map((name) => [
+    name,
+    options.offline && Array.isArray(existing?.logs?.[name]) ? existing.logs[name] : [],
+  ]));
   const warnings = [];
   if (!options.offline) {
     const id = sheetId(options.logSheet);
@@ -247,6 +275,7 @@ async function main() {
   const payload = {
     generatedAt: new Date().toISOString(),
     balance,
+    balanceHistory: buildBalanceHistory(existing, balance),
     logs,
     warnings,
     logSheetId: sheetId(options.logSheet),

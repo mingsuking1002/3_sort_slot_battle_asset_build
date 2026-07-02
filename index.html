@@ -644,6 +644,7 @@
       }
 
       .piece-icon {
+        position: relative;
         display: grid;
         place-items: center;
         width: 100%;
@@ -657,6 +658,8 @@
       }
 
       .piece-icon img {
+        position: relative;
+        z-index: 1;
         display: block;
         width: 112%;
         height: 112%;
@@ -664,6 +667,17 @@
         filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.45));
         pointer-events: none;
         user-select: none;
+      }
+
+      .piece-icon-letter {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: var(--piece-color, #fff);
+        font-size: clamp(12px, 40%, 28px);
+        font-weight: 900;
+        text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
       }
 
       .slot-cell .piece-icon {
@@ -1659,6 +1673,11 @@
         cursor: pointer;
       }
 
+      .main-arrow-prev {
+        right: auto;
+        left: 6.2%;
+      }
+
       .main-arrow::before {
         content: "";
         position: absolute;
@@ -1666,6 +1685,10 @@
         background: #008dff;
         filter: drop-shadow(0 7px 0 #050505);
         clip-path: polygon(0 0, 100% 50%, 0 100%, 22% 50%);
+      }
+
+      .main-arrow-prev::before {
+        clip-path: polygon(100% 0, 0 50%, 100% 100%, 78% 50%);
       }
 
       .main-start-button {
@@ -3575,6 +3598,7 @@
         border-radius: 0;
       }
 
+      body.exhibition-mode:not(.balance-mode) #mainPrevStageButton,
       body.exhibition-mode:not(.balance-mode) #mainNextStageButton,
       body.exhibition-mode #openShopTabButton,
       body.exhibition-mode #openShopFromLobbyButton,
@@ -3847,6 +3871,7 @@
             <img src="assets/images/ui/Main/Image_Stage_1 5.png" alt="" />
             <div id="mainStageClear" class="main-stage-clear hidden"></div>
           </div>
+          <button id="mainPrevStageButton" class="main-arrow main-arrow-prev" type="button" aria-label="이전 스테이지"></button>
           <button id="mainNextStageButton" class="main-arrow" type="button" aria-label="다음 스테이지"></button>
 
           <button id="startGameButton" class="main-start-button" type="button" aria-label="시작">
@@ -4157,6 +4182,7 @@
       }
 
       const BALANCE_DATA_ACTIVE = GAME_DATA.balanceDataStatus?.active === true;
+      const PIECE_MAX_LEVEL = 5;
       const PIECES = Object.fromEntries(Object.entries(PIECE_DATA).map(([key, pieceData]) => [key, createRuntimePiece({ ...pieceData, key }, key)]));
       if (BALANCE_DATA_ACTIVE) {
         const basePieceByType = new Map();
@@ -4170,7 +4196,7 @@
         for (const [towerKey, tower] of Object.entries(TOWER_DATA)) {
           const level = Math.max(1, Math.floor(Number(tower.design?.towerLevel) || 0));
           const basePiece = basePieceByType.get(tower.type);
-          if (!basePiece || !level) continue;
+          if (!basePiece || !level || level > PIECE_MAX_LEVEL) continue;
           const groupId = basePiece.upgradeGroupId || basePiece.type;
           const groupLevelKey = `${groupId}:${level}`;
           if (existingLevelByGroup.has(groupLevelKey)) continue;
@@ -4364,7 +4390,7 @@
         CONFIGURED_SELECTABLE_PIECE_KEYS.map((pieceKey) => PIECES[pieceKey]?.upgradeGroupId || pieceKey),
       );
       const SELECTABLE_PIECE_KEYS = BALANCE_DATA_ACTIVE
-        ? PIECE_KEYS.filter((pieceKey) => configuredLoadoutGroups.has(PIECES[pieceKey]?.upgradeGroupId || pieceKey))
+        ? PIECE_KEYS.filter((pieceKey) => Math.max(1, Math.floor(Number(PIECES[pieceKey]?.level) || 1)) <= PIECE_MAX_LEVEL && configuredLoadoutGroups.has(PIECES[pieceKey]?.upgradeGroupId || pieceKey))
         : CONFIGURED_SELECTABLE_PIECE_KEYS;
       const FALLBACK_LOADOUT_KEYS = requirePieceKeyList("loadout.fallbackPieceKeys", LOADOUT_DATA.fallbackPieceKeys);
       const DEFAULT_LOADOUT_KEYS = requirePieceKeyList("loadout.defaultPieceKeys", LOADOUT_DATA.defaultPieceKeys, { allowEmpty: true });
@@ -4373,6 +4399,7 @@
       const PIECE_GROUPS = (() => {
         const groups = new Map();
         for (const pieceKey of PIECE_KEYS) {
+          if (Math.max(1, Math.floor(Number(PIECES[pieceKey]?.level) || 1)) > PIECE_MAX_LEVEL) continue;
           const groupId = getPieceGroupId(pieceKey);
           if (!groups.has(groupId)) groups.set(groupId, []);
           groups.get(groupId).push(pieceKey);
@@ -4462,7 +4489,7 @@
       }
 
       function getPieceKeyForGroupLevel(groupId, level) {
-        const safeLevel = Math.max(1, Math.floor(finiteNumber(level, 1)));
+        const safeLevel = Math.min(PIECE_MAX_LEVEL, Math.max(1, Math.floor(finiteNumber(level, 1))));
         const groupKeys = getPieceGroupKeys(groupId);
         return groupKeys.find((key) => getPieceDataLevel(key) === safeLevel) || groupKeys[groupKeys.length - 1] || null;
       }
@@ -4742,6 +4769,7 @@
       const upgradeOverlay = document.getElementById("upgradeOverlay");
       const introTitleOverlay = document.getElementById("introTitleOverlay");
       const mainMenuOverlay = document.getElementById("mainMenuOverlay");
+      const mainPrevStageButton = document.getElementById("mainPrevStageButton");
       const mainNextStageButton = document.getElementById("mainNextStageButton");
       const lobbyOverlay = document.getElementById("lobbyOverlay");
       const shopOverlay = document.getElementById("shopOverlay");
@@ -5745,6 +5773,7 @@
 
       function getPieceUpgradeCost(pieceKey) {
         const piece = PIECES[pieceKey];
+        if (getPieceLevel(pieceKey) >= PIECE_MAX_LEVEL) return null;
         if (!piece?.owned || !piece.nextPieceKey || !PIECES[piece.nextPieceKey]) return null;
         return Math.max(0, Math.floor(finiteNumber(piece.upgradeCost, 0)));
       }
@@ -5828,10 +5857,11 @@
         if (!piece) return "";
         const classes = ["piece-icon", `piece-${piece.type}`, extraClass].filter(Boolean).join(" ");
         const style = `--piece-color:${piece.color}`;
+        const fallbackText = Array.from(String(piece.fallbackText || piece.name || piece.mark || "?").trim())[0] || "?";
         if (piece.image) {
-          return `<span class="${classes}" style="${style}"><img src="${piece.image}" alt="${piece.name}" draggable="false" /></span>`;
+          return `<span class="${classes}" style="${style}"><span class="piece-icon-letter" aria-hidden="true">${fallbackText}</span><img src="${piece.image}" alt="${piece.name}" draggable="false" onerror="this.remove()" /></span>`;
         }
-        return `<span class="${classes} piece-icon-fallback" style="${style}">${piece.mark}</span>`;
+        return `<span class="${classes} piece-icon-fallback" style="${style}"><span class="piece-icon-letter">${fallbackText}</span></span>`;
       }
 
       function getPieceImageElement(piece) {
@@ -5847,7 +5877,7 @@
       function getBalanceLevelKeys(pieceKey) {
         if (!BALANCE_DATA_ACTIVE || !PIECES[pieceKey]) return [pieceKey].filter(Boolean);
         return getPieceGroupKeys(getPieceGroupId(pieceKey))
-          .filter((key) => PIECES[key])
+          .filter((key) => PIECES[key] && getPieceLevel(key) <= PIECE_MAX_LEVEL)
           .sort((a, b) => getPieceLevel(a) - getPieceLevel(b));
       }
 
@@ -6369,6 +6399,12 @@
           mainNextStageButton.hidden = EXHIBITION_BUILD.lockStage || STAGES.length <= 1;
           mainNextStageButton.setAttribute("aria-label", `다음 스테이지: ${nextStage?.title || "스테이지"}`);
           mainNextStageButton.title = nextStage?.title || "다음 스테이지";
+        }
+        if (mainPrevStageButton) {
+          const previousStage = STAGES[(getSelectedStageIndex() - 1 + STAGES.length) % STAGES.length] || stage;
+          mainPrevStageButton.hidden = EXHIBITION_BUILD.lockStage || STAGES.length <= 1;
+          mainPrevStageButton.setAttribute("aria-label", `이전 스테이지: ${previousStage?.title || "스테이지"}`);
+          mainPrevStageButton.title = previousStage?.title || "이전 스테이지";
         }
         if (!clearBadge) return;
         clearBadge.classList.toggle("hidden", !isStageCleared(stage?.key || "stage-1"));
@@ -9749,11 +9785,6 @@
         const aiType = tower.aiType || piece.aiType || projectile.aiType || "basic";
         const projectileType = tower.projectileType || projectile.projectileType || projectile.type || piece.projectileType || "normal";
         const homingSource = tower.homing ?? projectile.homing;
-        const projectileSizeScale =
-          piece.type === "sniper" ? 1 :
-          piece.type === "blast" ? 1.3 :
-          piece.type === "breaker" ? 1.8 :
-          1.5;
         const profile = {
           count: gradedCount,
           range: Number(tower.range ?? piece.range ?? 360) + getPieceLevelRangeBonus(pieceKey) + (state.mods.rangeBonus || 0),
@@ -9761,7 +9792,7 @@
           damageRatio: Number(tower.damageRatio ?? projectile.damageRatio ?? 1),
           radius:
             (Number(tower.projectileSize ?? tower.radius ?? projectile.radius ?? 5) + (state.mods.bulletSizeBonus || 0)) *
-            projectileSizeScale * (1 + typeProjectileSizeRatio),
+            (1 + typeProjectileSizeRatio),
           life: Number(tower.life ?? projectile.life ?? 1.2),
           splashRadius: Number(tower.splashRadius ?? projectile.splashRadius ?? 0),
           splashDamageRatio: Number(tower.splashDamageRatio ?? projectile.splashDamageRatio ?? 0),
@@ -9835,7 +9866,7 @@
             count: Math.max(1, Math.ceil(gradedCount * countScale) + countBonus),
             damageRatio: Math.max(0.28, profile.damageRatio - wide * 0.08 + focused * 0.18),
             splashRadius: Math.max(
-              24,
+              0,
               (profile.splashRadius + special * 10 + wide * 22 - focused * 12 + typeBlastRadiusBonus) * (1 + typeBlastRadiusRatio),
             ),
           };
@@ -12247,6 +12278,7 @@
         upgradeContinueButton.addEventListener("click", closeUpgradeOverlay);
         document.getElementById("introTitleButton").addEventListener("click", enterMainMenuFromIntro);
         document.getElementById("startGameButton").addEventListener("click", startGameFromMenu);
+        mainPrevStageButton.addEventListener("click", () => selectMainStageByOffset(-1));
         mainNextStageButton.addEventListener("click", () => selectMainStageByOffset(1));
         document.getElementById("openLoadoutTabButton").addEventListener("click", openLoadoutFromMenu);
         document.getElementById("openShopTabButton").addEventListener("click", openAcquisitionFromMenu);

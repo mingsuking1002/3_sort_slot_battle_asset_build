@@ -1,13 +1,13 @@
 # 데이터 테이블 동기화 점검 보고서
 
-- 계약 버전: `2026-07-01-combat-balance-profile-v11`
+- 계약 버전: `2026-07-02-combat-balance-profile-v12`
 - 데이터 프로필: `balance` (밸런스 허용 목록)
-- 데이터 버전: `2026-07-01-combat-balance-profile-v11`
+- 데이터 버전: `2026-07-02-combat-balance-profile-v12`
 - 실행 모드: `Google Sheets 링크 동기화`
 - 런타임 연결: **기본 실행 모드** (유효한 생성 스냅샷을 항상 적용)
 - 외부 적용: **13개**, 내장 fallback: **3개**
 - 검사 결과: ERROR 0 / WARN 0 / INFO 9
-- 현재 데이터 대비 변경: 523개 행 / 1067개 필드
+- 현재 데이터 대비 변경: 523개 행 / 1062개 필드
 
 ## 테이블 공급 현황
 
@@ -286,9 +286,10 @@
 - **BossPatternGroupData**: 밸런스 프로필에서 보스 계열은 제외합니다.
 - **BossPatternData**: 밸런스 프로필에서 보스 계열은 제외합니다.
 - **BossData**: 현재 공식 데이터에 보스가 없으므로 파싱하지 않습니다.
-- **PieceData**: PieceType이 없으면 ConnectTower가 참조하는 TowerData.TowerType에서 파생합니다. 구형 ConnectTower ID는 PieceType + PieceLv 기준으로 현재 TowerData ID에 연결합니다.
+- **PieceData**: PieceType이 없으면 ConnectTower가 참조하는 TowerData.TowerType에서 파생합니다. PieceSprite의 단순 파일명은 assets/images/towers/<파일명>.png로 연결합니다. 구형 ConnectTower ID는 PieceType + PieceLv 기준으로 현재 TowerData ID에 연결합니다.
 - **UpgradeCostData**: 아웃게임 기물 강화 비용이므로 전투 balance 프로필에서 제외합니다.
 - **TowerData**: TowerType은 1 Basic, 2 Shotgun, 3 SR, 4 Mortar, 5 Boomer, 6 Buffer입니다. TowerMaxRange는 런타임 TowerMaxLange로 정규화합니다. TowerLv가 없으면 TowerID 마지막 두 자리에서 파생합니다.
+- **ProjectileData**: ProjectilePrefab과 피격 이펙트 키는 ProjectileData에서 읽고, 크기·속도·관통·범위 등 전투 수치는 TowerData에서 읽습니다.
 - **TriggerData**: 조건부 특전을 사용하지 않으므로 balance 프로필에서 제외합니다.
 - **EffectData**: CurrentHp는 대상 포탑 타입의 체력비례 피해 퍼센트 증가량으로 적용합니다.
 - **PerkData**: 현재 모든 특전은 선택 즉시 적용하며 조건부 TriggerID는 파싱하지 않습니다.

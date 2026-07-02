@@ -44,8 +44,27 @@
   const MONSTER_LABELS = { normal: "기본", speedy: "속도", tanker: "탱커" };
   const MONSTER_COLORS = { normal: "#276dcc", speedy: "#e3a51b", tanker: "#c33d3d" };
   const NEUTRAL = "#8b98a2";
+  const PIECE_MAX_LEVEL = 5;
+  const LEGACY_TYPE_SPRITES = {
+    basic: "../assets/images/ui/PIECE/기본형.png",
+    scatter: "../assets/images/ui/PIECE/산탄형.png",
+    sniper: "../assets/images/ui/PIECE/원거리저격혐.png",
+    blast: "../assets/images/ui/PIECE/범위형.png",
+    breaker: "../assets/images/ui/PIECE/탱커대항형.png",
+    support: "../assets/images/ui/PIECE/보조형ㄹ.png",
+  };
 
-  const state = { view: "overview", build: "all", snapshot: "all", result: "all", device: "all" };
+  const state = {
+    view: "overview",
+    build: "all",
+    snapshot: "all",
+    result: "all",
+    device: "all",
+    previewA: "basic",
+    previewB: "scatter",
+    previewLevelA: 1,
+    previewLevelB: 1,
+  };
 
   const number = (value, fallback = 0) => {
     if (value === null || value === undefined || value === "") return fallback;
@@ -279,6 +298,32 @@
         <text x="${width - 8}" y="${y + 17}" text-anchor="end" class="bar-number">${escape(options.formatter ? options.formatter(value, item) : format(value, 1))}</text>`;
     }).join("");
     return `<svg class="chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escape(options.labelName || "bar chart")}">${bars}</svg>`;
+  }
+
+  function deltaBarChart(items, options = {}) {
+    const source = (items || []).filter((item) => Number.isFinite(number(options.value(item), NaN))).slice(0, options.limit || 12);
+    if (!source.length) return emptyChart();
+    const width = options.width || 760;
+    const rowHeight = 36;
+    const height = Math.max(150, source.length * rowHeight + 24);
+    const left = 190;
+    const right = 84;
+    const plotWidth = width - left - right;
+    const maxAbs = Math.max(.001, ...source.map((item) => Math.abs(number(options.value(item)))));
+    const center = left + plotWidth / 2;
+    const bars = source.map((item, index) => {
+      const value = number(options.value(item));
+      const size = Math.abs(value) / maxAbs * plotWidth / 2;
+      const x = value >= 0 ? center : center - size;
+      const y = 10 + index * rowHeight;
+      const color = value >= 0 ? (options.positiveColor || "#15946f") : (options.negativeColor || "#c33d3d");
+      return `<text class="bar-label" x="${left - 10}" y="${y + 16}" text-anchor="end">${escape(clip(options.label(item), options.labelLength || 22))}</text>
+        <rect class="bar-bg" x="${left}" y="${y + 3}" width="${plotWidth}" height="18" rx="2"></rect>
+        <rect x="${x}" y="${y + 3}" width="${Math.max(1, size)}" height="18" rx="2" fill="${color}"><title>${escape(options.label(item))}: ${escape(options.formatter ? options.formatter(value, item) : format(value, 2))}</title></rect>
+        <text class="bar-number" x="${width - 6}" y="${y + 16}" text-anchor="end">${escape(options.formatter ? options.formatter(value, item) : format(value, 2))}</text>`;
+    }).join("");
+    return `<svg class="chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="delta bar chart">
+      <line class="axis-line" x1="${center}" y1="4" x2="${center}" y2="${height - 8}"></line>${bars}</svg>`;
   }
 
   function stackedWaveChart(rows, options = {}) {
@@ -663,7 +708,8 @@
         magazineDamageBase: atk * count * ammo,
         magazineDamage: perVolleyDamage * ammo,
       };
-    }).sort((a, b) => a.typeKey.localeCompare(b.typeKey) || a.level - b.level);
+    }).filter((row) => row.level >= 1 && row.level <= PIECE_MAX_LEVEL)
+      .sort((a, b) => a.typeKey.localeCompare(b.typeKey) || a.level - b.level);
   }
 
   function getObservedPieceSummary() {
@@ -705,6 +751,50 @@
     return new Map(getObservedPieceSummary().map((row) => [row.key, row]));
   }
 
+  function getTowerEfficiencyRows() {
+    const detailed = getPieceWaveRows();
+    const source = filteredRows(detailed.length ? detailed : getPieceRows());
+    const groups = new Map();
+    for (const row of source) {
+      const parsedLevel = String(row.piece_key || "").match(/_(\d+)$/)?.[1];
+      const typeKey = normalizeTowerTypeKey(row.tower_type || row.piece_key || row.piece_name);
+      const level = Math.min(PIECE_MAX_LEVEL, Math.max(1, number(row.tower_level || parsedLevel || 1)));
+      const key = row.piece_key || `${typeKey}_${level}`;
+      if (!groups.has(key)) {
+        const meta = Object.values(TYPE_META).find((item) => item.key === typeKey) || typeMeta(typeKey);
+        groups.set(key, { key, typeKey, level, label: row.piece_name || meta.label, color: meta.color, rows: [], sessions: new Set() });
+      }
+      const group = groups.get(key);
+      group.rows.push(row);
+      if (row.session_id) group.sessions.add(row.session_id);
+    }
+    return [...groups.values()].map((group) => {
+      const damage = sum(group.rows, (row) => row.damage_done || row.damage);
+      const healing = sum(group.rows, (row) => row.healing_done);
+      const created = sum(group.rows, (row) => row.tower_created || row.created);
+      const activeSec = sum(group.rows, (row) => row.active_sec);
+      const attacks = sum(group.rows, (row) => row.attacks_fired);
+      const projectiles = sum(group.rows, (row) => row.projectiles_fired);
+      const hits = sum(group.rows, (row) => row.hits);
+      return {
+        ...group,
+        samples: group.sessions.size || group.rows.length,
+        damage,
+        healing,
+        created,
+        activeSec,
+        attacks,
+        projectiles,
+        hits,
+        damagePerTower: created ? damage / created : 0,
+        damagePerSec: activeSec ? damage / activeSec : 0,
+        damagePerAttack: attacks ? damage / attacks : 0,
+        damagePerProjectile: projectiles ? damage / projectiles : 0,
+        hitRate: projectiles ? hits / projectiles : 0,
+      };
+    }).sort((a, b) => b.damagePerTower - a.damagePerTower);
+  }
+
   function getPerkSummary() {
     const sessionMap = new Map(filteredSessions().map((row) => [row.session_id, row]));
     const groups = new Map();
@@ -737,6 +827,42 @@
         ? row.pickedSessions.filter((session) => session.result === "clear").length / row.pickedSessions.length
         : 0,
     })).sort((a, b) => b.rate - a.rate || b.picked - a.picked || b.offered - a.offered);
+  }
+
+  function getPerkImpactRows() {
+    const sessionMap = new Map(filteredSessions().map((row) => [row.session_id, row]));
+    const groups = new Map();
+    for (const row of filteredRows(getPerkRows())) {
+      const session = sessionMap.get(row.session_id);
+      if (!session) continue;
+      const key = row.perk_id || row.perk_title || "unknown";
+      if (!groups.has(key)) groups.set(key, { id: key, title: row.perk_title || key, picked: [], skipped: [] });
+      const pickWave = number(row.wave_ordinal || row.wave, 0);
+      const result = {
+        progress: Math.max(0, number(session.reached_wave) - pickWave),
+        reached: number(session.reached_wave),
+        slotHp: normalizePercentValue(session.slot_hp_ratio_avg),
+        clear: session.result === "clear" ? 1 : 0,
+      };
+      groups.get(key)[isTrue(row.selected) ? "picked" : "skipped"].push(result);
+    }
+    return [...groups.values()].map((group) => {
+      const pickedProgress = average(group.picked, (item) => item.progress);
+      const skippedProgress = average(group.skipped, (item) => item.progress);
+      return {
+        ...group,
+        pickedProgress,
+        skippedProgress,
+        progressDelta: pickedProgress - skippedProgress,
+        pickedReached: average(group.picked, (item) => item.reached),
+        skippedReached: average(group.skipped, (item) => item.reached),
+        pickedSlotHp: average(group.picked, (item) => item.slotHp),
+        skippedSlotHp: average(group.skipped, (item) => item.slotHp),
+        pickedClear: average(group.picked, (item) => item.clear),
+        skippedClear: average(group.skipped, (item) => item.clear),
+      };
+    }).filter((row) => row.picked.length || row.skipped.length)
+      .sort((a, b) => Math.abs(b.progressDelta) - Math.abs(a.progressDelta));
   }
 
   function getTargetDistribution(perks = getPerkSummary()) {
@@ -884,6 +1010,7 @@
     const labels = unique(rows.map((row) => String(row.level))).sort((a, b) => number(a) - number(b));
     const levelOne = rows.filter((row) => row.level === 1);
     const scatterRows = rows.map((row) => ({ ...row, observed: observed.get(row.pieceKey) })).filter((row) => row.observed?.damage);
+    const efficiency = getTowerEfficiencyRows();
 
     return `<section class="chart-grid">
       ${chartPanel("기물 성장곡선: 1회 소환 기대딜", `체력비례 피해는 평균 몬스터 HP ${format(referenceMonsterHp(), 1)} 기준`, lineChart(byType.map(({ meta, values }) => ({
@@ -909,19 +1036,34 @@
         label: (item) => `${item.label} Lv${item.level}`,
         color: (item) => item.color,
       }))}
+      ${chartPanel("소환 1회당 실전 피해", "많이 사용된 기물이 유리한 누적 피해 편향을 제거", horizontalBarChart(efficiency.filter((item) => item.created), {
+        value: (item) => item.damagePerTower,
+        label: (item) => `${item.label} Lv${item.level}`,
+        color: (item) => item.color,
+        formatter: (value, item) => `${format(value, 1)} / ${format(item.created)}기`,
+        limit: 12,
+      }))}
+      ${chartPanel("실전 가동 효율", "초당 피해와 명중률로 실제 작동 성능을 비교", horizontalBarChart(efficiency.filter((item) => item.activeSec), {
+        value: (item) => item.damagePerSec,
+        label: (item) => `${item.label} Lv${item.level}`,
+        color: (item) => item.color,
+        formatter: (value, item) => `${format(value, 2)}/초 · 명중 ${percent(item.hitRate)}`,
+        limit: 12,
+      }))}
     </section>`;
   }
 
   function renderTowerTable(compact = false) {
     const observed = observedTowerMap();
-    const rows = theoryRows().map((tower) => ({ ...tower, observed: observed.get(tower.pieceKey) || {} }));
+    const efficiency = new Map(getTowerEfficiencyRows().map((row) => [row.key, row]));
+    const rows = theoryRows().map((tower) => ({ ...tower, observed: observed.get(tower.pieceKey) || {}, efficiency: efficiency.get(tower.pieceKey) || {} }));
     const displayed = compact ? rows.filter((row) => row.level === 1) : rows;
     const charts = compact ? "" : renderTowerCharts(rows, observed);
     return `${charts}<section class="section">${sectionTitle(compact ? "레벨 1 포탑 요약" : "포탑 이론값과 플레이 관측값", `${displayed.length}개 레코드`)}
       <div class="table-wrap"><table><thead><tr>
-        <th>기물</th><th>역할</th><th>Lv</th><th>공격력</th><th>공격 간격</th><th>투사체</th><th>탄창</th><th>사거리</th><th>체력비례</th><th>기대 DPS</th><th>1회 소환 기대딜</th><th>관측 누적 피해</th><th>실전 점유율</th><th>표본</th>
+        <th>기물</th><th>역할</th><th>Lv</th><th>공격력</th><th>공격 간격</th><th>투사체</th><th>탄창</th><th>사거리</th><th>체력비례</th><th>기대 DPS</th><th>1회 소환 기대딜</th><th>관측 누적 피해</th><th>소환 수</th><th>소환당 피해</th><th>실전 DPS</th><th>발사체당 피해</th><th>명중률</th><th>표본</th>
       </tr></thead><tbody>${displayed.map((row) => `<tr>
-        <td>${escape(row.pieceKey)}</td><td>${escape(`${row.label} / ${row.ai}`)}</td><td>${row.level}</td><td>${format(row.atk, 2)}</td><td>${format(row.interval, 3)}초</td><td>${row.count}</td><td>${row.ammo}</td><td>${format(row.range, 1)}</td><td>${escape(row.currentHpDisplay)}</td><td>${format(row.dps, 1)}</td><td>${format(row.magazineDamage)}</td><td>${row.observed.samples ? format(row.observed.damage) : "-"}</td><td>${row.observed.samples ? percent(row.observed.share) : "-"}</td><td>${row.observed.samples || 0}</td>
+        <td>${escape(row.pieceKey)}</td><td>${escape(`${row.label} / ${row.ai}`)}</td><td>${row.level}</td><td>${format(row.atk, 2)}</td><td>${format(row.interval, 3)}초</td><td>${row.count}</td><td>${row.ammo}</td><td>${format(row.range, 1)}</td><td>${escape(row.currentHpDisplay)}</td><td>${format(row.dps, 1)}</td><td>${format(row.magazineDamage)}</td><td>${row.observed.samples ? format(row.observed.damage) : "-"}</td><td>${row.efficiency.created ? format(row.efficiency.created) : "-"}</td><td>${row.efficiency.created ? format(row.efficiency.damagePerTower, 1) : "-"}</td><td>${row.efficiency.activeSec ? format(row.efficiency.damagePerSec, 2) : "-"}</td><td>${row.efficiency.projectiles ? format(row.efficiency.damagePerProjectile, 2) : "-"}</td><td>${row.efficiency.projectiles ? percent(row.efficiency.hitRate) : "-"}</td><td>${row.efficiency.samples || row.observed.samples || 0}</td>
       </tr>`).join("")}</tbody></table></div></section>`;
   }
 
@@ -946,6 +1088,7 @@
 
   function renderPerks() {
     const perks = getPerkSummary();
+    const impacts = getPerkImpactRows();
     if (!perks.length) return empty();
     const targetDist = getTargetDistribution(perks);
     return `<section class="chart-grid">
@@ -973,14 +1116,25 @@
         limit: 12,
         labelLength: 22,
       }))}
+      ${chartPanel("선택 vs 미선택 이후 진행 차이", "같은 특전이 제시됐을 때 선택군-미선택군의 이후 생존 웨이브. 인과가 아닌 상관 지표", deltaBarChart(impacts.filter((item) => item.picked.length && item.skipped.length), {
+        value: (item) => item.progressDelta,
+        label: (item) => item.title,
+        formatter: (value, item) => `${value >= 0 ? "+" : ""}${format(value, 2)}W (${item.picked.length}/${item.skipped.length})`,
+        limit: 14,
+        labelLength: 22,
+      }))}
     </section>
     <section class="section">${sectionTitle("특전 선택 효율", "선택 횟수 / 제시 횟수 / 선택 후 결과")}
       <div class="table-wrap"><table><thead><tr><th>특전 ID</th><th>이름</th><th>희귀도</th><th>대상</th><th>제시</th><th>선택</th><th>선택률</th><th>선택 후 평균 도달</th><th>선택 후 클리어율</th></tr></thead><tbody>
       ${perks.map((row) => `<tr><td>${escape(row.id)}</td><td>${escape(row.title)}</td><td>${escape(row.rarity)}</td><td>${escape(row.target)}</td><td>${row.offered}</td><td>${row.picked}</td><td class="${row.rate > .55 ? "positive" : row.rate < .18 && row.offered >= 10 ? "negative" : ""}">${percent(row.rate)}</td><td>${row.pickedSessions.length ? `W${format(row.avgReached, 1)}` : "-"}</td><td>${row.pickedSessions.length ? percent(row.clearRate) : "-"}</td></tr>`).join("")}
-      </tbody></table></div></section>`;
+      </tbody></table></div></section>
+      <section class="section">${sectionTitle("특전 선택 전후 성과 비교", "제시된 세션에서 선택군과 미선택군을 비교")}
+        <div class="table-wrap"><table><thead><tr><th>특전</th><th>선택 표본</th><th>미선택 표본</th><th>선택 후 진행</th><th>미선택 후 진행</th><th>진행 차이</th><th>선택군 도달</th><th>미선택군 도달</th><th>슬롯 체력 차이</th><th>클리어율 차이</th></tr></thead><tbody>
+        ${impacts.map((row) => `<tr><td>${escape(row.title)}</td><td>${row.picked.length}</td><td>${row.skipped.length}</td><td>${row.picked.length ? format(row.pickedProgress, 2) : "-"}</td><td>${row.skipped.length ? format(row.skippedProgress, 2) : "-"}</td><td class="${row.progressDelta > 0 ? "positive" : row.progressDelta < 0 ? "negative" : ""}">${row.picked.length && row.skipped.length ? `${row.progressDelta >= 0 ? "+" : ""}${format(row.progressDelta, 2)}W` : "-"}</td><td>${row.picked.length ? `W${format(row.pickedReached, 2)}` : "-"}</td><td>${row.skipped.length ? `W${format(row.skippedReached, 2)}` : "-"}</td><td>${row.picked.length && row.skipped.length ? `${percent(row.pickedSlotHp - row.skippedSlotHp)}` : "-"}</td><td>${row.picked.length && row.skipped.length ? `${percent(row.pickedClear - row.skippedClear)}` : "-"}</td></tr>`).join("")}
+        </tbody></table></div></section>`;
   }
 
-  function renderVersions() {
+  function getVersionRows() {
     const groups = new Map();
     for (const row of sessions) {
       const key = `${sessionBuild(row)}\n${sessionSnapshot(row)}`;
@@ -997,10 +1151,73 @@
       sorts: average(items, (row) => row.sort_successes),
       slotHp: average(items, (row) => row.slot_hp_ratio_avg),
       duration: average(items, (row) => number(row.duration_ms) / 1000),
-    })).sort((a, b) => b.key.localeCompare(a.key));
+    })).sort((a, b) => String(a.snapshot).localeCompare(String(b.snapshot)));
+    rows.forEach((row, index) => {
+      const previous = rows[index - 1];
+      row.previous = previous || null;
+      row.waveDelta = previous ? row.wave - previous.wave : 0;
+      row.clearDelta = previous ? row.clearRate - previous.clearRate : 0;
+      row.sortDelta = previous ? row.sorts - previous.sorts : 0;
+      row.slotHpDelta = previous ? row.slotHp - previous.slotHp : 0;
+    });
+    return rows;
+  }
+
+  function getBalanceHistory() {
+    const snapshots = [...(data.balanceHistory || []), data.balance].filter((item) => item?.snapshotId);
+    return [...new Map(snapshots.map((item) => [item.snapshotId, item])).values()]
+      .sort((a, b) => String(a.generatedAt || "").localeCompare(String(b.generatedAt || "")));
+  }
+
+  function getBalanceChangeRows() {
+    const history = getBalanceHistory();
+    if (history.length < 2) return { history, before: null, after: history[0] || null, rows: [], summary: [] };
+    const before = history[history.length - 2];
+    const after = history[history.length - 1];
+    const contracts = {
+      TowerData: { key: "TowerID", fields: ["TowerAtk", "TowerAtkSpeed", "TowerMaxLange", "TowerMaxAmmo", "ProjectileCount", "ProjectileSize", "PiercingCount", "SplashRadius", "current_hp", "BulletSpeed"] },
+      MonsterData: { key: "MonsterID", fields: ["MonsterHp", "MonsterAtk", "MonsterAtkSpeed", "MonsterMoveSpeed"] },
+      WavePatternData: { key: "WavePatternID", fields: ["Normal_Count", "Speedy_Count", "Tanker_Count", "NormalRate_1", "NormalRate_2", "NormalRate_3", "isRush"] },
+      PerkData: { key: "PerkID", fields: ["Rarity", "EffectID", "IsActive"] },
+      EffectData: { key: "EffectID", fields: ["ATK", "ATKSpeed", "ShotProjCount", "MaxProj", "ProjSize", "ProjPiercing", "BuffType", "BuffValue", "Duration"] },
+    };
+    const rows = [];
+    const summary = [];
+    for (const [table, contract] of Object.entries(contracts)) {
+      const oldMap = new Map((before.tables?.[table] || []).map((row) => [String(row[contract.key]), row]));
+      const newMap = new Map((after.tables?.[table] || []).map((row) => [String(row[contract.key]), row]));
+      let changed = 0;
+      for (const key of new Set([...oldMap.keys(), ...newMap.keys()])) {
+        const oldRow = oldMap.get(key);
+        const newRow = newMap.get(key);
+        if (!oldRow || !newRow) {
+          rows.push({ table, key, field: oldRow ? "행 삭제" : "행 추가", before: oldRow ? "있음" : "-", after: newRow ? "있음" : "-", delta: "-" });
+          changed += 1;
+          continue;
+        }
+        for (const field of contract.fields) {
+          if (String(oldRow[field] ?? "") === String(newRow[field] ?? "")) continue;
+          const beforeValue = oldRow[field] ?? "";
+          const afterValue = newRow[field] ?? "";
+          const numericDelta = Number.isFinite(Number(beforeValue)) && Number.isFinite(Number(afterValue))
+            ? Number(afterValue) - Number(beforeValue)
+            : null;
+          rows.push({ table, key, field, before: beforeValue, after: afterValue, delta: numericDelta });
+          changed += 1;
+        }
+      }
+      summary.push({ table, changed });
+    }
+    return { history, before, after, rows, summary };
+  }
+
+  function renderVersions() {
+    const rows = getVersionRows();
+    const changes = getBalanceChangeRows();
     if (!rows.length) return empty();
+    const displayRows = rows.slice().reverse();
     return `<section class="chart-grid">
-      ${chartPanel("버전별 평균 도달 웨이브", "빌드/스냅샷 조합별 비교", horizontalBarChart(rows, {
+      ${chartPanel("버전별 평균 도달 웨이브", "빌드/스냅샷 조합별 비교", horizontalBarChart(displayRows, {
         value: (item) => item.wave,
         label: (item) => item.build,
         color: () => "#276dcc",
@@ -1008,7 +1225,7 @@
         limit: 10,
         labelLength: 24,
       }))}
-      ${chartPanel("버전별 클리어율", "표본 수와 함께 해석 필요", horizontalBarChart(rows, {
+      ${chartPanel("버전별 클리어율", "표본 수와 함께 해석 필요", horizontalBarChart(displayRows, {
         value: (item) => item.clearRate,
         label: (item) => item.build,
         color: (item) => item.clearRate < .3 ? "#c33d3d" : "#15946f",
@@ -1017,11 +1234,27 @@
         limit: 10,
         labelLength: 24,
       }))}
+      ${chartPanel("최신 밸런스 변경량", changes.before ? `${clip(changes.before.snapshotId, 24)} → ${clip(changes.after.snapshotId, 24)}` : "다음 데이터 갱신부터 전후 이력을 비교", horizontalBarChart(changes.summary.filter((item) => item.changed), {
+        value: (item) => item.changed,
+        label: (item) => item.table,
+        color: () => "#e3a51b",
+        formatter: (value) => `${format(value)}개 필드`,
+        limit: 8,
+      }))}
+      ${chartPanel("버전별 성과 변화", "직전 스냅샷 대비 평균 도달 웨이브 증감", deltaBarChart(displayRows.filter((item) => item.previous), {
+        value: (item) => item.waveDelta,
+        label: (item) => clip(item.snapshot, 18),
+        formatter: (value, item) => `${value >= 0 ? "+" : ""}${format(value, 2)}W / 클리어 ${percent(item.clearDelta)}`,
+        limit: 10,
+      }))}
     </section>
     <section class="section">${sectionTitle("빌드·밸런스 스냅샷 비교", "필터와 무관한 전체 버전")}
-      <div class="table-wrap"><table><thead><tr><th>빌드</th><th>스냅샷</th><th>세션</th><th>클리어율</th><th>평균 도달</th><th>평균 소팅</th><th>종료 슬롯 체력</th><th>플레이 시간</th></tr></thead><tbody>
-      ${rows.map((row) => `<tr><td>${escape(row.build)}</td><td>${escape(row.snapshot)}</td><td>${row.sessions}</td><td>${percent(row.clearRate)}</td><td>${format(row.wave, 1)}</td><td>${format(row.sorts, 1)}</td><td>${percent(row.slotHp)}</td><td>${format(row.duration, 1)}초</td></tr>`).join("")}
-      </tbody></table></div></section>`;
+      <div class="table-wrap"><table><thead><tr><th>빌드</th><th>스냅샷</th><th>세션</th><th>클리어율</th><th>Δ 클리어율</th><th>평균 도달</th><th>Δ 도달</th><th>평균 소팅</th><th>Δ 소팅</th><th>종료 슬롯 체력</th><th>Δ 슬롯 체력</th><th>플레이 시간</th></tr></thead><tbody>
+      ${displayRows.map((row) => `<tr><td>${escape(row.build)}</td><td>${escape(row.snapshot)}</td><td>${row.sessions}</td><td>${percent(row.clearRate)}</td><td class="${row.clearDelta > 0 ? "positive" : row.clearDelta < 0 ? "negative" : ""}">${row.previous ? percent(row.clearDelta) : "-"}</td><td>${format(row.wave, 1)}</td><td class="${row.waveDelta > 0 ? "positive" : row.waveDelta < 0 ? "negative" : ""}">${row.previous ? `${row.waveDelta >= 0 ? "+" : ""}${format(row.waveDelta, 2)}` : "-"}</td><td>${format(row.sorts, 1)}</td><td>${row.previous ? `${row.sortDelta >= 0 ? "+" : ""}${format(row.sortDelta, 2)}` : "-"}</td><td>${percent(row.slotHp)}</td><td>${row.previous ? percent(row.slotHpDelta) : "-"}</td><td>${format(row.duration, 1)}초</td></tr>`).join("")}
+      </tbody></table></div></section>
+    <section class="section">${sectionTitle("최신 데이터 테이블 변경 상세", changes.before ? `${changes.rows.length}개 변경 · 최근 ${changes.history.length}개 스냅샷 보관` : "스냅샷 2개부터 자동 표시")}
+      ${changes.rows.length ? `<div class="table-wrap"><table><thead><tr><th>테이블</th><th>ID</th><th>컬럼</th><th>변경 전</th><th>변경 후</th><th>차이</th></tr></thead><tbody>${changes.rows.map((row) => `<tr><td>${escape(row.table)}</td><td>${escape(row.key)}</td><td>${escape(row.field)}</td><td>${escape(row.before)}</td><td>${escape(row.after)}</td><td class="${number(row.delta) > 0 ? "positive" : number(row.delta) < 0 ? "negative" : ""}">${row.delta === null || row.delta === "-" ? "-" : `${number(row.delta) >= 0 ? "+" : ""}${format(row.delta, 3)}`}</td></tr>`).join("")}</tbody></table></div>` : `<div class="notice">${changes.before ? "최신 두 스냅샷의 밸런스 수치는 동일합니다." : "현재 저장된 이전 밸런스 스냅샷이 없습니다. 다음 데이터 테이블 갱신부터 변경 전후 수치가 이곳에 누적됩니다."}</div>`}
+    </section>`;
   }
 
   function renderSessions() {
@@ -1045,6 +1278,120 @@
       <div class="table-wrap"><table><thead><tr><th>종료 시각</th><th>세션 ID</th><th>결과</th><th>빌드</th><th>도달</th><th>소팅</th><th>최대 콤보</th><th>피해량</th><th>슬롯 체력</th><th>기물</th><th>특전</th></tr></thead><tbody>
       ${rows.map((row) => `<tr><td>${escape(row.event_at || row.received_at)}</td><td>${escape(String(row.session_id || "").slice(0, 12))}</td><td>${escape(row.result)}</td><td>${escape(row.build_version)}</td><td>${format(row.reached_wave)}</td><td>${format(row.sort_successes)}</td><td>${format(row.max_combo)}</td><td>${format(row.damage_done)}</td><td>${percent(row.slot_hp_ratio_avg)}</td><td>${escape(row.selected_pieces)}</td><td>${escape(row.picked_perks)}</td></tr>`).join("")}
       </tbody></table></div></section>`;
+  }
+
+  function dashboardAssetPath(value) {
+    const raw = String(value || "").trim().replace(/\\/g, "/");
+    if (!raw) return "";
+    if (/^(?:https?:|data:|blob:)/i.test(raw)) return raw;
+    if (raw.startsWith("../") || raw.startsWith("/")) return raw;
+    if (raw.includes("/")) return raw.startsWith("assets/") ? `../${raw}` : raw;
+    return `../assets/images/towers/${/\.png$/i.test(raw) ? raw : `${raw}.png`}`;
+  }
+
+  function getPreviewTower(typeKey, requestedLevel) {
+    const candidates = theoryRows().filter((row) => row.typeKey === typeKey);
+    if (!candidates.length) return null;
+    const level = Math.min(PIECE_MAX_LEVEL, Math.max(1, number(requestedLevel, 1)));
+    return candidates.reduce((closest, row) => (
+      Math.abs(row.level - level) < Math.abs(closest.level - level) ? row : closest
+    ), candidates[0]);
+  }
+
+  function getPreviewPiece(tower) {
+    if (!tower) return { name: "?", sprite: "", fallback: "?" };
+    const piece = tableRows("PieceData").find((row) => String(row.ConnectTower) === String(tower.towerId))
+      || tableRows("PieceData").find((row) => normalizeTowerTypeKey(row.PieceType) === tower.typeKey && number(row.PieceLv, 1) === tower.level)
+      || {};
+    const name = String(piece.PieceName || tower.label || tower.typeKey);
+    const sprite = dashboardAssetPath(piece.PieceSprite);
+    const legacySprite = !piece.PieceName && !piece.PieceSprite ? LEGACY_TYPE_SPRITES[tower.typeKey] || "" : "";
+    return { name, sprite: sprite || legacySprite, fallback: Array.from(name.trim())[0] || "?" };
+  }
+
+  function renderPreviewTowerArt(piece) {
+    return `<span class="preview-tower-letter">${escape(piece.fallback)}</span>${piece.sprite ? `<img src="${escape(piece.sprite)}" alt="${escape(piece.name)}" onerror="this.remove()">` : ""}`;
+  }
+
+  function renderPreviewLane(tower, side) {
+    if (!tower) return `<article class="preview-lane">${emptyChart("비교할 포탑 데이터가 없습니다")}</article>`;
+    const piece = getPreviewPiece(tower);
+    const allRanges = theoryRows().map((row) => row.range);
+    const maxRange = Math.max(1, ...allRanges);
+    const rangeRatio = Math.max(.2, tower.range / maxRange);
+    const ringSize = 110 + rangeRatio * 270;
+    const ai = String(tower.ai || "Basic").toLowerCase();
+    const isShotgun = ai.includes("shotgun") || tower.typeKey === "scatter";
+    const isHeal = ai.includes("heal") || tower.typeKey === "support";
+    const projectileType = String(valueOf(tableRows("TowerData").find((row) => String(row.TowerID) === String(tower.towerId)), "ProjectileType", "normal") || "normal").toLowerCase();
+    const visualCount = isShotgun ? Math.min(7, Math.max(3, tower.count)) : 3;
+    const bulletClass = [projectileType, tower.typeKey, isShotgun ? "shotgun" : "sequential"].join(" ");
+    const travel = 120 + rangeRatio * 170;
+    const duration = Math.max(.55, Math.min(1.6, 1.2 / Math.max(.25, tower.bulletSpeed || 1)));
+    const bullets = Array.from({ length: visualCount }, (_, index) => {
+      const spread = isShotgun ? (index - (visualCount - 1) / 2) * 21 : 0;
+      const delay = isShotgun ? index * .025 : index * Math.max(.08, Math.min(.28, tower.interval / 2));
+      return `<i class="preview-projectile ${escape(bulletClass)}" style="--spread:${spread}px;--delay:${delay}s;--travel:${travel}px;--duration:${duration}s"></i>`;
+    }).join("");
+    return `<article class="preview-lane" data-preview-side="${side}">
+      <header><div><strong>${escape(piece.name)}</strong><span>${escape(tower.label)} · Lv${tower.level}</span></div><b>${escape(tower.ai)}</b></header>
+      <div class="preview-field">
+        <div class="preview-grid-lines" aria-hidden="true"></div>
+        <div class="preview-range" style="width:${ringSize}px;height:${ringSize}px"><span>사거리 ${format(tower.range, 1)}</span></div>
+        <div class="preview-monsters" aria-hidden="true">
+          <img src="../assets/images/monsters/기본형.png" alt=""><img src="../assets/images/monsters/속도형.png" alt=""><img src="../assets/images/monsters/탱커형.png" alt="">
+        </div>
+        <div class="preview-shot-origin">${bullets}${projectileType.includes("explode") || tower.typeKey === "blast" ? `<i class="preview-impact" style="--delay:${duration}s"></i>` : ""}</div>
+        ${isHeal ? `<div class="preview-heal-pulse"></div>` : ""}
+        <div class="preview-slot"><div class="preview-tower-art">${renderPreviewTowerArt(piece)}</div><div class="preview-slot-hp"></div></div>
+      </div>
+      <dl class="preview-stats">
+        <div><dt>공격력</dt><dd>${format(tower.atk, 2)}</dd></div><div><dt>간격</dt><dd>${format(tower.interval, 2)}초</dd></div>
+        <div><dt>발사체</dt><dd>${tower.count}개</dd></div><div><dt>탄속</dt><dd>${format(tower.bulletSpeed, 2)}</dd></div>
+        <div><dt>탄창</dt><dd>${tower.ammo}</dd></div><div><dt>기대 DPS</dt><dd>${format(tower.dps, 1)}</dd></div>
+        <div><dt>관통</dt><dd>${tower.piercing || "-"}</dd></div><div><dt>폭발 범위</dt><dd>${tower.splash || "-"}</dd></div>
+      </dl>
+      <p class="preview-behavior">${isShotgun ? "한 번에 부채꼴 산탄 발사" : "탄환이 발사 간격을 두고 순차 발사"} · ${escape(projectileType || "normal")} · ${tower.currentHpRate ? `최대 체력 ${percent(tower.currentHpRate)} 추가 피해` : "고정 피해"}</p>
+    </article>`;
+  }
+
+  function renderPreviewControls(typeKeys) {
+    const typeOptions = typeKeys.map((key) => `<option value="${escape(key)}">${escape(typeMeta(key).label)}</option>`).join("");
+    const levelOptions = Array.from({ length: PIECE_MAX_LEVEL }, (_, index) => `<option value="${index + 1}">Lv${index + 1}</option>`).join("");
+    return `<section class="preview-controls" aria-label="사격 비교 설정">
+      <label>왼쪽 기물<select data-preview-type="A">${typeOptions}</select></label>
+      <label>왼쪽 레벨<select data-preview-level="A">${levelOptions}</select></label>
+      <label>오른쪽 기물<select data-preview-type="B">${typeOptions}</select></label>
+      <label>오른쪽 레벨<select data-preview-level="B">${levelOptions}</select></label>
+    </section>`;
+  }
+
+  function renderPreview() {
+    const typeKeys = unique(theoryRows().map((row) => row.typeKey));
+    if (!typeKeys.length) return empty();
+    if (!typeKeys.includes(state.previewA)) state.previewA = typeKeys[0];
+    if (!typeKeys.includes(state.previewB)) state.previewB = typeKeys[1] || typeKeys[0];
+    const towerA = getPreviewTower(state.previewA, state.previewLevelA);
+    const towerB = getPreviewTower(state.previewB, state.previewLevelB);
+    return `${renderPreviewControls(typeKeys)}
+      <section class="preview-intro">${sectionTitle("인게임형 사격·사거리 비교", "두 전투 구역은 같은 축척입니다. 원의 크기가 실제 사거리 차이를 나타냅니다.")}</section>
+      <section class="preview-grid">${renderPreviewLane(towerA, "A")}${renderPreviewLane(towerB, "B")}</section>`;
+  }
+
+  function bindViewInteractions() {
+    if (state.view !== "preview") return;
+    for (const side of ["A", "B"]) {
+      const typeSelect = document.querySelector(`[data-preview-type="${side}"]`);
+      const levelSelect = document.querySelector(`[data-preview-level="${side}"]`);
+      if (typeSelect) {
+        typeSelect.value = state[`preview${side}`];
+        typeSelect.addEventListener("change", () => { state[`preview${side}`] = typeSelect.value; render(); });
+      }
+      if (levelSelect) {
+        levelSelect.value = String(state[`previewLevel${side}`]);
+        levelSelect.addEventListener("change", () => { state[`previewLevel${side}`] = number(levelSelect.value, 1); render(); });
+      }
+    }
   }
 
   function renderDiagnostics() {
@@ -1083,11 +1430,13 @@
       towers: () => renderTowerTable(false),
       waves: renderWaves,
       perks: renderPerks,
+      preview: renderPreview,
       diagnostics: renderDiagnostics,
       versions: renderVersions,
       sessions: renderSessions,
     };
     dashboard.innerHTML = (renderers[state.view] || renderOverview)();
+    bindViewInteractions();
     document.querySelector("#data-status").textContent =
       `밸런스 ${data.balance?.contractVersion || "-"} | 생성 ${data.balance?.generatedAt || data.generatedAt || "-"} | 세션 ${sessions.length}건`;
   }

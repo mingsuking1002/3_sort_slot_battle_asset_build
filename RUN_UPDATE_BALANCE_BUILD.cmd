@@ -43,6 +43,7 @@ echo.
 echo [5/5] Updating deployment mirror...
 if exist "%MIRROR_DIR%\index.html" (
   if not exist "%MIRROR_DIR%\assets\data\generated" mkdir "%MIRROR_DIR%\assets\data\generated"
+  if not exist "%MIRROR_DIR%\assets\images\towers" mkdir "%MIRROR_DIR%\assets\images\towers"
   if not exist "%MIRROR_DIR%\docs\generated" mkdir "%MIRROR_DIR%\docs\generated"
   if not exist "%MIRROR_DIR%\tools" mkdir "%MIRROR_DIR%\tools"
   if not exist "%MIRROR_DIR%\balance-dashboard" mkdir "%MIRROR_DIR%\balance-dashboard"
@@ -50,6 +51,7 @@ if exist "%MIRROR_DIR%\index.html" (
   copy /Y "index.html" "%MIRROR_DIR%\index.html" >nul
   copy /Y "assets\data\game-data.js" "%MIRROR_DIR%\assets\data\game-data.js" >nul
   copy /Y "assets\data\generated\game-data.generated.js" "%MIRROR_DIR%\assets\data\generated\game-data.generated.js" >nul
+  xcopy /E /I /Y "assets\images\towers" "%MIRROR_DIR%\assets\images\towers" >nul
   copy /Y "docs\DATA_TABLE_COLUMN_GUIDE.md" "%MIRROR_DIR%\docs\DATA_TABLE_COLUMN_GUIDE.md" >nul
   copy /Y "docs\DATA_TABLE_COLUMN_AUDIT.md" "%MIRROR_DIR%\docs\DATA_TABLE_COLUMN_AUDIT.md" >nul
   copy /Y "docs\generated\DATA_TABLE_SYNC_REPORT.md" "%MIRROR_DIR%\docs\generated\DATA_TABLE_SYNC_REPORT.md" >nul

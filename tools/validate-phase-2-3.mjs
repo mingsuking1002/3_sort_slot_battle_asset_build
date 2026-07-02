@@ -519,7 +519,7 @@ function validateDesignTables(data) {
   assertSchemaColumns("PieceUpgradeData", ["UpgradeID", "PieceGroupID", "FromPieceID", "ToPieceID", "*", "Desc"]);
   assertSchemaColumns("UpgradeCostData", ["UpgradeCostID", "UpgradeID", "CurrencyType", "UpgradeCost", "*", "Desc"]);
   assertSchemaColumns("TowerData", ["TowerID", "TowerName", "TowerType", "TowerAiType", "TargetPriority", "ProjectileType", "TowerAtk", "TowerAtkSpeed", "TowerMaxLange", "TowerMaxAmmo", "SkillID", "TowerProjectile", "ProjectileCount", "ProjectileSize", "PiercingCount", "SplashRadius", "current_hp", "*", "Desc", "TowerLv"]);
-  assertSchemaColumns("ProjectileData", ["ProjectileID", "ProjectileType", "ProjectileName", "ProjectilePrefab", "*", "Desc"]);
+  assertSchemaColumns("ProjectileData", ["ProjectileID", "ProjectileType", "ProjectileName", "ProjectilePrefab", "PopEffectPrefab", "SubPopEffectPrefab", "*", "Desc"]);
   assertSchemaColumns("RarityData", ["PerkRarityID", "PerkRarityName", "Weight", "Color", "*", "Desc"]);
   assertSchemaColumns("TriggerData", ["TriggerID", "TriggerType", "TriggerValue", "RequiredTag", "*", "Desc"]);
   assertSchemaColumns("EffectData", ["EffectID", "BuffTowerType", "ATK", "ATKSpeed", "ShotProjCount", "MaxProj", "ProjSize", "ProjPiercing", "current_hp", "BuffType", "BuffValue", "IsOneOff", "Duration", "*", "Desc"]);
@@ -901,6 +901,8 @@ function validateDesignTables(data) {
     const expectedProjectileKey = projectileRuntimeKey(tower.TowerProjectile);
     if (runtimeTower?.projectileId === expectedProjectileKey) pass("DESIGN_TABLE", `TowerData ${tower.TowerID} projectile runtime ${expectedProjectileKey}`);
     else fail("DESIGN_TABLE", `TowerData ${tower.TowerID} projectile mismatch`, `${runtimeTower?.projectileId} / ${expectedProjectileKey}`);
+    if (runtimeTower?.projectileKey === expectedProjectileKey) pass("DESIGN_TABLE", `TowerData ${tower.TowerID} preserves projectileKey ${expectedProjectileKey}`);
+    else fail("DESIGN_TABLE", `TowerData ${tower.TowerID} projectileKey mismatch`, `${runtimeTower?.projectileKey} / ${expectedProjectileKey}`);
     if (closeTo(runtimeTower?.damageMod, Number(tower.TowerAtk) / 24, 0.01)) pass("DESIGN_TABLE", `TowerData ${tower.TowerID} TowerAtk feeds damageMod`);
     else fail("DESIGN_TABLE", `TowerData ${tower.TowerID} damageMod mismatch`, `${runtimeTower?.damageMod} / ${Number(tower.TowerAtk) / 24}`);
     if (closeTo(runtimeTower?.fireRate, tower.TowerAtkSpeed, 0.001)) pass("DESIGN_TABLE", `TowerData ${tower.TowerID} TowerAtkSpeed feeds fireRate`);
@@ -910,6 +912,21 @@ function validateDesignTables(data) {
     else fail("DESIGN_TABLE", `TowerData ${tower.TowerID} range mismatch`, `${runtimeTower?.range} / ${expectedRange}`);
     if (Number(runtimeTower?.maxAmmo) === Number(tower.TowerMaxAmmo)) pass("DESIGN_TABLE", `TowerData ${tower.TowerID} TowerMaxAmmo feeds maxAmmo`);
     else fail("DESIGN_TABLE", `TowerData ${tower.TowerID} maxAmmo mismatch`, `${runtimeTower?.maxAmmo} / ${tower.TowerMaxAmmo}`);
+    const expectedProjectileCount = Math.max(0, Math.floor(Number(tower.ProjectileCount) || 0));
+    if (Number(runtimeTower?.projectileCount) === expectedProjectileCount) pass("DESIGN_TABLE", `TowerData ${tower.TowerID} ProjectileCount feeds projectileCount`);
+    else fail("DESIGN_TABLE", `TowerData ${tower.TowerID} projectileCount mismatch`, `${runtimeTower?.projectileCount} / ${expectedProjectileCount}`);
+    const expectedProjectileSize = normalizeDesignProjectileSize(tower.ProjectileSize, runtimeTower?.projectileSize || 0);
+    if (closeTo(runtimeTower?.projectileSize, expectedProjectileSize, 0.001)) pass("DESIGN_TABLE", `TowerData ${tower.TowerID} ProjectileSize feeds projectileSize`);
+    else fail("DESIGN_TABLE", `TowerData ${tower.TowerID} projectileSize mismatch`, `${runtimeTower?.projectileSize} / ${expectedProjectileSize}`);
+    const expectedPierceHits = Math.max(0, Math.floor(Number(tower.PiercingCount) || 0));
+    if (Number(runtimeTower?.pierceHits) === expectedPierceHits) pass("DESIGN_TABLE", `TowerData ${tower.TowerID} PiercingCount feeds pierceHits`);
+    else fail("DESIGN_TABLE", `TowerData ${tower.TowerID} pierceHits mismatch`, `${runtimeTower?.pierceHits} / ${expectedPierceHits}`);
+    const expectedSplashRadius = Math.max(0, Number(tower.SplashRadius) || 0);
+    if (closeTo(runtimeTower?.splashRadius, expectedSplashRadius, 0.001)) pass("DESIGN_TABLE", `TowerData ${tower.TowerID} SplashRadius feeds splashRadius`);
+    else fail("DESIGN_TABLE", `TowerData ${tower.TowerID} splashRadius mismatch`, `${runtimeTower?.splashRadius} / ${expectedSplashRadius}`);
+    const expectedBulletSpeed = Number(tower.BulletSpeed);
+    if (!Number.isFinite(expectedBulletSpeed) || expectedBulletSpeed <= 0 || closeTo(runtimeTower?.speedMult, expectedBulletSpeed, 0.001)) pass("DESIGN_TABLE", `TowerData ${tower.TowerID} BulletSpeed feeds speedMult`);
+    else fail("DESIGN_TABLE", `TowerData ${tower.TowerID} speedMult mismatch`, `${runtimeTower?.speedMult} / ${expectedBulletSpeed}`);
     if (Number.isFinite(Number(tower.current_hp))) pass("DESIGN_TABLE", `TowerData ${tower.TowerID} current_hp valid`);
     else fail("DESIGN_TABLE", `TowerData ${tower.TowerID} current_hp invalid`, String(tower.current_hp));
     const expectedPercentHpDamage = normalizeDesignPercentDamage(tower.current_hp, 0);
@@ -927,6 +944,18 @@ function validateDesignTables(data) {
     const expectedType = projectileTypeMap[projectile.ProjectileType] || "basic";
     if (runtimeProjectile?.type === expectedType) pass("DESIGN_TABLE", `ProjectileData ${projectile.ProjectileID} type -> ${expectedType}`);
     else fail("DESIGN_TABLE", `ProjectileData ${projectile.ProjectileID} type mismatch`, `${runtimeProjectile?.type} / ${expectedType}`);
+    const rawPrefab = String(projectile.ProjectilePrefab || "").trim().replace(/\\/g, "/");
+    const expectedPrefab = !rawPrefab || rawPrefab === "0"
+      ? key
+      : /^(?:https?:|data:|blob:|\/|\.\.?\/)/i.test(rawPrefab) || rawPrefab.includes("/")
+        ? rawPrefab
+        : `assets/images/Projectile/${/\.(?:png|webp|jpe?g|gif)$/i.test(rawPrefab) ? rawPrefab : `${rawPrefab}.png`}`;
+    if (runtimeProjectile?.prefab === expectedPrefab) pass("DESIGN_TABLE", `ProjectileData ${projectile.ProjectileID} prefab -> ${expectedPrefab}`);
+    else fail("DESIGN_TABLE", `ProjectileData ${projectile.ProjectileID} prefab mismatch`, `${runtimeProjectile?.prefab} / ${expectedPrefab}`);
+    if (runtimeProjectile?.popEffectPrefab === String(projectile.PopEffectPrefab || "").trim()) pass("DESIGN_TABLE", `ProjectileData ${projectile.ProjectileID} preserves PopEffectPrefab`);
+    else fail("DESIGN_TABLE", `ProjectileData ${projectile.ProjectileID} PopEffectPrefab mismatch`, `${runtimeProjectile?.popEffectPrefab} / ${projectile.PopEffectPrefab}`);
+    if (runtimeProjectile?.subPopEffectPrefab === String(projectile.SubPopEffectPrefab || "").trim()) pass("DESIGN_TABLE", `ProjectileData ${projectile.ProjectileID} preserves SubPopEffectPrefab`);
+    else fail("DESIGN_TABLE", `ProjectileData ${projectile.ProjectileID} SubPopEffectPrefab mismatch`, `${runtimeProjectile?.subPopEffectPrefab} / ${projectile.SubPopEffectPrefab}`);
     const ownerTower = (tables.TowerData || []).find((tower) => String(tower.TowerProjectile) === String(projectile.ProjectileID));
     const expectedRadius = normalizeDesignProjectileSize(ownerTower?.ProjectileSize, runtimeProjectile?.radius || 0);
     if (!ownerTower || !Number(ownerTower.ProjectileSize) || closeTo(runtimeProjectile?.radius, expectedRadius, 0.001)) {
@@ -1258,6 +1287,7 @@ function validateDataOnlyRuntime(data, html) {
     ["const PIECES = Object.fromEntries(Object.entries(PIECE_DATA)", "HTML derives pieces from PieceData runtime table"],
     ["const tower = TOWER_DATA[towerId]", "HTML resolves piece towers through TowerData runtime table"],
     ["const projectile = PROJECTILE_DATA[tower.projectileId]", "HTML resolves tower projectiles through ProjectileData runtime table"],
+    ["(Number(tower.projectileSize ?? tower.radius ?? projectile.radius ?? 5) + (state.mods.bulletSizeBonus || 0)) *", "HTML projectile size starts from TowerData without type multiplier"],
     ["const SHOP_UNLOCK_ENTRIES = new Map((SHOP_DATA.pieceUnlocks", "HTML derives shop unlocks from ShopData runtime table"],
     ["const SHOP_FALLBACK_UNLOCK_COST = requireGameDataValue(\"shop.fallbackUnlockCost\"", "Shop fallback cost comes from data table"],
     ["const DECK_SETS_PER_PIECE = requireFiniteDataNumber(\"loadout.startDeck.setsPerPiece\"", "Deck set count comes from LoadoutData"],
@@ -1274,6 +1304,9 @@ function validateDataOnlyRuntime(data, html) {
     if (html.includes(needle)) pass("DATA_ONLY", label);
     else fail("DATA_ONLY", `${label} missing`, needle);
   }
+
+  if (!html.includes("const projectileSizeScale =")) pass("DATA_ONLY", "HTML has no tower-type projectile size multiplier");
+  else fail("DATA_ONLY", "HTML still contains tower-type projectile size multiplier", "const projectileSizeScale =");
 
   const forbiddenRuntimeFallbacks = [
     ["window.GAME_DATA || {}", "GAME_DATA object fallback"],
@@ -2226,10 +2259,13 @@ function validateMainStageCarouselRules(data, html) {
   }
 
   const runtimeChecks = [
+    ["id=\"mainPrevStageButton\"", "Main previous-stage button exists"],
     ["id=\"mainNextStageButton\"", "Main next-stage button exists"],
     ["function selectMainStageByOffset", "Main stage carousel function exists"],
     ["state.selectedStageKey = STAGES[nextIndex].key", "Carousel updates selected stage from STAGES"],
+    ["mainPrevStageButton.addEventListener(\"click\", () => selectMainStageByOffset(-1))", "Previous-stage click handler exists"],
     ["mainNextStageButton.addEventListener(\"click\", () => selectMainStageByOffset(1))", "Next-stage click handler exists"],
+    ["mainPrevStageButton.setAttribute(\"aria-label\"", "Previous-stage button label updates"],
     ["mainNextStageButton.setAttribute(\"aria-label\"", "Next-stage button label updates"],
   ];
   for (const [needle, label] of runtimeChecks) {
@@ -2293,15 +2329,15 @@ function loadSyntheticAutoAddGameData() {
   const injection = `
   // Synthetic rows for validator-only auto-add coverage. These rows are injected in memory only.
   designTables.ProjectileData.push(
-    { ProjectileID: 6999, ProjectileType: "normal", ProjectileName: "Projectile_synthetic_auto", ProjectilePrefab: "proj_synthetic_auto", "*": "", Desc: "검증 전용 신규 투사체" }
+    { ProjectileID: 6999, ProjectileType: "normal", ProjectileName: "Projectile_synthetic_auto", ProjectilePrefab: "proj_synthetic_auto", PopEffectPrefab: "hit_synthetic", SubPopEffectPrefab: "sub_synthetic", "*": "", Desc: "검증 전용 신규 투사체" }
   );
   designTables.TowerData.push(
     { TowerID: 7999, TowerName: "Tower_synthetic_auto_1", TowerType: "Basic", TowerAiType: "basic", TargetPriority: "near", ProjectileType: "normal", TowerAtk: 31, TowerAtkSpeed: 0.61, TowerMaxLange: 345, TowerMaxAmmo: 12, SkillID: 0, TowerProjectile: 6999, ProjectileCount: 1, ProjectileSize: 5.4, PiercingCount: 0, SplashRadius: 0, current_hp: 0, "*": "", Desc: "검증 전용 신규 타워 Lv1", TowerLv: 1 },
     { TowerID: 8000, TowerName: "Tower_synthetic_auto_2", TowerType: "Basic", TowerAiType: "basic", TargetPriority: "near", ProjectileType: "normal", TowerAtk: 36, TowerAtkSpeed: 0.58, TowerMaxLange: 360, TowerMaxAmmo: 13, SkillID: 0, TowerProjectile: 6999, ProjectileCount: 1, ProjectileSize: 5.6, PiercingCount: 0, SplashRadius: 0, current_hp: 0, "*": "", Desc: "검증 전용 신규 타워 Lv2", TowerLv: 2 }
   );
   designTables.PieceData.push(
-    { PieceID: 7999, PieceName: "PieceName_synthetic_auto_1", PieceType: "Basic", PieceDesc: "PieceDesc_synthetic_auto_1", PieceGrade: 1, PieceLv: 1, ConnectTower: 7999, Portrait: "assets/images/ui/PIECE/기본형.png", PieceSprite: "assets/images/ui/PIECE/기본형.png", "*": "", Desc: "검증 전용 신규 기물 Lv1" },
-    { PieceID: 8000, PieceName: "PieceName_synthetic_auto_1", PieceType: "Basic", PieceDesc: "PieceDesc_synthetic_auto_1", PieceGrade: 1, PieceLv: 2, ConnectTower: 8000, Portrait: "assets/images/ui/PIECE/기본형.png", PieceSprite: "assets/images/ui/PIECE/기본형.png", "*": "", Desc: "검증 전용 신규 기물 Lv2" }
+    { PieceID: 7999, PieceName: "PieceName_synthetic_auto_1", PieceType: "Basic", PieceDesc: "PieceDesc_synthetic_auto_1", PieceGrade: 1, PieceLv: 1, ConnectTower: 7999, Portrait: "", PieceSprite: "synthetic_auto", "*": "", Desc: "검증 전용 신규 기물 Lv1" },
+    { PieceID: 8000, PieceName: "PieceName_synthetic_auto_1", PieceType: "Basic", PieceDesc: "PieceDesc_synthetic_auto_1", PieceGrade: 1, PieceLv: 2, ConnectTower: 8000, Portrait: "", PieceSprite: "synthetic_auto", "*": "", Desc: "검증 전용 신규 기물 Lv2" }
   );
   designTables.PieceUpgradeData.push(
     { UpgradeID: 889991, PieceGroupID: "synthetic_auto", FromPieceID: 7999, ToPieceID: 8000, "*": "", Desc: "검증 전용 신규 기물 Lv1 -> Lv2" }
@@ -2368,6 +2404,12 @@ function validateSyntheticAutoAddRules() {
     fail("AUTO_ADD", "New PieceData rows failed tower link", `${piece?.connectTower} / ${upgradedPiece?.connectTower}`);
   }
 
+  if (piece?.image === "assets/images/towers/synthetic_auto.png" && piece?.fallbackText) {
+    pass("AUTO_ADD", "PieceSprite filename resolves to towers asset with text fallback");
+  } else {
+    fail("AUTO_ADD", "PieceSprite asset or fallback mismatch", `${piece?.image} / ${piece?.fallbackText}`);
+  }
+
   if (piece?.nextPieceKey === "piece_8000" && upgradedPiece?.prevPieceKey === "piece_7999") {
     pass("AUTO_ADD", "New PieceUpgradeData row auto-links piece upgrade chain");
   } else {
@@ -2382,8 +2424,8 @@ function validateSyntheticAutoAddRules() {
 
   const shopEntry = (syntheticData.shop?.pieceUnlocks || []).find((entry) => entry.pieceKey === "piece_7999");
   const upgradeShopEntry = (syntheticData.shop?.pieceUnlocks || []).find((entry) => entry.pieceKey === "piece_8000");
-  if (shopEntry?.source === "designTables-auto" && !upgradeShopEntry) {
-    pass("AUTO_ADD", "New base piece enters acquisition list while upgrade-only piece stays hidden");
+  if ((piece?.owned === true || shopEntry?.source === "designTables-auto") && !upgradeShopEntry) {
+    pass("AUTO_ADD", "New base piece is immediately playable or enters acquisition while upgrade-only piece stays hidden");
   } else {
     fail("AUTO_ADD", "New piece acquisition visibility mismatch", `${shopEntry?.source || "missing"} / upgrade=${Boolean(upgradeShopEntry)}`);
   }

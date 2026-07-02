@@ -31,7 +31,7 @@ const jsonString = "json-string";
 const presentationHeaders = (...headers) => ["*", "Desc", "Description", ...headers];
 
 export const GAME_DATA_SCHEMA = {
-  version: "2026-07-01-combat-balance-profile-v11",
+  version: "2026-07-02-combat-balance-profile-v12",
   profile: "balance",
   documentationHeaders: [
     "*",
@@ -273,10 +273,14 @@ export const GAME_DATA_SCHEMA = {
     ProjectileData: table("ProjectileID", "projectiles", [
       ["ProjectileID", integer],
       ["ProjectileType", scalar, { enum: [1, 2, 3, 4, 5, "Basic", "Snipe", "Tank", "Explode", "Heal"] }],
+      ["ProjectilePrefab", string],
+      ["PopEffectPrefab", string],
+      ["SubPopEffectPrefab", string],
     ], {
-      ignoredInputHeaders: presentationHeaders(
-        "ProjectileName", "ProjectilePrefab", "PopEffectPrefab", "subPopEffect", "SubPopEffectPrefab"
-      ),
+      optionalHeaders: ["ProjectilePrefab", "PopEffectPrefab", "SubPopEffectPrefab"],
+      inputHeaderAliases: { subPopEffect: "SubPopEffectPrefab" },
+      ignoredInputHeaders: presentationHeaders("ProjectileName"),
+      notes: "ProjectilePrefab과 피격 이펙트 키는 ProjectileData에서 읽고, 크기·속도·관통·범위 등 전투 수치는 TowerData에서 읽습니다.",
     }),
 
     RarityData: table("PerkRarityID", "perks.rarities", [

@@ -1617,7 +1617,7 @@
       ProjectileData: {
         pk: "ProjectileID",
         runtimeTable: "projectiles",
-        columns: ["ProjectileID", "ProjectileType", "ProjectileName", "ProjectilePrefab", "*", "Desc"],
+        columns: ["ProjectileID", "ProjectileType", "ProjectileName", "ProjectilePrefab", "PopEffectPrefab", "SubPopEffectPrefab", "*", "Desc"],
       },
       RarityData: {
         pk: "PerkRarityID",
@@ -1814,11 +1814,11 @@
     // ProjectileData - 포탑 발사체 타입과 프리팹 키
     // ============================================================
     ProjectileData: [
-      { ProjectileID: 6001, ProjectileType: "Basic", ProjectileName: "노말", ProjectilePrefab: "assets/images/Projectile/01.png", "*": "", Desc: "세린/도이 공용 01 투사체" },
-      { ProjectileID: 6002, ProjectileType: "Snipe", ProjectileName: "저격", ProjectilePrefab: "assets/images/Projectile/13.png", "*": "", Desc: "유진 13 투사체" },
-      { ProjectileID: 6003, ProjectileType: "Tank", ProjectileName: "탱커", ProjectilePrefab: "assets/images/Projectile/02.png", "*": "", Desc: "가비 02 투사체" },
-      { ProjectileID: 6004, ProjectileType: "Explode", ProjectileName: "폭발", ProjectilePrefab: "assets/images/Projectile/14.png", "*": "", Desc: "유은 14 투사체" },
-      { ProjectileID: 6005, ProjectileType: "Heal", ProjectileName: "힐링", ProjectilePrefab: "assets/images/Projectile/08.png", "*": "", Desc: "리리 08 투사체" },
+      { ProjectileID: 6001, ProjectileType: "Basic", ProjectileName: "노말", ProjectilePrefab: "01", PopEffectPrefab: "Hit_1_blue", SubPopEffectPrefab: "0", "*": "", Desc: "세린/도이 공용 01 투사체" },
+      { ProjectileID: 6002, ProjectileType: "Snipe", ProjectileName: "저격", ProjectilePrefab: "13", PopEffectPrefab: "Hit_3_purple", SubPopEffectPrefab: "Hit_1_purple", "*": "", Desc: "유진 13 투사체" },
+      { ProjectileID: 6003, ProjectileType: "Tank", ProjectileName: "탱커", ProjectilePrefab: "02", PopEffectPrefab: "splash", SubPopEffectPrefab: "0", "*": "", Desc: "가비 02 투사체" },
+      { ProjectileID: 6004, ProjectileType: "Explode", ProjectileName: "폭발", ProjectilePrefab: "14", PopEffectPrefab: "explosion_4", SubPopEffectPrefab: "0", "*": "", Desc: "유은 14 투사체" },
+      { ProjectileID: 6005, ProjectileType: "Heal", ProjectileName: "힐링", ProjectilePrefab: "08", PopEffectPrefab: "Hit_1_green", SubPopEffectPrefab: "Level_Up_green", "*": "", Desc: "리리 08 투사체" },
     ],
 
     // ============================================================
@@ -2474,6 +2474,26 @@
     return raw > 1 ? raw / 100 : raw;
   }
 
+  function resolveDesignPieceSprite(value) {
+    const raw = String(value || "").trim().replace(/\\/g, "/");
+    if (!raw) return "";
+    if (/^(?:https?:|data:|blob:|\/|\.\.?\/)/i.test(raw) || raw.includes("/")) return raw;
+    const filename = /\.png$/i.test(raw) ? raw : `${raw}.png`;
+    return `assets/images/towers/${filename}`;
+  }
+
+  function resolveDesignProjectileAsset(value) {
+    const raw = String(value || "").trim().replace(/\\/g, "/");
+    if (!raw || raw === "0") return "";
+    if (/^(?:https?:|data:|blob:|\/|\.\.?\/)/i.test(raw) || raw.includes("/")) return raw;
+    const filename = /\.(?:png|webp|jpe?g|gif)$/i.test(raw) ? raw : `${raw}.png`;
+    return `assets/images/Projectile/${filename}`;
+  }
+
+  function getDesignPieceFallbackText(name, fallback = "?") {
+    return Array.from(String(name || fallback).trim())[0] || "?";
+  }
+
   function getTowerRowsByProjectileId(projectileId) {
     return (designTables.TowerData || []).filter((towerRow) => String(towerRow.TowerProjectile) === String(projectileId));
   }
@@ -2501,23 +2521,36 @@
       const sizeOverride = normalizeDesignProjectileSize(sizeOverrideRaw, fillDefaults.radius);
       const pierceOverride = Math.max(0, ...towerRows.map((row) => Number(row.PiercingCount) || 0));
       const splashOverride = Math.max(0, ...towerRows.map((row) => Number(row.SplashRadius) || 0));
+      const projectileName = String(projectileRow.ProjectileName || "").trim() || projectileKey;
+      const projectilePrefabKey = String(projectileRow.ProjectilePrefab || "").trim();
+      const projectilePrefab = resolveDesignProjectileAsset(projectilePrefabKey);
+      const popEffectPrefab = String(projectileRow.PopEffectPrefab || "").trim();
+      const subPopEffectPrefab = String(projectileRow.SubPopEffectPrefab || "").trim();
       runtime.projectiles[projectileKey] = {
         ...fillDefaults,
         id: projectileKey,
         type: projectileType,
         projectileType,
         aiType,
-        name: localizeDesignKey(projectileRow.ProjectileName, projectileRow.ProjectileName || projectileKey),
+        name: projectileName,
         radius: sizeOverride,
         pierce: pierceOverride > 0 || fillDefaults.pierce === true,
         pierceHits: pierceOverride > 0 ? pierceOverride : Number(fillDefaults.pierceHits || 0),
         splashRadius: splashOverride > 0 ? splashOverride : Number(fillDefaults.splashRadius || 0),
-        prefab: projectileRow.ProjectilePrefab || projectileKey,
+        prefab: projectilePrefab || projectileKey,
+        prefabKey: projectilePrefabKey,
+        popEffectPrefab,
+        subPopEffectPrefab,
         source: "designTables",
         design: {
           projectileId: projectileRow.ProjectileID,
           projectileType: projectileRow.ProjectileType,
           projectileEffectType: projectileType,
+          projectileName,
+          projectilePrefabKey,
+          projectilePrefab,
+          popEffectPrefab,
+          subPopEffectPrefab,
           towerAiType: ownerTowerRow.TowerAiType,
           aiType,
           fillSource: "ProjectileTypeDefaults",
@@ -2560,6 +2593,7 @@
         targetPriority,
         projectileType,
         projectileId: projectileKey,
+        projectileKey,
         damageMod,
         fireRateMod: 1,
         fireRate: Math.max(0.05, Number(towerRow.TowerAtkSpeed) || 0.6),
@@ -2623,7 +2657,8 @@
       if (!pieceKey || !towerKey) return;
       const runtimeType = designPieceTypeToRuntime(pieceRow.PieceType);
       const baseType = towerTypes[runtimeType] || {};
-      const name = localizeDesignKey(pieceRow.PieceName, baseType.name || pieceRow.PieceName || pieceKey);
+      const name = String(pieceRow.PieceName || "").trim() || baseType.name || pieceKey;
+      const sprite = resolveDesignPieceSprite(pieceRow.PieceSprite || pieceRow.Portrait || baseType.image || "");
       runtime.pieces[pieceKey] = {
         key: pieceKey,
         type: runtimeType,
@@ -2631,10 +2666,11 @@
         level: Math.max(1, Math.floor(Number(pieceRow.PieceLv) || 1)),
         name,
         mark: `${baseType.mark || ""}${Math.max(1, Math.floor(Number(pieceRow.PieceGrade) || 1))}`,
+        fallbackText: getDesignPieceFallbackText(name, pieceKey),
         connectTower: towerKey,
-        image: pieceRow.PieceSprite || pieceRow.Portrait || baseType.image || "",
-        portrait: pieceRow.Portrait || pieceRow.PieceSprite || "",
-        owned: defaultOwnedPieceIds.has(Number(pieceRow.PieceID)),
+        image: sprite,
+        portrait: sprite,
+        owned: defaultOwnedPieceIds.has(Number(pieceRow.PieceID)) || Math.max(1, Math.floor(Number(pieceRow.PieceLv) || 1)) === 1,
         description: localizeDesignKey(pieceRow.PieceDesc, baseType.description || pieceRow.PieceDesc || ""),
         source: "designTables",
         design: {
@@ -2642,6 +2678,8 @@
           pieceType: pieceRow.PieceType,
           pieceLevel: Number(pieceRow.PieceLv) || 1,
           connectTower: pieceRow.ConnectTower,
+          pieceSprite: pieceRow.PieceSprite || "",
+          resolvedPieceSprite: sprite,
         },
       };
       runtime.pieceDefinitions.push([pieceKey, runtimeType, runtime.pieces[pieceKey].star, name]);
@@ -2664,6 +2702,27 @@
       runtime.pieces[toKey].prevPieceKey = fromKey;
       runtime.pieces[toKey].upgradeOnly = true;
     });
+
+    const autoGroups = new Map();
+    for (const piece of Object.values(runtime.pieces)) {
+      if (piece.upgradeGroupId) continue;
+      const identity = String(piece.design?.pieceSprite || piece.name || "").trim().toLowerCase();
+      if (!identity) continue;
+      if (!autoGroups.has(identity)) autoGroups.set(identity, []);
+      autoGroups.get(identity).push(piece);
+    }
+    for (const pieces of autoGroups.values()) {
+      if (!pieces.length) continue;
+      pieces.sort((a, b) => Number(a.level || 1) - Number(b.level || 1));
+      const groupId = `piece-auto-${pieces[0].design?.pieceId || pieces[0].key}`;
+      pieces.forEach((piece, index) => {
+        piece.upgradeGroupId = groupId;
+        piece.prevPieceKey = pieces[index - 1]?.key || null;
+        piece.nextPieceKey = Number(piece.level || 1) < 5 ? pieces[index + 1]?.key || null : null;
+        piece.upgradeOnly = index > 0;
+        piece.owned = index === 0;
+      });
+    }
 
     return runtime;
   }

@@ -105,10 +105,12 @@
 | `PieceType` | 기물 계열. 공식 값은 `AR`, `Shotgun`, `Lange`, `Tank`, `Wide`, `Buffer`. |
 | `PieceDesc` | 기물 설명. |
 | `PieceGrade` | 등급/별. 현재 기본값은 1. |
-| `PieceLv` | 강화 단계. 현재 1~5. |
+| `PieceLv` | 강화 단계. 게임과 밸런스 대시보드 모두 최대 레벨 5로 고정한다. |
 | `ConnectTower` | 생성할 `TowerData.TowerID`. |
 | `Portrait` | 상세/카드 이미지 경로. |
-| `PieceSprite` | 인게임/카드 스프라이트 경로. |
+| `PieceSprite` | 인게임/카드 스프라이트. `세린` 또는 `세린.png`처럼 파일명만 입력하면 `assets/images/towers/세린.png`를 자동 사용한다. 전체 경로도 허용하며, 이미지가 없거나 로드에 실패하면 `PieceName` 첫 글자를 표시한다. |
+
+새 기물은 `PieceData`, 연결된 `TowerData`와 `ProjectileData` 행을 추가하면 밸런스 빌드의 보유/편성 후보와 대시보드에 자동으로 나타난다. 같은 기물의 레벨 행은 동일한 `PieceName` 또는 `PieceSprite` 값을 사용하고 `PieceLv`를 1~5로 구분한다.
 
 ## PieceUpgradeData
 
@@ -140,10 +142,10 @@
 |---|---|
 | `TowerID` | 포탑 고유 ID. 현재 공식 ID는 `7001~7030`. |
 | `TowerName` | 포탑 표시명. |
-| `TowerType` | 포탑 역할/계열. 숫자값은 1 basic, 2 scatter, 3 sniper, 4 breaker, 5 blast, 6 support로 변환한다. |
+| `TowerType` | 포탑 역할/계열. 숫자값은 1 Basic, 2 Shotgun, 3 SR, 4 Mortar, 5 Boomer, 6 Buffer로 변환한다. |
 | `TowerAiType` | 어떻게 쏘는가. 현재 공식 값은 `basic`, `basic-non`, `shotgun`, `heal`. 런타임 `aiType`으로 변환된다. |
 | `TargetPriority` | 누구를 노리는가. 예: `near`, `far`, `strong`, `weak`, `friendly`, `cluster`. 현재 공식 포탑은 적을 노리는 값만 사용한다. |
-| `ProjectileType` | 맞았을 때 어떤 효과가 나는가. 예: `normal`, `pierce`, `tank`, `explode`, `heal`. |
+| `ProjectileType` | 구형 호환용 선택 열. 비어 있으면 `TowerProjectile`로 연결된 `ProjectileData.ProjectileType`을 사용한다. |
 | `TowerAtk` | 포탑 공격력. 런타임 피해와 리리 회복량의 기준이다. |
 | `TowerAtkSpeed` | 공격 주기. 낮을수록 자주 공격한다. |
 | `TowerMaxLange` | 사거리. 30 이하 값은 보드 단위로 보고 런타임에서 `x38px`로 변환한다. |
@@ -156,6 +158,9 @@
 | `SplashRadius` | 폭발/범위 피해 반경. |
 | `current_hp` / `CurrentHp` | 체력비례 피해 퍼센트. `3`은 3%, `0.03`은 3%, `3%`도 3%로 해석된다. 탱커 대항형처럼 체력비례 추가 피해를 주는 투사체에 사용한다. |
 | `TowerLv` | 포탑 레벨. `PieceData.PieceLv`와 맞춰 보는 표시/검증용 값. |
+| `BulletSpeed` | 투사체 이동 속도 배율. 값이 있으면 투사체 종류의 기본 행동값보다 우선한다. |
+
+공격력, 공격 주기, 사거리, 탄약, 발사 수, 탄 크기, 탄속, 관통 수, 폭발 반경, 최대 체력 비례 피해는 모두 `TowerData`가 원천이다. 특전은 이 기본값 위에 런타임 보정만 적용한다.
 
 ### TowerData 전투 의미
 
@@ -176,8 +181,12 @@
 |---|---|
 | `ProjectileID` | 발사체 고유 ID. 현재 공식 ID는 `6001~6005`. |
 | `ProjectileType` | 명중 효과. `Basic`, `Snipe`, `Tank`, `Explode`, `Heal`을 런타임 타입으로 변환한다. |
-| `ProjectileName` | 발사체 표시명. |
-| `ProjectilePrefab` | 발사체 프리팹/리소스 키. |
+| `ProjectileName` | `*` 뒤의 확인용 표시명. 현재 밸런스 파싱에는 사용하지 않는다. |
+| `ProjectilePrefab` | 발사체 이미지 키. `01`처럼 파일명만 적으면 `assets/images/Projectile/01.png`로 해석하며, 경로·URL을 직접 적어도 된다. |
+| `PopEffectPrefab` | 주 피격/폭발 이펙트 리소스 키. 현재 런타임 메타데이터로 보존하며 이펙트 시스템 확장 시 사용한다. |
+| `SubPopEffectPrefab` | 보조 피격/회복 이펙트 리소스 키. `subPopEffect` 헤더도 같은 열로 호환한다. |
+
+`ProjectileData`는 투사체 ID, 효과 종류, 표시명, 이미지와 피격 이펙트 키를 소유한다. 수치 밸런스는 중복해서 두지 않고 해당 투사체를 참조하는 `TowerData`가 소유한다.
 
 ## specialProjectiles
 
