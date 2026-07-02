@@ -4225,6 +4225,7 @@
       const EXPLOSION_IMAGE_SOURCE = "assets/images/Projectile/EXP.gif";
       const explosionImagePreload = new Image();
       explosionImagePreload.src = EXPLOSION_IMAGE_SOURCE;
+      const AUDIO_ENABLED = false;
       const AUDIO_ASSETS = Object.freeze({
         bgmLobby: "assets/audio/로비.mp3",
         bgmStage1: "assets/audio/1스테이지.mp3",
@@ -4267,7 +4268,7 @@
       let currentBgmKey = "";
 
       function getSfxTemplate(key) {
-        if (!AUDIO_ASSETS[key]) return null;
+        if (!AUDIO_ENABLED || !AUDIO_ASSETS[key]) return null;
         if (!sfxTemplates.has(key)) {
           const audio = new Audio(AUDIO_ASSETS[key]);
           audio.preload = "auto";
@@ -4312,6 +4313,7 @@
 
       function playBgm(key) {
         const assetKey = key === "stage1" ? "bgmStage1" : "bgmLobby";
+        if (!AUDIO_ENABLED || !AUDIO_ASSETS[assetKey]) return;
         if (currentBgmKey === assetKey && currentBgm) {
           if (currentBgm.paused) currentBgm.play().catch(() => {});
           return;

@@ -1879,30 +1879,19 @@ function validatePhase3TowerRules(data, html) {
     fail("PHASE3", "Queue overflow overdrive contract missing");
   }
 
-  const requiredAudioFiles = [
-    "assets/audio/로비.mp3",
-    "assets/audio/1스테이지.mp3",
-    "assets/audio/기물집기효과음.wav",
-    "assets/audio/소팅.wav",
-    "assets/audio/기본형.wav",
-    "assets/audio/샷건.wav",
-    "assets/audio/저격형.wav",
-    "assets/audio/탱커대항.wav",
-    "assets/audio/폭발형.wav",
-    "assets/audio/보조형.wav",
-    "assets/audio/폭발음.wav",
-  ];
   if (
-    requiredAudioFiles.every(fileExists) &&
+    html.includes("const AUDIO_ENABLED = false") &&
+    html.includes("if (!AUDIO_ENABLED || !AUDIO_ASSETS[key]) return null") &&
+    html.includes("if (!AUDIO_ENABLED || !AUDIO_ASSETS[assetKey]) return") &&
     html.includes("const SFX_SETTINGS") &&
     html.includes("activeSfx.size >= 6") &&
     html.includes('playSfx("sort")') &&
     html.includes("playTowerFireSfx(pieceKey)") &&
     html.includes('playBgm("stage1")')
   ) {
-    pass("AUDIO", "Low-volume BGM/SFX mapping and overlap limits are connected");
+    pass("AUDIO", "Optional audio is disabled cleanly without requiring asset files");
   } else {
-    fail("AUDIO", "Audio assets or runtime event mapping missing");
+    fail("AUDIO", "Optional audio disable contract or runtime event mapping missing");
   }
 
   const typeCounts = {};

@@ -7,7 +7,7 @@
 - 런타임 연결: **기본 실행 모드** (유효한 생성 스냅샷을 항상 적용)
 - 외부 적용: **13개**, 내장 fallback: **3개**
 - 검사 결과: ERROR 0 / WARN 0 / INFO 9
-- 현재 데이터 대비 변경: 523개 행 / 1062개 필드
+- 현재 데이터 대비 변경: 523개 행 / 1060개 필드
 
 ## 테이블 공급 현황
 
@@ -119,7 +119,7 @@
 - `WavePatternData.3002.Duration`: `` -> `""`
 - `WavePatternData.3002.WaveDuration`: `` -> `""`
 - `WavePatternData.3003.WaveType`: `"Normal"` -> `""`
-- `WavePatternData.3003.Normal_Count`: `54` -> `30`
+- `WavePatternData.3003.Normal_Count`: `54` -> `25`
 - `WavePatternData.3003.Speedy_Count`: `14` -> `0`
 - `WavePatternData.3003.Tanker_Count`: `8` -> `0`
 - `WavePatternData.3003.몬스터 총합`: `76` -> ``
@@ -131,7 +131,7 @@
 - `WavePatternData.3003.NormalRate_3`: `` -> `0`
 - `WavePatternData.3003.Duration`: `` -> `""`
 - `WavePatternData.3003.WaveDuration`: `` -> `""`
-- `WavePatternData.3004.Normal_Count`: `72` -> `60`
+- `WavePatternData.3004.Normal_Count`: `72` -> `50`
 - `WavePatternData.3004.Speedy_Count`: `28` -> `0`
 - `WavePatternData.3004.Tanker_Count`: `8` -> `0`
 - `WavePatternData.3004.몬스터 총합`: `108` -> ``
@@ -144,7 +144,7 @@
 - `WavePatternData.3004.Duration`: `` -> `""`
 - `WavePatternData.3004.WaveDuration`: `` -> `""`
 - `WavePatternData.3005.WaveType`: `"Normal"` -> `""`
-- `WavePatternData.3005.Normal_Count`: `70` -> `25`
+- `WavePatternData.3005.Normal_Count`: `70` -> `20`
 - `WavePatternData.3005.Speedy_Count`: `24` -> `10`
 - `WavePatternData.3005.Tanker_Count`: `12` -> `0`
 - `WavePatternData.3005.몬스터 총합`: `106` -> ``
@@ -157,7 +157,7 @@
 - `WavePatternData.3005.Duration`: `` -> `""`
 - `WavePatternData.3005.WaveDuration`: `` -> `""`
 - `WavePatternData.3006.WaveType`: `"Normal"` -> `""`
-- `WavePatternData.3006.Normal_Count`: `78` -> `30`
+- `WavePatternData.3006.Normal_Count`: `78` -> `25`
 - `WavePatternData.3006.Speedy_Count`: `30` -> `10`
 - `WavePatternData.3006.Tanker_Count`: `16` -> `0`
 - `WavePatternData.3006.몬스터 총합`: `124` -> ``
@@ -170,7 +170,7 @@
 - `WavePatternData.3006.Duration`: `` -> `""`
 - `WavePatternData.3006.WaveDuration`: `` -> `""`
 - `WavePatternData.3007.WaveType`: `"Normal"` -> `""`
-- `WavePatternData.3007.Normal_Count`: `84` -> `30`
+- `WavePatternData.3007.Normal_Count`: `84` -> `25`
 - `WavePatternData.3007.Speedy_Count`: `36` -> `10`
 - `WavePatternData.3007.Tanker_Count`: `20` -> `5`
 - `WavePatternData.3007.몬스터 총합`: `140` -> ``
@@ -182,7 +182,7 @@
 - `WavePatternData.3007.NormalRate_3`: `` -> `70`
 - `WavePatternData.3007.Duration`: `` -> `""`
 - `WavePatternData.3007.WaveDuration`: `` -> `""`
-- `WavePatternData.3008.Normal_Count`: `98` -> `60`
+- `WavePatternData.3008.Normal_Count`: `98` -> `50`
 - `WavePatternData.3008.Speedy_Count`: `44` -> `20`
 - `WavePatternData.3008.Tanker_Count`: `24` -> `10`
 - `WavePatternData.3008.몬스터 총합`: `166` -> ``
@@ -195,7 +195,7 @@
 - `WavePatternData.3008.Duration`: `` -> `""`
 - `WavePatternData.3008.WaveDuration`: `` -> `""`
 - `WavePatternData.3009.WaveType`: `"Normal"` -> `""`
-- `WavePatternData.3009.Normal_Count`: `100` -> `30`
+- `WavePatternData.3009.Normal_Count`: `100` -> `25`
 - `WavePatternData.3009.Speedy_Count`: `48` -> `10`
 - `WavePatternData.3009.Tanker_Count`: `30` -> `10`
 - `WavePatternData.3009.몬스터 총합`: `178` -> ``

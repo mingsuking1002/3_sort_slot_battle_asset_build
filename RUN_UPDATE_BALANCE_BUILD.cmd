@@ -24,7 +24,7 @@ echo.
 echo [2/5] Validating generated game data...
 node tools\validate-phase-2-3.mjs . > "%VALIDATION_LOG%" 2>&1
 if errorlevel 1 (
-  powershell -NoProfile -Command "Get-Content -LiteralPath $env:VALIDATION_LOG -Tail 40"
+  powershell -NoProfile -Command "Get-Content -LiteralPath $env:VALIDATION_LOG -TotalCount 30"
   goto :failed
 )
 findstr /C:"Summary:" "%VALIDATION_LOG%"
