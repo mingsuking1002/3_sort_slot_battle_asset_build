@@ -36,8 +36,8 @@
     1: { key: "basic", sheet: "Basic", label: "기본형", color: "#276dcc" },
     2: { key: "scatter", sheet: "Shotgun", label: "산탄형", color: "#d96532" },
     3: { key: "sniper", sheet: "SR", label: "원거리형", color: "#7767d6" },
-    4: { key: "blast", sheet: "Mortar", label: "범위형", color: "#d03e60" },
-    5: { key: "breaker", sheet: "Boomer", label: "탱커대항형", color: "#15946f" },
+    4: { key: "breaker", sheet: "Mortar", label: "탱커대항형", color: "#d03e60" },
+    5: { key: "blast", sheet: "Boomer", label: "범위형", color: "#15946f" },
     6: { key: "support", sheet: "Buffer", label: "보조형", color: "#a97724" },
   };
   const AI_NAMES = { 1: "Basic", 2: "Basic-non", 3: "Shotgun", 4: "Heal" };
@@ -60,10 +60,9 @@
     snapshot: "all",
     result: "all",
     device: "all",
-    previewA: "basic",
-    previewB: "scatter",
-    previewLevelA: 1,
-    previewLevelB: 1,
+    previewType: "basic",
+    previewLevel: 1,
+    previewSlot: 4,
   };
 
   const number = (value, fallback = 0) => {
@@ -678,9 +677,16 @@
       const meta = typeMeta(tower.TowerType);
       const level = number(valueOf(tower, ["TowerLv", "tower_lv"]), 1);
       const count = Math.max(1, number(valueOf(tower, ["ProjectileCount", "TowerProjectileCount"]), 1));
-      const interval = Math.max(.001, number(valueOf(tower, ["TowerAtkSpeed", "AtkSpeed"]), 1));
+      const rawInterval = Math.max(.001, number(valueOf(tower, ["TowerAtkSpeed", "AtkSpeed"]), 1));
+      const interval = Math.max(.12, rawInterval);
       const ammo = number(valueOf(tower, ["TowerMaxAmmo", "MaxAmmo"]));
       const atk = number(valueOf(tower, ["TowerAtk", "ATK"]));
+      const rawRange = number(valueOf(tower, ["TowerMaxLange", "TowerMaxRange", "TowerRange"]));
+      const range = rawRange > 0 && rawRange <= 30 ? rawRange * 38 : rawRange;
+      const rawProjectileSize = number(tower.ProjectileSize);
+      const projectileSize = rawProjectileSize > 0 && rawProjectileSize <= 2 ? rawProjectileSize * 20 : rawProjectileSize;
+      const projectileId = valueOf(tower, "TowerProjectile");
+      const projectile = tableRows("ProjectileData").find((row) => String(row.ProjectileID) === String(projectileId)) || {};
       const currentHpRate = normalizePercentValue(valueOf(tower, ["current_hp", "CurrentHp"]));
       const percentDamage = currentHpRate * refHp;
       const perVolleyDamage = (atk + percentDamage) * count;
@@ -694,10 +700,16 @@
         ai: AI_NAMES[tower.TowerAiType] || tower.TowerAiType,
         level,
         atk,
+        rawInterval,
         interval,
         count,
         ammo,
-        range: number(valueOf(tower, ["TowerMaxLange", "TowerMaxRange", "TowerRange"])),
+        rawRange,
+        range,
+        projectileId,
+        projectileType: valueOf(projectile, "ProjectileType", valueOf(tower, "ProjectileType", "normal")),
+        projectilePrefab: valueOf(projectile, "ProjectilePrefab"),
+        projectileSize,
         splash: number(tower.SplashRadius),
         piercing: number(tower.PiercingCount),
         bulletSpeed: number(tower.BulletSpeed),
@@ -1303,7 +1315,8 @@
     const piece = tableRows("PieceData").find((row) => String(row.ConnectTower) === String(tower.towerId))
       || tableRows("PieceData").find((row) => normalizeTowerTypeKey(row.PieceType) === tower.typeKey && number(row.PieceLv, 1) === tower.level)
       || {};
-    const name = String(piece.PieceName || tower.label || tower.typeKey);
+    const rawName = String(piece.PieceName || tower.label || tower.typeKey);
+    const name = /^PieceName_/i.test(rawName) ? tower.label : rawName;
     const sprite = dashboardAssetPath(piece.PieceSprite);
     const legacySprite = !piece.PieceName && !piece.PieceSprite ? LEGACY_TYPE_SPRITES[tower.typeKey] || "" : "";
     return { name, sprite: sprite || legacySprite, fallback: Array.from(name.trim())[0] || "?" };
@@ -1313,85 +1326,233 @@
     return `<span class="preview-tower-letter">${escape(piece.fallback)}</span>${piece.sprite ? `<img src="${escape(piece.sprite)}" alt="${escape(piece.name)}" onerror="this.remove()">` : ""}`;
   }
 
-  function renderPreviewLane(tower, side) {
-    if (!tower) return `<article class="preview-lane">${emptyChart("비교할 포탑 데이터가 없습니다")}</article>`;
+  function normalizePreviewProjectileType(value) {
+    const raw = String(value || "normal").trim().toLowerCase();
+    return ({ "1": "normal", basic: "normal", "2": "pierce", snipe: "pierce", "3": "tank", "4": "explode", "5": "heal" })[raw] || raw;
+  }
+
+  function previewProjectileAsset(value) {
+    const raw = String(value || "").trim().replace(/\\/g, "/");
+    if (!raw || raw === "0") return "";
+    if (/^(?:https?:|data:|blob:|\/|\.\.?\/)/i.test(raw) || raw.includes("/")) return raw.startsWith("assets/") ? `../${raw}` : raw;
+    return `../assets/images/Projectile/${/\.(?:png|webp|jpe?g|gif)$/i.test(raw) ? raw : `${raw}.png`}`;
+  }
+
+  const PREVIEW_MONSTERS = [
+    { type: "basic", x: 18, y: 14 },
+    { type: "speed", x: 49, y: 10 },
+    { type: "tank", x: 81, y: 18 },
+    { type: "speed", x: 13, y: 84 },
+    { type: "basic", x: 36, y: 91 },
+    { type: "tank", x: 64, y: 87 },
+    { type: "basic", x: 86, y: 78 },
+  ];
+
+  let stopPreviewSimulation = () => {};
+
+  function renderPreviewArena(tower) {
+    if (!tower) return emptyChart("표시할 포탑 데이터가 없습니다");
     const piece = getPreviewPiece(tower);
-    const allRanges = theoryRows().map((row) => row.range);
-    const maxRange = Math.max(1, ...allRanges);
-    const rangeRatio = Math.max(.2, tower.range / maxRange);
-    const ringSize = 110 + rangeRatio * 270;
-    const ai = String(tower.ai || "Basic").toLowerCase();
-    const isShotgun = ai.includes("shotgun") || tower.typeKey === "scatter";
-    const isHeal = ai.includes("heal") || tower.typeKey === "support";
-    const projectileType = String(valueOf(tableRows("TowerData").find((row) => String(row.TowerID) === String(tower.towerId)), "ProjectileType", "normal") || "normal").toLowerCase();
-    const visualCount = isShotgun ? Math.min(7, Math.max(3, tower.count)) : 3;
-    const bulletClass = [projectileType, tower.typeKey, isShotgun ? "shotgun" : "sequential"].join(" ");
-    const travel = 120 + rangeRatio * 170;
-    const duration = Math.max(.55, Math.min(1.6, 1.2 / Math.max(.25, tower.bulletSpeed || 1)));
-    const bullets = Array.from({ length: visualCount }, (_, index) => {
-      const spread = isShotgun ? (index - (visualCount - 1) / 2) * 21 : 0;
-      const delay = isShotgun ? index * .025 : index * Math.max(.08, Math.min(.28, tower.interval / 2));
-      return `<i class="preview-projectile ${escape(bulletClass)}" style="--spread:${spread}px;--delay:${delay}s;--travel:${travel}px;--duration:${duration}s"></i>`;
+    const projectileType = normalizePreviewProjectileType(tower.projectileType);
+    const slots = Array.from({ length: 9 }, (_, index) => {
+      const selected = index === state.previewSlot;
+      return `<button class="sim-slot${selected ? " selected" : ""}" type="button" data-sim-slot="${index}" aria-label="전투 슬롯 ${index + 1}">
+        <img class="sim-slot-frame" src="../assets/images/ui/Slot_Component_01.png" alt="">
+        ${selected ? `<span class="sim-tower-art">${renderPreviewTowerArt(piece)}</span>` : ""}
+      </button>`;
     }).join("");
-    return `<article class="preview-lane" data-preview-side="${side}">
-      <header><div><strong>${escape(piece.name)}</strong><span>${escape(tower.label)} · Lv${tower.level}</span></div><b>${escape(tower.ai)}</b></header>
-      <div class="preview-field">
-        <div class="preview-grid-lines" aria-hidden="true"></div>
-        <div class="preview-range" style="width:${ringSize}px;height:${ringSize}px"><span>사거리 ${format(tower.range, 1)}</span></div>
-        <div class="preview-monsters" aria-hidden="true">
-          <img src="../assets/images/monsters/기본형.png" alt=""><img src="../assets/images/monsters/속도형.png" alt=""><img src="../assets/images/monsters/탱커형.png" alt="">
+    const monsters = PREVIEW_MONSTERS.map((monster, index) => `<span class="sim-monster" data-sim-monster="${index}" style="--x:${monster.x}%;--y:${monster.y}%" aria-label="${monster.type} 몬스터">
+      <b><em>${monster.type === "tank" ? "T" : monster.type === "speed" ? "S" : "M"}</em></b><i></i>
+    </span>`).join("");
+    return `<section class="preview-workbench" style="--tower-color:${escape(tower.color)}">
+      <div class="sim-phone" data-sim-arena>
+        <div class="sim-hud">
+          <span><small>ATK</small><b>${format(tower.atk, 1)}</b></span>
+          <strong>RANGE ${format(tower.range)}</strong>
+          <span><small>RATE</small><b>${format(1 / tower.interval, 2)}/s</b></span>
         </div>
-        <div class="preview-shot-origin">${bullets}${projectileType.includes("explode") || tower.typeKey === "blast" ? `<i class="preview-impact" style="--delay:${duration}s"></i>` : ""}</div>
-        ${isHeal ? `<div class="preview-heal-pulse"></div>` : ""}
-        <div class="preview-slot"><div class="preview-tower-art">${renderPreviewTowerArt(piece)}</div><div class="preview-slot-hp"></div></div>
+        <div class="sim-range" data-sim-range><span>R ${format(tower.range)}</span></div>
+        <div class="sim-monsters">${monsters}</div>
+        <div class="sim-projectile-layer" data-sim-projectiles></div>
+        <div class="sim-slots">${slots}</div>
+        <div class="sim-cadence" style="--attack-interval:${tower.interval}s"><i></i><span>${format(tower.interval, 2)}s</span></div>
       </div>
-      <dl class="preview-stats">
-        <div><dt>공격력</dt><dd>${format(tower.atk, 2)}</dd></div><div><dt>간격</dt><dd>${format(tower.interval, 2)}초</dd></div>
-        <div><dt>발사체</dt><dd>${tower.count}개</dd></div><div><dt>탄속</dt><dd>${format(tower.bulletSpeed, 2)}</dd></div>
-        <div><dt>탄창</dt><dd>${tower.ammo}</dd></div><div><dt>기대 DPS</dt><dd>${format(tower.dps, 1)}</dd></div>
-        <div><dt>관통</dt><dd>${tower.piercing || "-"}</dd></div><div><dt>폭발 범위</dt><dd>${tower.splash || "-"}</dd></div>
-      </dl>
-      <p class="preview-behavior">${isShotgun ? "한 번에 부채꼴 산탄 발사" : "탄환이 발사 간격을 두고 순차 발사"} · ${escape(projectileType || "normal")} · ${tower.currentHpRate ? `최대 체력 ${percent(tower.currentHpRate)} 추가 피해` : "고정 피해"}</p>
-    </article>`;
+      <aside class="sim-inspector">
+        <header><span class="sim-inspector-art">${renderPreviewTowerArt(piece)}</span><div><strong>${escape(piece.name)}</strong><span>${escape(tower.label)} · Lv${tower.level} · ${escape(tower.ai)}</span></div></header>
+        <div class="sim-coverage"><span>타격 가능</span><strong data-sim-coverage>0 / ${PREVIEW_MONSTERS.length}</strong></div>
+        <dl class="sim-stats">
+          <div><dt>공격력</dt><dd>${format(tower.atk, 2)}</dd></div>
+          <div><dt>공격 간격</dt><dd>${format(tower.interval, 2)}초</dd></div>
+          <div><dt>초당 공격</dt><dd>${format(1 / tower.interval, 2)}회</dd></div>
+          <div><dt>실제 사거리</dt><dd>${format(tower.range)}px</dd></div>
+          <div><dt>발사체</dt><dd>${tower.count}개</dd></div>
+          <div><dt>탄속 배율</dt><dd>${format(tower.bulletSpeed, 2)}</dd></div>
+          <div><dt>탄창</dt><dd>${tower.ammo}</dd></div>
+          <div><dt>기대 DPS</dt><dd>${format(tower.dps, 1)}</dd></div>
+          <div><dt>관통</dt><dd>${tower.piercing || "-"}</dd></div>
+          <div><dt>폭발 범위</dt><dd>${tower.splash || "-"}</dd></div>
+          <div><dt>체력 비례</dt><dd>${escape(tower.currentHpDisplay)}</dd></div>
+          <div><dt>투사체 타입</dt><dd>${escape(projectileType)}</dd></div>
+        </dl>
+      </aside>
+    </section>`;
   }
 
   function renderPreviewControls(typeKeys) {
     const typeOptions = typeKeys.map((key) => `<option value="${escape(key)}">${escape(typeMeta(key).label)}</option>`).join("");
     const levelOptions = Array.from({ length: PIECE_MAX_LEVEL }, (_, index) => `<option value="${index + 1}">Lv${index + 1}</option>`).join("");
     return `<section class="preview-controls" aria-label="사격 비교 설정">
-      <label>왼쪽 기물<select data-preview-type="A">${typeOptions}</select></label>
-      <label>왼쪽 레벨<select data-preview-level="A">${levelOptions}</select></label>
-      <label>오른쪽 기물<select data-preview-type="B">${typeOptions}</select></label>
-      <label>오른쪽 레벨<select data-preview-level="B">${levelOptions}</select></label>
+      <label>포탑<select data-preview-type>${typeOptions}</select></label>
+      <label>레벨<select data-preview-level>${levelOptions}</select></label>
     </section>`;
   }
 
   function renderPreview() {
     const typeKeys = unique(theoryRows().map((row) => row.typeKey));
     if (!typeKeys.length) return empty();
-    if (!typeKeys.includes(state.previewA)) state.previewA = typeKeys[0];
-    if (!typeKeys.includes(state.previewB)) state.previewB = typeKeys[1] || typeKeys[0];
-    const towerA = getPreviewTower(state.previewA, state.previewLevelA);
-    const towerB = getPreviewTower(state.previewB, state.previewLevelB);
+    if (!typeKeys.includes(state.previewType)) state.previewType = typeKeys[0];
+    state.previewSlot = Math.max(0, Math.min(8, number(state.previewSlot, 4)));
+    const tower = getPreviewTower(state.previewType, state.previewLevel);
     return `${renderPreviewControls(typeKeys)}
-      <section class="preview-intro">${sectionTitle("인게임형 사격·사거리 비교", "두 전투 구역은 같은 축척입니다. 원의 크기가 실제 사거리 차이를 나타냅니다.")}</section>
-      <section class="preview-grid">${renderPreviewLane(towerA, "A")}${renderPreviewLane(towerB, "B")}</section>`;
+      <section class="preview-intro">${sectionTitle("인게임형 사격·사거리 시뮬레이터", `${escape(tower?.label || "포탑")} Lv${tower?.level || 1}`)}</section>
+      ${renderPreviewArena(tower)}`;
+  }
+
+  function startPreviewSimulation(tower) {
+    stopPreviewSimulation();
+    const arena = document.querySelector("[data-sim-arena]");
+    const layer = document.querySelector("[data-sim-projectiles]");
+    const rangeEl = document.querySelector("[data-sim-range]");
+    const coverageEl = document.querySelector("[data-sim-coverage]");
+    if (!tower || !arena || !layer || !rangeEl) return;
+    let disposed = false;
+    const timers = new Set();
+    const projectileSource = previewProjectileAsset(tower.projectilePrefab);
+    let projectileImageAvailable = false;
+    if (projectileSource) {
+      const projectileProbe = new Image();
+      projectileProbe.addEventListener("load", () => { projectileImageAvailable = true; }, { once: true });
+      projectileProbe.src = projectileSource;
+    }
+    const projectileType = normalizePreviewProjectileType(tower.projectileType);
+    const isShotgun = String(tower.ai).toLowerCase().includes("shotgun") || tower.typeKey === "scatter";
+
+    const geometry = () => {
+      const selected = arena.querySelector(".sim-slot.selected");
+      if (!selected) return null;
+      const arenaRect = arena.getBoundingClientRect();
+      const slotRect = selected.getBoundingClientRect();
+      const scale = arenaRect.width / 360;
+      const origin = { x: slotRect.left - arenaRect.left + slotRect.width / 2, y: slotRect.top - arenaRect.top + slotRect.height * .42 };
+      const radius = Math.max(1, tower.range * scale);
+      rangeEl.style.left = `${origin.x}px`;
+      rangeEl.style.top = `${origin.y}px`;
+      rangeEl.style.width = `${radius * 2}px`;
+      rangeEl.style.height = `${radius * 2}px`;
+      const targets = [...arena.querySelectorAll("[data-sim-monster]")].map((element) => {
+        const rect = element.getBoundingClientRect();
+        const point = { x: rect.left - arenaRect.left + rect.width / 2, y: rect.top - arenaRect.top + rect.height / 2 };
+        const distance = Math.hypot(point.x - origin.x, point.y - origin.y);
+        element.classList.toggle("in-range", distance <= radius);
+        return { element, point, distance };
+      }).filter((target) => target.distance <= radius).sort((a, b) => a.distance - b.distance);
+      if (coverageEl) coverageEl.textContent = `${targets.length} / ${PREVIEW_MONSTERS.length}`;
+      return { arenaRect, origin, radius, scale, targets };
+    };
+
+    const impact = (target) => {
+      target.element.classList.remove("hit");
+      requestAnimationFrame(() => target.element.classList.add("hit"));
+      const timer = setTimeout(() => target.element.classList.remove("hit"), 180);
+      timers.add(timer);
+      if (projectileType !== "explode") return;
+      const fx = document.createElement("img");
+      fx.className = "sim-impact";
+      fx.src = "../assets/images/Projectile/EXP.gif";
+      fx.style.left = `${target.point.x}px`;
+      fx.style.top = `${target.point.y}px`;
+      const size = Math.max(42, tower.splash * 2);
+      fx.style.width = `${size}px`;
+      fx.style.height = `${size}px`;
+      layer.appendChild(fx);
+      const removeTimer = setTimeout(() => fx.remove(), 520);
+      timers.add(removeTimer);
+    };
+
+    const fireProjectile = (target, spread = 0) => {
+      const current = geometry();
+      if (!current || !target || disposed) return;
+      const dx = target.point.x - current.origin.x + spread;
+      const dy = target.point.y - current.origin.y;
+      const angle = Math.atan2(dy, dx) * 180 / Math.PI + 180;
+      const projectile = document.createElement(projectileImageAvailable ? "img" : "i");
+      projectile.className = `sim-projectile ${escape(projectileType)} ${escape(tower.typeKey)}`;
+      if (projectileImageAvailable) projectile.src = projectileSource;
+      projectile.style.left = `${current.origin.x}px`;
+      projectile.style.top = `${current.origin.y}px`;
+      const size = Math.max(10, Math.min(34, number(tower.projectileSize, 8) * 2.2));
+      projectile.style.width = `${size}px`;
+      projectile.style.height = `${size * 1.35}px`;
+      layer.appendChild(projectile);
+      const speed = 720 * Math.max(.1, tower.bulletSpeed || 1) * current.scale;
+      const duration = Math.max(110, Math.hypot(dx, dy) / speed * 1000);
+      const animation = projectile.animate([
+        { transform: `translate(-50%, -50%) rotate(${angle}deg)`, opacity: 1 },
+        { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) rotate(${angle}deg)`, opacity: 1 },
+      ], { duration, easing: "linear" });
+      animation.onfinish = () => { projectile.remove(); impact(target); };
+      animation.oncancel = () => projectile.remove();
+    };
+
+    const fire = () => {
+      const current = geometry();
+      if (!current?.targets.length || disposed) return;
+      arena.classList.remove("firing");
+      requestAnimationFrame(() => arena.classList.add("firing"));
+      const pulseTimer = setTimeout(() => arena.classList.remove("firing"), 90);
+      timers.add(pulseTimer);
+      const visualCount = Math.max(1, Math.min(7, Math.floor(tower.count || 1)));
+      for (let index = 0; index < visualCount; index += 1) {
+        const target = current.targets[index % current.targets.length];
+        const spread = isShotgun ? (index - (visualCount - 1) / 2) * 18 : 0;
+        const delay = isShotgun ? 0 : index * 70;
+        const timer = setTimeout(() => fireProjectile(target, spread), delay);
+        timers.add(timer);
+      }
+    };
+
+    geometry();
+    fire();
+    const interval = setInterval(fire, Math.max(120, tower.interval * 1000));
+    window.addEventListener("resize", geometry);
+    stopPreviewSimulation = () => {
+      disposed = true;
+      clearInterval(interval);
+      timers.forEach(clearTimeout);
+      window.removeEventListener("resize", geometry);
+      layer.replaceChildren();
+      stopPreviewSimulation = () => {};
+    };
   }
 
   function bindViewInteractions() {
     if (state.view !== "preview") return;
-    for (const side of ["A", "B"]) {
-      const typeSelect = document.querySelector(`[data-preview-type="${side}"]`);
-      const levelSelect = document.querySelector(`[data-preview-level="${side}"]`);
-      if (typeSelect) {
-        typeSelect.value = state[`preview${side}`];
-        typeSelect.addEventListener("change", () => { state[`preview${side}`] = typeSelect.value; render(); });
-      }
-      if (levelSelect) {
-        levelSelect.value = String(state[`previewLevel${side}`]);
-        levelSelect.addEventListener("change", () => { state[`previewLevel${side}`] = number(levelSelect.value, 1); render(); });
-      }
+    const typeSelect = document.querySelector("[data-preview-type]");
+    const levelSelect = document.querySelector("[data-preview-level]");
+    const tower = getPreviewTower(state.previewType, state.previewLevel);
+    if (typeSelect) {
+      typeSelect.value = state.previewType;
+      typeSelect.addEventListener("change", () => { state.previewType = typeSelect.value; render(); });
     }
+    if (levelSelect) {
+      levelSelect.value = String(state.previewLevel);
+      levelSelect.addEventListener("change", () => { state.previewLevel = number(levelSelect.value, 1); render(); });
+    }
+    document.querySelectorAll("[data-sim-slot]").forEach((slot) => slot.addEventListener("click", () => {
+      state.previewSlot = number(slot.dataset.simSlot, 4);
+      render();
+    }));
+    startPreviewSimulation(tower);
   }
 
   function renderDiagnostics() {
@@ -1425,6 +1586,7 @@
   }
 
   function render() {
+    stopPreviewSimulation();
     const renderers = {
       overview: renderOverview,
       towers: () => renderTowerTable(false),

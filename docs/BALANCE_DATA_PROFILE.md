@@ -43,6 +43,7 @@
 - 러시 별칭 패턴은 `isRush` 행과 개수가 일치할 때만 연결한다.
 - 보정 후보가 없거나 여러 개면 추측하지 않고 strict 파싱을 실패시킨다.
 - `NormalRate_1~3`은 `WavePatternData.Normal_Count`의 일반 몬스터 3종 분배에만 사용한다.
+- `Normal_Count`, `Speedy_Count`, `Tanker_Count`는 웨이브 총량이 아니라 5초마다 반복되는 1회 스폰량이다. 40초 웨이브에서 0~30초까지 7회 적용하고 35~40초는 스폰하지 않는다.
 
 ## 성공 기준
 

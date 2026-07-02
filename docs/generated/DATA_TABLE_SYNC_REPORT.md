@@ -82,7 +82,7 @@
 - `StageData.1001.BossID`: `9001` -> ``
 - `StageData.1001.StageReward`: `1220` -> `5`
 - `StageData.1001.BGID`: `"assets/images/ui/Main/Image_Stage_1 5.png"` -> ``
-- `StageData.1001.WaveDuration`: `32` -> `""`
+- `StageData.1001.WaveDuration`: `40` -> `""`
 - `StageData.1001.Desc`: `"1 스테이지 관계자의 출입금지"` -> ``
 - `StageData.1001.*`: `""` -> ``
 - `StageData.1002.StageName`: `"StageName_2"` -> ``

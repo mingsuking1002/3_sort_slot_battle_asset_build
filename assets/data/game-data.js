@@ -631,15 +631,15 @@
 
   // 웨이브 테이블: 1~10 웨이브의 타입/지속시간/패턴/보스 연결입니다.
   const waves = {
-    1: { id: 1, label: "입문 물량", type: "normal", duration: 32, patternId: "wp_w1" },
-    2: { id: 2, label: "속도형 적응", type: "normal", duration: 32, patternId: "wp_w2" },
-    3: { id: 3, label: "탱커 첫 압박", type: "normal", duration: 32, patternId: "wp_w3" },
-    4: { id: 4, label: "러시", type: "rush", duration: 32, patternId: "wp_w4" },
-    5: { id: 5, label: "혼합 압박", type: "normal", duration: 32, patternId: "wp_w5" },
-    6: { id: 6, label: "엘리트 진입", type: "normal", duration: 32, patternId: "wp_w6" },
-    7: { id: 7, label: "속도 압박", type: "normal", duration: 32, patternId: "wp_w7" },
-    8: { id: 8, label: "대형 러시", type: "rush", duration: 32, patternId: "wp_w8" },
-    9: { id: 9, label: "최종 전 압박", type: "normal", duration: 32, patternId: "wp_w9" },
+    1: { id: 1, label: "입문 물량", type: "normal", duration: 40, patternId: "wp_w1" },
+    2: { id: 2, label: "속도형 적응", type: "normal", duration: 40, patternId: "wp_w2" },
+    3: { id: 3, label: "탱커 첫 압박", type: "normal", duration: 40, patternId: "wp_w3" },
+    4: { id: 4, label: "러시", type: "rush", duration: 40, patternId: "wp_w4" },
+    5: { id: 5, label: "혼합 압박", type: "normal", duration: 40, patternId: "wp_w5" },
+    6: { id: 6, label: "엘리트 진입", type: "normal", duration: 40, patternId: "wp_w6" },
+    7: { id: 7, label: "속도 압박", type: "normal", duration: 40, patternId: "wp_w7" },
+    8: { id: 8, label: "대형 러시", type: "rush", duration: 40, patternId: "wp_w8" },
+    9: { id: 9, label: "최종 전 압박", type: "normal", duration: 40, patternId: "wp_w9" },
     10: { id: 10, label: "최종보스", type: "boss", bossId: "final_boss_1", bossKind: "final", duration: 0 },
     101: { id: 101, label: "허수아비 테스트 1", type: "test", duration: 40, patternId: "wp_test_dummy" },
     102: { id: 102, label: "허수아비 테스트 2", type: "test", duration: 40, patternId: "wp_test_dummy" },
@@ -689,7 +689,7 @@
       },
       config: {
         totalWaves: 10,
-        waveDuration: 32,
+        waveDuration: 40,
       },
       ui: {
         mainImage: "assets/images/ui/Main/Image_Stage_1 5.png",
@@ -1709,7 +1709,7 @@
     // StageData - 스테이지 선택, 보상, 배경, 웨이브 묶음 연결
     // ============================================================
     StageData: [
-      { StageID: 1001, StageName: "StageName_1", WaveDataID: 2001, MonsterGroupID_Normal: 11011, MonsterGroupID_Speedy: 11012, MonsterGroupID_Tanker: 11013, BossID: 9001, WaveReward: 5, StageReward: 1220, BGID: "assets/images/ui/Main/Image_Stage_1 5.png", WaveDuration: 32, Desc: "1 스테이지 관계자의 출입금지" },
+      { StageID: 1001, StageName: "StageName_1", WaveDataID: 2001, MonsterGroupID_Normal: 11011, MonsterGroupID_Speedy: 11012, MonsterGroupID_Tanker: 11013, BossID: 9001, WaveReward: 5, StageReward: 1220, BGID: "assets/images/ui/Main/Image_Stage_1 5.png", WaveDuration: 40, Desc: "1 스테이지 관계자의 출입금지" },
       { StageID: 1002, StageName: "StageName_2", WaveDataID: 2002, MonsterGroupID_Normal: 11021, MonsterGroupID_Speedy: 11022, MonsterGroupID_Tanker: 11023, BossID: 9001, WaveReward: 5, StageReward: 1600, BGID: "assets/images/ui/Main/Image_Stage_1 5.png", Desc: "2 스테이지 임시 데이터" },
       { StageID: 1901, StageName: "StageName_TestDummy", WaveDataID: 2901, MonsterGroupID_Normal: 11901, MonsterGroupID_Speedy: 11901, MonsterGroupID_Tanker: 11901, BossID: 0, WaveReward: 0, StageReward: 0, BGID: "assets/images/ui/Main/Image_Stage_1 5.png", Desc: "허수아비 타격 테스트 스테이지" },
     ],
@@ -2043,13 +2043,6 @@
     if (row) return row["Korean(ko)"] || row.Korean || row["English(en)"] || row.English || fallback || rawKey;
     const looksLikeLocalizeKey = /^[A-Za-z][A-Za-z0-9]*(Name|Desc|Text|Label|Title|Subtitle|Description)_/.test(rawKey);
     return looksLikeLocalizeKey ? fallback || rawKey : rawKey || fallback;
-  }
-
-  function splitDesignCount(total, bucketCount) {
-    const count = Math.max(0, Math.floor(Number(total) || 0));
-    const buckets = Array.from({ length: Math.max(1, bucketCount) }, () => 0);
-    for (let index = 0; index < count; index += 1) buckets[index % buckets.length] += 1;
-    return buckets;
   }
 
   function getDesignRuntimeKey(tableName, rowId, prefix, fallback = "") {
@@ -3354,31 +3347,46 @@
     };
   }
 
+  const DESIGN_WAVE_DURATION_SECONDS = 40;
+  const DESIGN_WAVE_SPAWN_INTERVAL_SECONDS = 5;
+  const DESIGN_WAVE_FINAL_QUIET_SECONDS = 5;
+
+  function getDesignWaveDuration(stageRow, patternRow) {
+    const candidates = [patternRow?.Duration, patternRow?.WaveDuration, stageRow?.WaveDuration];
+    const configured = candidates.map(Number).find((value) => Number.isFinite(value) && value > 0);
+    return configured || DESIGN_WAVE_DURATION_SECONDS;
+  }
+
   function buildDesignPatternEvents({ stageRow, patternRow, patternId, waveOrdinal }) {
-    const waveDuration = Number(patternRow?.Duration ?? patternRow?.WaveDuration ?? stageRow?.WaveDuration ?? 40);
-    const eventCount = Math.max(1, Math.min(8, Math.floor((Number.isFinite(waveDuration) && waveDuration > 0 ? waveDuration : 40) / 5) + 1));
-    const normalBuckets = splitDesignCount(patternRow.Normal_Count, eventCount);
-    const speedyBuckets = splitDesignCount(patternRow.Speedy_Count, eventCount);
-    const tankerBuckets = splitDesignCount(patternRow.Tanker_Count, eventCount);
+    const waveDuration = getDesignWaveDuration(stageRow, patternRow);
+    const finalSpawnBoundary = Math.max(0, waveDuration - DESIGN_WAVE_FINAL_QUIET_SECONDS);
+    const eventTimes = [];
+    for (let time = 0; time < finalSpawnBoundary; time += DESIGN_WAVE_SPAWN_INTERVAL_SECONDS) {
+      eventTimes.push(time);
+    }
+    const normalCount = Math.max(0, Math.floor(Number(patternRow.Normal_Count) || 0));
+    const speedyCount = Math.max(0, Math.floor(Number(patternRow.Speedy_Count) || 0));
+    const tankerCount = Math.max(0, Math.floor(Number(patternRow.Tanker_Count) || 0));
+    const countPerSpawn = normalCount + speedyCount + tankerCount;
     const events = [];
-    for (let index = 0; index < eventCount; index += 1) {
+    for (const [index, time] of eventTimes.entries()) {
       const monsters = mergeMonsterCounts(
-        distributeDesignMonsterTypes(normalBuckets[index], stageRow.MonsterGroupID_Normal, {
+        distributeDesignMonsterTypes(normalCount, stageRow.MonsterGroupID_Normal, {
           useNormalRates: true,
           normalRates: [patternRow.NormalRate_1, patternRow.NormalRate_2, patternRow.NormalRate_3],
         }),
-        distributeDesignMonsterTypes(speedyBuckets[index], stageRow.MonsterGroupID_Speedy),
-        distributeDesignMonsterTypes(tankerBuckets[index], stageRow.MonsterGroupID_Tanker)
+        distributeDesignMonsterTypes(speedyCount, stageRow.MonsterGroupID_Speedy),
+        distributeDesignMonsterTypes(tankerCount, stageRow.MonsterGroupID_Tanker)
       );
       if (!Object.keys(monsters).length) continue;
       const groupId = `${patternId}_g${index + 1}`;
       const sourceGroups = [
-        { role: "Normal", monsterGroupId: Number(stageRow.MonsterGroupID_Normal) || 0, count: normalBuckets[index] },
-        { role: "Speedy", monsterGroupId: Number(stageRow.MonsterGroupID_Speedy) || 0, count: speedyBuckets[index] },
-        { role: "Tanker", monsterGroupId: Number(stageRow.MonsterGroupID_Tanker) || 0, count: tankerBuckets[index] },
+        { role: "Normal", monsterGroupId: Number(stageRow.MonsterGroupID_Normal) || 0, count: normalCount },
+        { role: "Speedy", monsterGroupId: Number(stageRow.MonsterGroupID_Speedy) || 0, count: speedyCount },
+        { role: "Tanker", monsterGroupId: Number(stageRow.MonsterGroupID_Tanker) || 0, count: tankerCount },
       ].filter((item) => item.monsterGroupId && item.count > 0);
       events.push({
-        time: index * 5,
+        time,
         groupId,
         spreadX: 18 + Math.min(30, waveOrdinal * 2),
         spreadY: 10,
@@ -3391,6 +3399,10 @@
           stageId: stageRow.StageID,
           wavePatternId: patternRow.WavePatternID,
           eventIndex: index + 1,
+          countPerSpawn,
+          plannedWaveCount: countPerSpawn * eventTimes.length,
+          spawnInterval: DESIGN_WAVE_SPAWN_INTERVAL_SECONDS,
+          finalQuietSeconds: DESIGN_WAVE_FINAL_QUIET_SECONDS,
           sourceGroups,
         },
       };
@@ -3410,10 +3422,7 @@
     const patternById = indexDesignRows("WavePatternData", "WavePatternID");
     const legacyStagesByKey = new Map(stages.map((stage) => [stage.key, stage]));
     const runtimeBosses = runtimeBossTables?.bosses || bosses;
-    const getRuntimeWaveDuration = (stageRow, patternRow) => {
-      const duration = Number(patternRow?.Duration ?? patternRow?.WaveDuration ?? stageRow?.WaveDuration ?? 40);
-      return Number.isFinite(duration) && duration > 0 ? duration : 40;
-    };
+    const getRuntimeWaveDuration = (stageRow, patternRow) => getDesignWaveDuration(stageRow, patternRow);
 
     (designTables.StageData || []).forEach((stageRow, stageIndex) => {
       const stageKey = getDesignRuntimeStageKey(stageRow.StageID, stageIndex);
@@ -3816,7 +3825,7 @@
       splashDamageRatio: 0.18,
       feverDuration: 10,
       totalWaves: 10,
-      waveDuration: 32,
+      waveDuration: 40,
       midBossHpMult: 95,
       midBossDamage: 4,
       midBossSpeed: 18,

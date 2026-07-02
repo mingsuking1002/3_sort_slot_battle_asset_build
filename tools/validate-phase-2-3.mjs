@@ -544,6 +544,7 @@ function validateDesignTables(data) {
   const expTypeIds = byId("ExpData", "ExpTypeID");
   const monsterRowsById = new Map((tables.MonsterData || []).map((row) => [String(row.MonsterID), row]));
   const monsterGroupRowsById = new Map((tables.MonsterGroupData || []).map((row) => [String(row.MonsterGroupID), row]));
+  const wavePatternRowsById = new Map((tables.WavePatternData || []).map((row) => [String(row.WavePatternID), row]));
   const expRowsById = new Map((tables.ExpData || []).map((row) => [String(row.ExpTypeID), row]));
   const pieceIds = byId("PieceData", "PieceID");
   const upgradeIds = byId("PieceUpgradeData", "UpgradeID");
@@ -761,11 +762,26 @@ function validateDesignTables(data) {
       }
 
       const runtimePattern = runtimeWavePatterns[runtimeWave?.patternId];
+      const sourcePattern = wavePatternRowsById.get(String(expectedPatternId));
       if (runtimePattern?.source === "designTables" && String(runtimePattern.design?.wavePatternId) === String(expectedPatternId)) {
         pass("DESIGN_TABLE", `WavePattern ${expectedPatternId} feeds runtime pattern ${runtimeWave?.patternId}`);
       } else {
         fail("DESIGN_TABLE", `WavePattern ${expectedPatternId} runtime pattern mismatch`, `${runtimeWave?.patternId} / ${JSON.stringify(runtimePattern?.design || {})}`);
       }
+
+      const configuredDuration = [sourcePattern?.Duration, sourcePattern?.WaveDuration, stage.WaveDuration]
+        .map(Number)
+        .find((value) => Number.isFinite(value) && value > 0) || 40;
+      const expectedEventTimes = [];
+      for (let time = 0; time < configuredDuration - 5; time += 5) expectedEventTimes.push(time);
+      const actualEventTimes = (runtimePattern?.events || []).map((event) => Number(event.time));
+      if (JSON.stringify(actualEventTimes) === JSON.stringify(expectedEventTimes)) {
+        pass("DESIGN_TABLE", `WavePattern ${expectedPatternId} spawns every 5s and keeps final 5s quiet`);
+      } else {
+        fail("DESIGN_TABLE", `WavePattern ${expectedPatternId} spawn timing mismatch`, `${JSON.stringify(actualEventTimes)} / ${JSON.stringify(expectedEventTimes)}`);
+      }
+      const expectedCountPerSpawn = [sourcePattern?.Normal_Count, sourcePattern?.Speedy_Count, sourcePattern?.Tanker_Count]
+        .reduce((sum, value) => sum + Math.max(0, Math.floor(Number(value) || 0)), 0);
 
       for (const event of runtimePattern?.events || []) {
         const runtimeGroup = runtimeMonsterGroups[event.groupId];
@@ -784,6 +800,13 @@ function validateDesignTables(data) {
         for (const monsterKey of Object.keys(runtimeGroup?.monsters || {})) {
           if (data.monsters?.[monsterKey]?.source === "designTables") pass("DESIGN_TABLE", `Runtime group ${event.groupId} monster ${monsterKey} from MonsterData`);
           else fail("DESIGN_TABLE", `Runtime group ${event.groupId} monster ${monsterKey} not from MonsterData`, String(data.monsters?.[monsterKey]?.source));
+        }
+        const actualCountPerSpawn = Object.values(runtimeGroup?.monsters || {})
+          .reduce((sum, value) => sum + Math.max(0, Math.floor(Number(value) || 0)), 0);
+        if (actualCountPerSpawn === expectedCountPerSpawn) {
+          pass("DESIGN_TABLE", `Runtime group ${event.groupId} repeats full WavePatternData count`, String(actualCountPerSpawn));
+        } else {
+          fail("DESIGN_TABLE", `Runtime group ${event.groupId} count mismatch`, `${actualCountPerSpawn} / ${expectedCountPerSpawn}`);
         }
       }
     }
@@ -1922,8 +1945,12 @@ function validatePhase4WaveMonsterRules(data, html) {
     if (wave?.patternId && data.wavePatterns?.[wave.patternId]) pass("PHASE4", `Wave ${waveId} uses WavePatternData`);
     else fail("PHASE4", `Wave ${waveId} pattern missing`, String(wave?.patternId));
     const events = data.wavePatterns?.[wave?.patternId]?.events || [];
-    if (events.length > 0) pass("PHASE4", `Wave ${waveId} pattern has events`, String(events.length));
-    else fail("PHASE4", `Wave ${waveId} pattern events missing`);
+    const expectedEventTimes = [0, 5, 10, 15, 20, 25, 30];
+    if (expectedWaveDuration === 40 && JSON.stringify(events.map((event) => Number(event.time))) === JSON.stringify(expectedEventTimes)) {
+      pass("PHASE4", `Wave ${waveId} has seven 5-second spawn batches and quiet final interval`);
+    } else {
+      fail("PHASE4", `Wave ${waveId} spawn schedule mismatch`, JSON.stringify(events.map((event) => event.time)));
+    }
     for (const event of events) {
       if (Number(event.time) >= 0 && Number(event.time) <= Number(wave.duration)) {
         pass("PHASE4", `Wave ${waveId} event in duration`, String(event.time));
