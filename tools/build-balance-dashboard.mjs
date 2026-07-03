@@ -18,12 +18,13 @@ const LOG_TAB_KEYS = {
 };
 
 function parseArgs(argv) {
-  const options = { logSheet: DEFAULT_LOG_SHEET, output: DEFAULT_OUTPUT, offline: false };
+  const options = { logSheet: DEFAULT_LOG_SHEET, output: DEFAULT_OUTPUT, offline: false, simulations: [] };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === "--log-sheet") options.logSheet = argv[++index] || "";
     else if (arg === "--output") options.output = path.resolve(root, argv[++index] || "");
     else if (arg === "--offline") options.offline = true;
+    else if (arg === "--simulation") options.simulations.push(path.resolve(root, argv[++index] || ""));
     else if (arg === "--help" || arg === "-h") options.help = true;
     else throw new Error(`알 수 없는 인자입니다: ${arg}`);
   }
@@ -246,10 +247,151 @@ function sumObject(value) {
     : 0;
 }
 
+function simulationEventRow(event) {
+  return {
+    received_at: event.eventAt || "",
+    event_at: event.eventAt || "",
+    session_id: event.sessionId || "",
+    event_id: event.eventId || "",
+    event_type: event.eventType || "",
+    build_version: event.buildVersion || "",
+    balance_snapshot_id: event.balanceSnapshotId || "",
+    stage_key: event.stageKey || "",
+    stage_title: event.stageTitle || "",
+    wave: event.wave ?? "",
+    wave_ordinal: event.waveOrdinal ?? "",
+    wave_total: event.waveTotal ?? "",
+    elapsed_sec: event.elapsedSec ?? "",
+    enemy_count: event.enemyCount ?? "",
+    sort_attempts: event.sortAttempts ?? "",
+    sort_successes: event.sortSuccesses ?? "",
+    sort_failures: event.sortFailures ?? "",
+    max_combo: event.maxCombo ?? "",
+    damage_done: event.damageDone ?? "",
+    alive_slot_count: event.aliveSlotCount ?? "",
+    destroyed_slot_count: event.destroyedSlotCount ?? "",
+    slot_hp_total: event.slotHpTotal ?? "",
+    slot_hp_ratio_avg: event.slotHpRatioAvg ?? "",
+    device_class: event.deviceClass || "simulation",
+    data_source: event.dataSource || "simulation",
+    bot_profile: event.botProfile || "",
+    bot_strategy: event.botStrategy || "",
+    simulation_version: event.simulationVersion || "",
+    simulation_seed: event.simulationSeed ?? "",
+    simulation_speed: event.simulationSpeed ?? "",
+    decision_delay_avg: event.decisionDelayAvg ?? "",
+    decision_delay_stddev: event.decisionDelayStddev ?? "",
+    mistake_count: event.mistakeCount ?? "",
+    invalid_sort_attempts: event.invalidSortAttempts ?? "",
+    payload_json: JSON.stringify(event.payload || {}),
+  };
+}
+
+function simulationToLogs(payload) {
+  const rawEvents = Array.isArray(payload?.events) ? payload.events : [];
+  const eventRows = rawEvents.map(simulationEventRow);
+  const sessionEnds = rawEvents.filter((event) => event.eventType === "session_end");
+  const sessions = sessionEnds.map((event) => {
+    const row = simulationEventRow(event);
+    const detail = event.payload || {};
+    return {
+      ...row,
+      result: detail.result || "unknown",
+      duration_ms: detail.durationMs ?? "",
+      reached_wave: event.reachedWave ?? event.waveOrdinal ?? "",
+      tower_created: event.towerCreated ?? "",
+      tower_queued: event.towerQueued ?? "",
+      rerolls: event.rerolls ?? "",
+      perk_choices: event.perkChoices ?? "",
+      selected_pieces: (detail.loadout || []).map((piece) => piece.name || piece.pieceKey).join(" | "),
+      picked_perks: (detail.pickedPerks || []).map((perk) => perk.title || perk.id).join(" | "),
+      tower_composition: (detail.towerComposition || []).map((piece) => `${piece.pieceName || piece.pieceKey}: ${piece.count}`).join(" | "),
+    };
+  });
+  const piece_damage = sessionEnds.flatMap((event) => (event.payload?.damageByPiece || []).map((piece) => ({
+    ...simulationEventRow(event),
+    piece_key: piece.pieceKey || "",
+    piece_name: piece.pieceName || "",
+    tower_id: piece.towerId || "",
+    tower_type: piece.towerType || "",
+    damage_done: piece.damage || 0,
+  })));
+  const waveEvents = rawEvents.filter((event) => event.eventType === "wave_end");
+  const wave_stats = waveEvents.map((event) => {
+    const row = simulationEventRow(event);
+    const detail = event.payload || {};
+    const slot = detail.slotHp || {};
+    return {
+      ...row,
+      reason: detail.reason || "",
+      enemy_spawned: detail.enemySpawned ?? "",
+      enemy_defeated: detail.enemyDefeated ?? "",
+      remaining_enemy_count: detail.remainingEnemyCount ?? detail.enemyCount ?? event.enemyCount ?? 0,
+      repair_count: detail.repairCount ?? "",
+      repair_heal_total: detail.repairHealTotal ?? "",
+      slot_damage_taken: detail.slotDamageTaken ?? "",
+      piece_damage: sumPieceDamage(detail.damageByPiece),
+      system_damage: sumObject(detail.systemDamageBySource),
+      alive_slot_count: slot.aliveSlotCount ?? event.aliveSlotCount ?? "",
+      destroyed_slot_count: slot.destroyedSlotCount ?? event.destroyedSlotCount ?? "",
+      slot_hp_total: slot.slotHpTotal ?? event.slotHpTotal ?? "",
+      slot_hp_ratio_avg: slot.slotHpRatioAvg ?? event.slotHpRatioAvg ?? "",
+      tower_composition: (detail.towerComposition || []).map((piece) => `${piece.pieceName || piece.pieceKey}: ${piece.count}`).join(" | "),
+    };
+  });
+  const piece_wave_stats = waveEvents.flatMap((event) => (event.payload?.pieceStats || []).map((piece) => ({
+    ...simulationEventRow(event),
+    ...toSnakePieceStats(piece),
+  })));
+  const perk_options = rawEvents.filter((event) => event.eventType === "perk_pick").flatMap((event) => {
+    const picked = String(event.payload?.picked?.id || "");
+    return (event.payload?.offered || []).map((perk) => ({
+      ...simulationEventRow(event),
+      perk_id: perk.id || "",
+      perk_title: perk.title || "",
+      rarity: perk.rarity || "",
+      target_type: perk.targetType || "",
+      label: perk.label || "",
+      selected: String(perk.id || "") === picked ? "TRUE" : "FALSE",
+    }));
+  });
+  const system_stats = waveEvents.flatMap((event) => {
+    const activations = event.payload?.systemActivations || {};
+    const damage = event.payload?.systemDamageBySource || {};
+    return [...new Set([...Object.keys(activations), ...Object.keys(damage)])].map((source) => ({
+      ...simulationEventRow(event),
+      source,
+      activation_count: activations[source]?.count || 0,
+      projectiles: activations[source]?.projectiles || 0,
+      ammo_spent: activations[source]?.ammoSpent || 0,
+      damage_done: damage[source] || 0,
+    }));
+  });
+  return {
+    sessions,
+    piece_damage,
+    wave_stats,
+    piece_wave_stats,
+    perk_options,
+    system_stats,
+    events: eventRows.filter((event) => ["wave_end", "perk_pick", "session_end"].includes(event.event_type)),
+  };
+}
+
+function appendUnique(target, incoming, keyFields) {
+  const keys = new Set(target.map((row) => keyFields.map((key) => row[key] ?? "").join("|")));
+  for (const row of incoming) {
+    const key = keyFields.map((field) => row[field] ?? "").join("|");
+    if (keys.has(key)) continue;
+    keys.add(key);
+    target.push(row);
+  }
+}
+
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.help) {
-    console.log("node tools/build-balance-dashboard.mjs [--log-sheet <url|id>] [--output <file>] [--offline]");
+    console.log("node tools/build-balance-dashboard.mjs [--log-sheet <url|id>] [--output <file>] [--offline] [--simulation <json>]");
     return;
   }
   const balance = loadBalanceSnapshot();
@@ -272,6 +414,27 @@ async function main() {
     }
   }
   deriveNormalizedLogs(logs);
+  for (const simulationFile of options.simulations) {
+    if (!fs.existsSync(simulationFile)) throw new Error(`시뮬레이션 로그 파일이 없습니다: ${simulationFile}`);
+    const simulation = simulationToLogs(JSON.parse(fs.readFileSync(simulationFile, "utf8")));
+    for (const tab of LOG_TABS) {
+      const keys = tab === "sessions"
+        ? ["session_id"]
+        : tab === "piece_damage"
+          ? ["session_id", "piece_key"]
+          : tab === "wave_stats"
+            ? ["session_id", "wave_ordinal"]
+            : tab === "piece_wave_stats"
+              ? ["session_id", "wave_ordinal", "piece_key"]
+              : tab === "perk_options"
+                ? ["event_id", "perk_id"]
+                : tab === "system_stats"
+                  ? ["event_id", "source"]
+                  : ["event_id"];
+      appendUnique(logs[tab], simulation[tab] || [], keys);
+    }
+    console.log(`SIMULATION ${path.basename(simulationFile)}: ${simulation.sessions.length} sessions`);
+  }
   const payload = {
     generatedAt: new Date().toISOString(),
     balance,

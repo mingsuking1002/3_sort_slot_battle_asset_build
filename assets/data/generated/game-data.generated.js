@@ -7,7 +7,7 @@
   "dataProfile": "balance",
   "valid": true,
   "runtimeEnabled": true,
-  "generatedAt": "2026-07-02T06:56:18.010Z",
+  "generatedAt": "2026-07-02T17:39:46.569Z",
   "sourceMode": "google-sheet-overrides",
   "spreadsheetId": "13GmSWRxvcBWgMDpW0ypgrPBkkb3zXRAefZBM2W-YA0g",
   "csvTables": [],
@@ -606,10 +606,10 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 20,
-        "MonsterAtk": 1,
+        "MonsterAtk": 2,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4012,
@@ -619,7 +619,7 @@
         "MonsterAtk": 2,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4013,
@@ -629,7 +629,7 @@
         "MonsterAtk": 3,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4021,
@@ -639,7 +639,7 @@
         "MonsterAtk": 4,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4022,
@@ -649,7 +649,7 @@
         "MonsterAtk": 5,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4023,
@@ -659,7 +659,7 @@
         "MonsterAtk": 6,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4031,
@@ -669,7 +669,7 @@
         "MonsterAtk": 7,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4032,
@@ -679,7 +679,7 @@
         "MonsterAtk": 8,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4033,
@@ -689,7 +689,7 @@
         "MonsterAtk": 9,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4041,
@@ -699,7 +699,7 @@
         "MonsterAtk": 10,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4042,
@@ -709,7 +709,7 @@
         "MonsterAtk": 11,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4043,
@@ -719,7 +719,7 @@
         "MonsterAtk": 12,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4051,
@@ -729,7 +729,7 @@
         "MonsterAtk": 13,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4052,
@@ -739,7 +739,7 @@
         "MonsterAtk": 14,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4053,
@@ -749,7 +749,7 @@
         "MonsterAtk": 15,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4061,
@@ -759,7 +759,7 @@
         "MonsterAtk": 16,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4062,
@@ -769,7 +769,7 @@
         "MonsterAtk": 17,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4063,
@@ -779,7 +779,7 @@
         "MonsterAtk": 18,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4071,
@@ -789,7 +789,7 @@
         "MonsterAtk": 19,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4072,
@@ -799,7 +799,7 @@
         "MonsterAtk": 20,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4073,
@@ -809,7 +809,7 @@
         "MonsterAtk": 21,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4081,
@@ -819,7 +819,7 @@
         "MonsterAtk": 22,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4082,
@@ -829,7 +829,7 @@
         "MonsterAtk": 23,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4083,
@@ -839,7 +839,7 @@
         "MonsterAtk": 24,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4091,
@@ -849,7 +849,7 @@
         "MonsterAtk": 25,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4092,
@@ -859,7 +859,7 @@
         "MonsterAtk": 26,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4093,
@@ -869,7 +869,7 @@
         "MonsterAtk": 27,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4101,
@@ -879,7 +879,7 @@
         "MonsterAtk": 28,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4102,
@@ -889,7 +889,7 @@
         "MonsterAtk": 29,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4103,
@@ -899,7 +899,7 @@
         "MonsterAtk": 30,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4111,
@@ -909,7 +909,7 @@
         "MonsterAtk": 31,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4112,
@@ -919,7 +919,7 @@
         "MonsterAtk": 32,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4113,
@@ -929,7 +929,7 @@
         "MonsterAtk": 33,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4121,
@@ -939,7 +939,7 @@
         "MonsterAtk": 34,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4122,
@@ -949,7 +949,7 @@
         "MonsterAtk": 35,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4123,
@@ -959,7 +959,7 @@
         "MonsterAtk": 36,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4131,
@@ -969,7 +969,7 @@
         "MonsterAtk": 37,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4132,
@@ -979,7 +979,7 @@
         "MonsterAtk": 38,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4133,
@@ -989,7 +989,7 @@
         "MonsterAtk": 39,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4141,
@@ -999,7 +999,7 @@
         "MonsterAtk": 40,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4142,
@@ -1009,7 +1009,7 @@
         "MonsterAtk": 41,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4143,
@@ -1019,7 +1019,7 @@
         "MonsterAtk": 42,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4151,
@@ -1029,7 +1029,7 @@
         "MonsterAtk": 43,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4152,
@@ -1039,7 +1039,7 @@
         "MonsterAtk": 44,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4153,
@@ -1049,7 +1049,7 @@
         "MonsterAtk": 45,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 1
+        "MonsterMoveSpeed": 2
       },
       {
         "MonsterID": 4014,
@@ -1928,9 +1928,9 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 10,
-        "TowerAtkSpeed": 0.17,
+        "TowerAtkSpeed": 0.3,
         "TowerMaxLange": 10,
-        "TowerMaxAmmo": 30,
+        "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
         "ProjectileCount": 1,
         "ProjectileSize": 0.25,
@@ -1947,7 +1947,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 12,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.3,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -1966,7 +1966,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 15,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.3,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -1985,7 +1985,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 20,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.3,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2004,7 +2004,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 30,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.3,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2023,7 +2023,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 30,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.3,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2042,7 +2042,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 30,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.3,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2061,7 +2061,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 30,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.3,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2080,7 +2080,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 30,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.3,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2099,7 +2099,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 30,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.3,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2118,7 +2118,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 30,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.3,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2137,7 +2137,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 30,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.3,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2156,7 +2156,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 30,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.3,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2175,7 +2175,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 30,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.3,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2194,7 +2194,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 30,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.3,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2802,7 +2802,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 9,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.5,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2821,7 +2821,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 12,
-        "TowerAtkSpeed": 0.3,
+        "TowerAtkSpeed": 0.5,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2840,7 +2840,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 16,
-        "TowerAtkSpeed": 0.2,
+        "TowerAtkSpeed": 0.5,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2859,7 +2859,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.1,
+        "TowerAtkSpeed": 0.5,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2878,7 +2878,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.1,
+        "TowerAtkSpeed": 0.5,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2897,7 +2897,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.1,
+        "TowerAtkSpeed": 0.5,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2916,7 +2916,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.1,
+        "TowerAtkSpeed": 0.5,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2935,7 +2935,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.1,
+        "TowerAtkSpeed": 0.5,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2954,7 +2954,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.1,
+        "TowerAtkSpeed": 0.5,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2973,7 +2973,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.1,
+        "TowerAtkSpeed": 0.5,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2992,7 +2992,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.1,
+        "TowerAtkSpeed": 0.5,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -3011,7 +3011,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.1,
+        "TowerAtkSpeed": 0.5,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -3030,7 +3030,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.1,
+        "TowerAtkSpeed": 0.5,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -3049,7 +3049,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.1,
+        "TowerAtkSpeed": 0.5,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -3372,7 +3372,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 7,
-        "TowerAtkSpeed": 0.7,
+        "TowerAtkSpeed": 0.75,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6005,
@@ -3391,7 +3391,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 10,
-        "TowerAtkSpeed": 0.6,
+        "TowerAtkSpeed": 0.75,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6005,
@@ -3410,7 +3410,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 15,
-        "TowerAtkSpeed": 0.5,
+        "TowerAtkSpeed": 0.75,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6005,
@@ -3429,7 +3429,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 20,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.75,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6005,
@@ -3448,7 +3448,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 20,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.75,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6005,
@@ -3467,7 +3467,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 20,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.75,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6005,
@@ -3486,7 +3486,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 20,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.75,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6005,
@@ -3505,7 +3505,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 20,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.75,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6005,
@@ -3524,7 +3524,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 20,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.75,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6005,
@@ -3543,7 +3543,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 20,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.75,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6005,
@@ -3562,7 +3562,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 20,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.75,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6005,
@@ -3581,7 +3581,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 20,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.75,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6005,
@@ -3600,7 +3600,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 20,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.75,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6005,
@@ -3619,7 +3619,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 20,
-        "TowerAtkSpeed": 0.4,
+        "TowerAtkSpeed": 0.75,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6005,
@@ -4802,21 +4802,21 @@
       {
         "LevelID": 12,
         "GoalLevel": 2,
-        "RequiredXP": 45,
+        "RequiredXP": 300,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 13,
         "GoalLevel": 3,
-        "RequiredXP": 100,
+        "RequiredXP": 400,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 14,
         "GoalLevel": 4,
-        "RequiredXP": 165,
+        "RequiredXP": 600,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },

@@ -57,6 +57,16 @@ const EVENT_HEADERS = [
   "enemy_defeated",
   "active_tower_count",
   "queued_tower_count",
+  "data_source",
+  "bot_profile",
+  "bot_strategy",
+  "simulation_version",
+  "simulation_seed",
+  "simulation_speed",
+  "decision_delay_avg",
+  "decision_delay_stddev",
+  "mistake_count",
+  "invalid_sort_attempts",
 ];
 
 const EVENT_DESCRIPTIONS = [
@@ -110,6 +120,16 @@ const EVENT_DESCRIPTIONS = [
   "당시 누적 처치 몬스터 수",
   "현재 가동 중인 포탑 수",
   "현재 대기열 포탑 수",
+  "실사용자(real) 또는 자동 플레이(simulation) 구분",
+  "자동 플레이 숙련도 프로필",
+  "자동 플레이 특전 빌드 성향",
+  "자동 플레이 로직 버전",
+  "동일 결과 재현용 난수 시드",
+  "자동 플레이 게임 배속",
+  "세션 평균 소팅 판단시간(초)",
+  "소팅 판단시간 표준편차(초)",
+  "의도적으로 비최적 행동을 한 횟수",
+  "실행되지 못한 소팅 명령 횟수",
 ];
 
 const SESSION_HEADERS = [
@@ -163,6 +183,16 @@ const SESSION_HEADERS = [
   "enemy_defeated",
   "piece_stats",
   "system_activations",
+  "data_source",
+  "bot_profile",
+  "bot_strategy",
+  "simulation_version",
+  "simulation_seed",
+  "simulation_speed",
+  "decision_delay_avg",
+  "decision_delay_stddev",
+  "mistake_count",
+  "invalid_sort_attempts",
 ];
 
 const SESSION_DESCRIPTIONS = [
@@ -216,6 +246,16 @@ const SESSION_DESCRIPTIONS = [
   "세션 전체 처치 몬스터 수",
   "기물별 발사·명중·피해·회복·가동시간 JSON",
   "콤보탄·전체정렬·탄배출 사용량 JSON",
+  "실사용자(real) 또는 자동 플레이(simulation) 구분",
+  "자동 플레이 숙련도 프로필",
+  "자동 플레이 특전 빌드 성향",
+  "자동 플레이 로직 버전",
+  "동일 결과 재현용 난수 시드",
+  "자동 플레이 게임 배속",
+  "세션 평균 소팅 판단시간(초)",
+  "소팅 판단시간 표준편차(초)",
+  "의도적으로 비최적 행동을 한 횟수",
+  "실행되지 못한 소팅 명령 횟수",
 ];
 
 const PIECE_DAMAGE_HEADERS = [
@@ -524,6 +564,16 @@ function toEventRow_(event, receivedAt) {
     number_(event.enemyDefeated),
     number_(event.activeTowerCount),
     number_(event.queuedTowerCount),
+    text_(event.dataSource || "real"),
+    text_(event.botProfile),
+    text_(event.botStrategy),
+    text_(event.simulationVersion),
+    number_(event.simulationSeed),
+    number_(event.simulationSpeed),
+    number_(event.decisionDelayAvg),
+    number_(event.decisionDelayStddev),
+    number_(event.mistakeCount),
+    number_(event.invalidSortAttempts),
   ];
 }
 
@@ -584,6 +634,16 @@ function toSessionRow_(event, receivedAt) {
     number_(event.enemyDefeated),
     json_(payload.pieceStats || []),
     json_(payload.systemActivations || {}),
+    text_(event.dataSource || "real"),
+    text_(event.botProfile),
+    text_(event.botStrategy),
+    text_(event.simulationVersion),
+    number_(event.simulationSeed),
+    number_(event.simulationSpeed),
+    number_(event.decisionDelayAvg),
+    number_(event.decisionDelayStddev),
+    number_(event.mistakeCount),
+    number_(event.invalidSortAttempts),
   ];
 }
 

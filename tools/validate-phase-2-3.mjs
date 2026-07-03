@@ -2178,6 +2178,8 @@ function validatePhase5GrowthPerkComboRules(data, html) {
     ["state.pendingLevelUps += 1", "Level ups are accumulated as pending perks"],
     ["if (state.wavePhase !== \"perk\")", "Perk selection is blocked outside maintenance"],
     ["if (state.pendingLevelUps > 0) return", "Next wave is blocked until all perks are selected"],
+    ["function skipUnavailableUpgradeChoices", "Empty perk choice state has an auto-skip guard"],
+    ["skipUnavailableUpgradeChoices(\"wave-break\")", "Wave maintenance skips automatically when no perks are available"],
     ["const UPGRADE_DEFINITIONS = Array.isArray(PERK_DATA.upgrades)", "PerkData upgrades are preferred"],
     ["function applyDataUpgradeAction", "PerkData action runtime exists"],
     ["function spawnXpOrb", "XP orb drop runtime exists"],

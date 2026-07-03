@@ -56,6 +56,7 @@
 
   const state = {
     view: "overview",
+    source: "all",
     build: "all",
     snapshot: "all",
     result: "all",
@@ -125,13 +126,19 @@
     return row.build_version || "unknown";
   }
 
+  function sessionSource(row) {
+    const payload = safeJson(row.payload_json, {});
+    return row.data_source || payload.simulation?.dataSource || "real";
+  }
+
   function unique(items) {
     return [...new Set(items.filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "ko"));
   }
 
   function filteredSessions() {
     return sessions.filter((row) =>
-      (state.build === "all" || sessionBuild(row) === state.build)
+      (state.source === "all" || sessionSource(row) === state.source)
+      && (state.build === "all" || sessionBuild(row) === state.build)
       && (state.snapshot === "all" || sessionSnapshot(row) === state.snapshot)
       && (state.result === "all" || (row.result || "unknown") === state.result)
       && (state.device === "all" || sessionDevice(row) === state.device));
@@ -154,6 +161,7 @@
   }
 
   function initControls() {
+    fillSelect("#filter-source", unique(sessions.map(sessionSource)), "전체 표본");
     fillSelect("#filter-build", unique(sessions.map(sessionBuild)), "전체 빌드");
     fillSelect("#filter-snapshot", unique(sessions.map(sessionSnapshot)), "전체 스냅샷");
     fillSelect("#filter-result", unique(sessions.map((row) => row.result || "unknown")), "전체 결과");
@@ -164,7 +172,7 @@
       render();
     }));
     document.querySelector("#reset-filters").addEventListener("click", () => {
-      for (const key of ["build", "snapshot", "result", "device"]) {
+      for (const key of ["source", "build", "snapshot", "result", "device"]) {
         state[key] = "all";
         document.querySelector(`#filter-${key}`).value = "all";
       }

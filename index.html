@@ -4432,6 +4432,49 @@
       const WAVE_PROFILES = JSON.parse(JSON.stringify(DEFAULT_WAVE_PROFILES));
       const config = { ...defaultConfig };
       const INITIAL_OWNED_PIECE_KEYS = PIECE_KEYS.filter((key) => PIECES[key]?.owned);
+      const SIMULATION_QUERY = (() => {
+        const params = new URLSearchParams(window.location.search);
+        const active = params.get("simulation") === "1";
+        return Object.freeze({
+          active,
+          upload: active && params.get("simulationUpload") === "1",
+          speed: active ? Math.max(1, Math.min(50, Number(params.get("speed")) || 20)) : 1,
+          seed: Math.max(1, Math.floor(Number(params.get("seed")) || 20260702)),
+        });
+      })();
+      const SIMULATION_RUNTIME = {
+        events: [],
+        meta: {
+          dataSource: SIMULATION_QUERY.active ? "simulation" : "real",
+          botProfile: "",
+          botStrategy: "",
+          simulationVersion: "1.0.0",
+          simulationSeed: SIMULATION_QUERY.seed,
+          simulationSpeed: SIMULATION_QUERY.speed,
+          decisionDelayAvg: 0,
+          decisionDelayStddev: 0,
+          mistakeCount: 0,
+          invalidSortAttempts: 0,
+        },
+      };
+      let simulationRandomState = SIMULATION_QUERY.seed >>> 0;
+
+      function reseedSimulationRandom(seed) {
+        simulationRandomState = Math.max(1, Math.floor(Number(seed) || SIMULATION_QUERY.seed)) >>> 0;
+      }
+
+      function nextSimulationRandom() {
+        simulationRandomState += 0x6d2b79f5;
+        let value = simulationRandomState;
+        value = Math.imul(value ^ (value >>> 15), value | 1);
+        value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+        return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+      }
+
+      if (SIMULATION_QUERY.active) {
+        reseedSimulationRandom(SIMULATION_QUERY.seed);
+        Math.random = nextSimulationRandom;
+      }
       const BUILD_PROFILE = Object.freeze({
         mode: "balance",
         enabled: true,
@@ -4890,6 +4933,7 @@
       }
 
       function getTelemetryEndpoint() {
+        if (SIMULATION_QUERY.active && !SIMULATION_QUERY.upload) return "";
         try {
           const fromQuery = new URLSearchParams(window.location.search).get("telemetryEndpoint");
           if (fromQuery) return fromQuery.trim();
@@ -4970,12 +5014,14 @@
             body,
           }).catch((error) => {
             writeTelemetryQueue(batch.concat(readTelemetryQueue()));
+            scheduleTelemetryFlush();
             if (EXHIBITION_BUILD.telemetryDebug) console.warn("telemetry send failed", error);
           });
           if (remaining.length) scheduleTelemetryFlush();
           return true;
         } catch (error) {
           writeTelemetryQueue(batch.concat(readTelemetryQueue()));
+          scheduleTelemetryFlush();
           if (EXHIBITION_BUILD.telemetryDebug) console.warn("telemetry send failed", error);
           return false;
         }
@@ -5257,6 +5303,16 @@
           perkChoices: stats.perkChoices,
           reachedWave: stats.reachedWave,
           maxCombo: stats.maxCombo,
+          dataSource: SIMULATION_RUNTIME.meta.dataSource,
+          botProfile: SIMULATION_RUNTIME.meta.botProfile,
+          botStrategy: SIMULATION_RUNTIME.meta.botStrategy,
+          simulationVersion: SIMULATION_RUNTIME.meta.simulationVersion,
+          simulationSeed: SIMULATION_RUNTIME.meta.simulationSeed,
+          simulationSpeed: SIMULATION_RUNTIME.meta.simulationSpeed,
+          decisionDelayAvg: SIMULATION_RUNTIME.meta.decisionDelayAvg,
+          decisionDelayStddev: SIMULATION_RUNTIME.meta.decisionDelayStddev,
+          mistakeCount: SIMULATION_RUNTIME.meta.mistakeCount,
+          invalidSortAttempts: SIMULATION_RUNTIME.meta.invalidSortAttempts,
           ...getSlotTelemetrySnapshot(),
         };
       }
@@ -5265,10 +5321,24 @@
         if (!isTelemetryActive()) return null;
         if (!state.telemetrySessionId && eventType !== "session_start") return null;
         state.telemetryEventSeq += 1;
+        const eventPayload = SIMULATION_QUERY.active
+          ? {
+              ...payload,
+              simulation: {
+                dataSource: SIMULATION_RUNTIME.meta.dataSource,
+                botProfile: SIMULATION_RUNTIME.meta.botProfile,
+                botStrategy: SIMULATION_RUNTIME.meta.botStrategy,
+                simulationVersion: SIMULATION_RUNTIME.meta.simulationVersion,
+                simulationSeed: SIMULATION_RUNTIME.meta.simulationSeed,
+                simulationSpeed: SIMULATION_RUNTIME.meta.simulationSpeed,
+              },
+            }
+          : payload;
         const event = {
           ...getTelemetryBasePayload(eventType),
-          payload,
+          payload: eventPayload,
         };
+        if (SIMULATION_QUERY.active) SIMULATION_RUNTIME.events.push(event);
         if (!getTelemetryEndpoint()) {
           rememberOfflineTelemetryEvent(event);
           return event;
@@ -5464,7 +5534,9 @@
         const stats = state.telemetryStats || createTelemetryStats();
         telemetryEvent("session_end", {
           result,
-          durationMs: Math.max(0, Date.now() - state.telemetryStartedAtMs),
+          durationMs: SIMULATION_QUERY.active
+            ? Math.max(0, Math.round((state.elapsed + finiteNumber(SIMULATION_RUNTIME.meta.perkDecisionDelayTotal, 0)) * 1000))
+            : Math.max(0, Date.now() - state.telemetryStartedAtMs),
           loadout: getLoadoutTelemetrySummary(),
           pickedPerks: stats.pickedPerks,
           waveSnapshots: stats.waveSnapshots,
@@ -9633,6 +9705,23 @@
         renderUpgradeSummary();
       }
 
+      function skipUnavailableUpgradeChoices(reason = "empty") {
+        const nextWave = state.pendingNextWave;
+        state.pendingLevelUps = 0;
+        state.leveling = false;
+        state.perkBreak = false;
+        state.pendingNextWave = null;
+        state.upgradeChoices = [];
+        state.perkRerollUsed = false;
+        state.perkRerollBusy = false;
+        upgradeOverlay.classList.add("hidden");
+        renderLevelUpButton();
+        syncPauseState();
+        showWaveBanner("선택 가능한 특전 없음");
+        log(`선택 가능한 특전 없음: ${reason}`);
+        if (nextWave && !state.ended) startWave(nextWave);
+      }
+
       function beginLevelUp() {
         if (state.wavePhase !== "perk") {
           showWaveBanner("정비 시간에 선택");
@@ -9647,8 +9736,8 @@
         syncPauseState();
         state.upgradeChoices = rollUpgradeChoices();
         if (state.upgradeChoices.length <= 0) {
-          state.pendingLevelUps = 0;
-          showWaveBanner("선택 가능한 특전 없음");
+          skipUnavailableUpgradeChoices("manual");
+          return;
         }
         renderUpgradeChoices();
         upgradeOverlay.classList.remove("hidden");
@@ -9694,8 +9783,8 @@
           state.perkRerollBusy = false;
           state.upgradeChoices = rollUpgradeChoices();
           if (state.upgradeChoices.length <= 0) {
-            state.pendingLevelUps = 0;
-            showWaveBanner("선택 가능한 특전 없음");
+            skipUnavailableUpgradeChoices("after-pick");
+            return;
           }
           renderUpgradeChoices();
           renderLevelUpButton();
@@ -11350,6 +11439,11 @@
         const carriedEnemies = state.enemies.length;
         state.perkBreak = true;
         state.upgradeChoices = rollUpgradeChoices();
+        if (state.upgradeChoices.length <= 0) {
+          log(`${getWaveTitle()} 종료: 잔여 몬스터 ${carriedEnemies}, 선택 가능한 특전 없음`);
+          skipUnavailableUpgradeChoices("wave-break");
+          return;
+        }
         syncPauseState();
         renderUpgradeChoices();
         upgradeOverlay.classList.remove("hidden");
@@ -12240,10 +12334,145 @@
         if (!startExhibitionPreWaveTutorial(firstWave)) startWave(firstWave);
       }
 
+      function getSimulationSnapshot() {
+        const stage = getStageData();
+        return {
+          started: state.started,
+          ended: state.ended,
+          paused: state.paused,
+          wave: state.wave,
+          waveOrdinal: getStageWaveOrdinal(state.wave, stage),
+          waveTotal: getStageTotalWaveCount(stage),
+          wavePhase: state.wavePhase,
+          elapsed: roundTelemetryNumber(state.elapsed, 3),
+          combo: state.combo,
+          enemies: state.enemies.length,
+          pendingLevelUps: state.pendingLevelUps,
+          perkRerollUsed: state.perkRerollUsed,
+          rerollCharges: state.rerollCharges,
+          hold: state.hold,
+          deckRemaining: countDeckRemaining(),
+          sessionId: state.telemetrySessionId,
+          telemetryEnded: state.telemetryEnded,
+          slots: state.slots.map((slot) => ({
+            id: slot.id,
+            cells: [...slot.cells],
+            hp: roundTelemetryNumber(slot.hp),
+            maxHp: roundTelemetryNumber(slot.maxHp),
+            destroyed: Boolean(slot.destroyed),
+            repairCount: slot.repairCount,
+          })),
+          choices: state.upgradeChoices.map((upgrade, index) => ({
+            index,
+            id: upgrade.id,
+            title: upgrade.title,
+            rarity: upgrade.rarity,
+            targetType: upgrade.targetType || "",
+            body: getUpgradeShortBody(upgrade),
+            design: cloneGameData(upgrade.design || {}),
+            actions: cloneGameData(upgrade.actions || []),
+            perkLevel: getPerkLevel(upgrade),
+            maxLevel: getPerkMaxLevel(upgrade),
+          })),
+          telemetry: state.telemetryStats ? {
+            sortAttempts: state.telemetryStats.sortAttempts,
+            sortSuccesses: state.telemetryStats.sortSuccesses,
+            sortFailures: state.telemetryStats.sortFailures,
+            maxCombo: state.telemetryStats.maxCombo,
+            slotDamageTaken: roundTelemetryNumber(state.telemetryStats.slotDamageTaken),
+            damageByPiece: cloneGameData(state.telemetryStats.damageByPiece),
+          } : null,
+        };
+      }
+
+      function installBalanceSimulationInterface() {
+        if (!SIMULATION_QUERY.active) return;
+        window.BALANCE_SIMULATION = Object.freeze({
+          version: SIMULATION_RUNTIME.meta.simulationVersion,
+          getSnapshot: getSimulationSnapshot,
+          getEvents: () => cloneGameData(SIMULATION_RUNTIME.events),
+          flushTelemetry() {
+            let batches = 0;
+            while (readTelemetryQueue().length > 0 && batches < 12) {
+              flushTelemetryQueue({ final: true });
+              batches += 1;
+            }
+            return { batches, remaining: readTelemetryQueue().length };
+          },
+          setMeta(meta = {}) {
+            SIMULATION_RUNTIME.meta = { ...SIMULATION_RUNTIME.meta, ...cloneGameData(meta) };
+            return cloneGameData(SIMULATION_RUNTIME.meta);
+          },
+          startSession(meta = {}) {
+            const seed = Math.max(1, Math.floor(Number(meta.simulationSeed) || SIMULATION_QUERY.seed));
+            reseedSimulationRandom(seed);
+            SIMULATION_RUNTIME.meta = {
+              ...SIMULATION_RUNTIME.meta,
+              dataSource: "simulation",
+              simulationSeed: seed,
+              simulationSpeed: SIMULATION_QUERY.speed,
+              decisionDelayAvg: 0,
+              decisionDelayStddev: 0,
+              mistakeCount: 0,
+              invalidSortAttempts: 0,
+              perkDecisionDelayTotal: 0,
+              ...cloneGameData(meta),
+            };
+            state.started = true;
+            resetGame();
+            return getSimulationSnapshot();
+          },
+          movePiece(fromSlot, fromCell, toSlot, toCell) {
+            if (state.ended || state.paused || state.leveling) return { ok: false, reason: "blocked" };
+            const source = state.slots[fromSlot];
+            const target = state.slots[toSlot];
+            if (!source || !target || !source.cells[fromCell]) return { ok: false, reason: "source" };
+            if (target.cells[toCell] && target.cells.every(Boolean)) return { ok: false, reason: "target" };
+            const before = state.telemetryStats?.sortSuccesses || 0;
+            state.selected = { source: "slot", slotIndex: fromSlot, cellIndex: fromCell };
+            moveSelectedToSlot(toSlot, toCell);
+            return {
+              ok: true,
+              success: (state.telemetryStats?.sortSuccesses || 0) > before,
+              snapshot: getSimulationSnapshot(),
+            };
+          },
+          choosePerk(index) {
+            if (!state.leveling || !state.upgradeChoices[index]) return false;
+            selectUpgrade(index);
+            return true;
+          },
+          rerollPerks() {
+            const before = state.upgradeChoices.map((choice) => choice.id).join("|");
+            rerollUpgradeChoices();
+            return before !== state.upgradeChoices.map((choice) => choice.id).join("|");
+          },
+          continueAfterPerk() {
+            if (state.pendingLevelUps > 0) return false;
+            closeUpgradeOverlay();
+            return true;
+          },
+          abortSession(reason = "simulation_timeout") {
+            if (!state.telemetryEnded) endTelemetrySession("abandon", { reason }, true);
+            state.ended = true;
+            state.wavePhase = "fail";
+            syncPauseState();
+          },
+        });
+        window.dispatchEvent(new CustomEvent("balance-simulation-ready"));
+      }
+
       function loop(now) {
-        const dt = Math.min(0.05, (now - state.lastTime) / 1000);
+        const realDt = Math.min(0.05, Math.max(0, (now - state.lastTime) / 1000));
         state.lastTime = now;
-        update(dt);
+        let remaining = realDt * (SIMULATION_QUERY.active ? SIMULATION_QUERY.speed : 1);
+        let steps = 0;
+        do {
+          const dt = Math.min(0.05, remaining);
+          update(dt);
+          remaining -= dt;
+          steps += 1;
+        } while (remaining > 0.00001 && steps < 64);
         draw();
         refreshHud();
         requestAnimationFrame(loop);
@@ -12324,7 +12553,9 @@
       loadLayoutConfig();
       resetGame();
       showIntroTitleScreen();
+      installBalanceSimulationInterface();
       requestAnimationFrame(loop);
     </script>
+    <script src="assets/js/balance-simulator.js"></script>
   </body>
 </html>
