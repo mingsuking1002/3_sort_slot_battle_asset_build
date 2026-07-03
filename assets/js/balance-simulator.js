@@ -63,17 +63,28 @@
   ];
   const PROFILES = {
     beginner: {
-      label: "초보자", delayMean: 6.78, delayCv: 0.38, perkDelayMean: 7.2,
-      successRate: 0.68, planningRate: 0.72, perkNoise: 1.45, rerollRate: 0.08,
+      label: "초보자", delayMean: 5.8, delayCv: 0.42, perkDelayMean: 6.2,
+      successRate: 0.78, planningRate: 0.72, perkNoise: 1.25, rerollRate: 0.12,
+      mistakeRate: 0.13, obviousMatchBonus: 0.12, setupBias: 0.74,
     },
     intermediate: {
-      label: "중급자", delayMean: 4.17, delayCv: 0.29, perkDelayMean: 4.8,
-      successRate: 0.88, planningRate: 0.9, perkNoise: 0.85, rerollRate: 0.23,
+      label: "중급자", delayMean: 3.35, delayCv: 0.29, perkDelayMean: 3.1,
+      successRate: 0.95, planningRate: 0.96, perkNoise: 0.58, rerollRate: 0.34,
+      mistakeRate: 0.045, obviousMatchBonus: 0.03, setupBias: 0.9,
     },
     advanced: {
-      label: "상급자", delayMean: 3.04, delayCv: 0.24, perkDelayMean: 3.1,
-      successRate: 0.97, planningRate: 0.98, perkNoise: 0.42, rerollRate: 0.42,
+      label: "상급자", delayMean: 2.35, delayCv: 0.22, perkDelayMean: 1.8,
+      successRate: 0.995, planningRate: 0.995, perkNoise: 0.24, rerollRate: 0.58,
+      mistakeRate: 0.012, obviousMatchBonus: 0, setupBias: 1,
     },
+  };
+  const PIECE_TACTICAL_WEIGHTS = {
+    basic: 0.75,
+    scatter: 1.15,
+    sniper: 1.2,
+    breaker: 0.85,
+    blast: 1.45,
+    support: 0.55,
   };
 
   function hashSeed(value) {
@@ -214,6 +225,9 @@
     for (const source of sources) {
       for (const target of emptyTargets) {
         if (source.slot === target.slot) continue;
+        const targetSlot = snapshot.slots[target.slot];
+        const targetPieces = (targetSlot?.cells || []).filter(Boolean);
+        if (targetPieces.length >= 2 && targetPieces.some((pieceKey) => pieceKey !== source.pieceKey)) continue;
         const kind = snapshot.slots[target.slot]?.destroyed ? "repair" : "attack";
         general[kind].push({ ...source, toSlot: target.slot, toCell: target.cell, kind });
       }
@@ -221,31 +235,133 @@
     return { successful, pairSetups, general };
   }
 
-  function chooseMoveForKind(options, kind, profile) {
+  function getSlot(snapshot, slotId) {
+    return (snapshot.slots || []).find((slot) => slot.id === slotId) || null;
+  }
+
+  function slotHpRatioOf(slot) {
+    if (!slot) return 1;
+    return Math.max(0, Number(slot.hp || 0)) / Math.max(1, Number(slot.maxHp || 1));
+  }
+
+  function getSourceStructureScore(snapshot, move) {
+    const source = getSlot(snapshot, move.slot);
+    if (!source) return 0;
+    const beforeSame = source.cells.filter((pieceKey) => pieceKey === move.pieceKey).length;
+    const afterPieces = source.cells.filter((pieceKey, index) => index !== move.cell && pieceKey);
+    const afterSame = afterPieces.filter((pieceKey) => pieceKey === move.pieceKey).length;
+    let score = 0;
+    if (beforeSame === 2 && afterSame === 1) score -= 1.35;
+    if (afterPieces.length === 2 && afterPieces[0] === afterPieces[1]) score += 1.25;
+    if (!afterPieces.length) score -= 0.2;
+    return score;
+  }
+
+  function getTargetStructureScore(snapshot, move, intendedSuccess, setupMove) {
+    const target = getSlot(snapshot, move.toSlot);
+    if (!target) return 0;
+    const pieces = target.cells.filter(Boolean);
+    let score = 0;
+    if (intendedSuccess) score += 6.5;
+    else if (setupMove) score += 3.2;
+    if (!intendedSuccess && !setupMove && pieces.length === 0) score += 0.8;
+    if (!intendedSuccess && !setupMove && pieces.length === 1 && pieces[0] === move.pieceKey) score += 1.4;
+    if (target.destroyed) score += intendedSuccess ? 2.4 : 0.75;
+    else score += 0.35;
+    score += (1 - slotHpRatioOf(target)) * (target.destroyed ? 0.4 : 0.9);
+    return score;
+  }
+
+  function getPieceTacticalScore(snapshot, move, kind) {
+    const type = normalizePieceType(move.pieceKey);
+    const threat = snapshot.threat || {};
+    const enemies = Number(snapshot.enemies || 0);
+    const pressure = Number(threat.pressureScore || 0);
+    const hpRatio = slotHpRatio(snapshot);
+    let score = PIECE_TACTICAL_WEIGHTS[type] || 0.55;
+    if (enemies > 60 || pressure > 0.45) {
+      if (type === "blast" || type === "scatter") score += 0.95;
+      if (type === "sniper") score += 0.55;
+      if (type === "breaker") score += 0.45;
+    }
+    if (hpRatio < 0.68 || Number(threat.destroyedSlotCount || 0) > 0) {
+      if (type === "support") score += 1.25;
+      if (kind === "repair") score += 0.6;
+    }
+    return score;
+  }
+
+  function getComboUrgencyScore(snapshot, intendedSuccess) {
+    if (!intendedSuccess) return 0;
+    const combo = Number(snapshot.combo || 0);
+    if (combo > 0 && (combo + 1) % 10 === 0) return 4.4;
+    if (combo >= 7) return 2.1;
+    if (combo >= 4) return 0.9;
+    return 0.25;
+  }
+
+  function scoreMove(snapshot, move, kind, intendedSuccess = false, setupMove = false) {
+    const threat = snapshot.threat || {};
+    const target = getSlot(snapshot, move.toSlot);
+    let score =
+      getTargetStructureScore(snapshot, move, intendedSuccess, setupMove)
+      + getSourceStructureScore(snapshot, move)
+      + getPieceTacticalScore(snapshot, move, kind)
+      + getComboUrgencyScore(snapshot, intendedSuccess);
+    if (target && (threat.pressuredSlotIds || []).includes(target.id)) score += kind === "attack" ? 1.45 : 0.35;
+    if (kind === "attack" && Number(threat.attackingEnemyCount || 0) > 0) score += 0.8;
+    if (kind === "repair" && Number(threat.destroyedSlotCount || 0) > 0) score += 0.75;
+    return score + normal() * 0.12;
+  }
+
+  function pickScoredMove(pool, snapshot, profile, kind, intendedSuccess = false, setupMove = false) {
+    if (!pool.length) return null;
+    const temperature = profile.profileKey === "advanced" ? 0.16 : profile.profileKey === "intermediate" ? 0.42 : 0.9;
+    const scored = pool.map((move) => ({ move, score: scoreMove(snapshot, move, kind, intendedSuccess, setupMove) }));
+    const max = Math.max(...scored.map((item) => item.score));
+    const weights = scored.map((item) => Math.exp((item.score - max) / temperature));
+    let roll = random() * weights.reduce((sum, value) => sum + value, 0);
+    for (let index = 0; index < scored.length; index += 1) {
+      roll -= weights[index];
+      if (roll <= 0) return scored[index].move;
+    }
+    return scored[scored.length - 1].move;
+  }
+
+  function chooseMoveForKind(options, kind, profile, snapshot) {
     const successful = options.successful[kind];
     const pairSetups = options.pairSetups[kind];
     const general = options.general[kind];
-    if (successful.length && random() < profile.successRate) {
-      return { move: pick(successful), intendedSuccess: true, mistake: false, kind };
+    const matchChance = clamp(Number(profile.successRate || 0.8) + (successful.length > 1 ? Number(profile.obviousMatchBonus || 0) : 0), 0, 0.999);
+    if (successful.length && random() < matchChance) {
+      return { move: pickScoredMove(successful, snapshot, profile, kind, true, false), intendedSuccess: true, mistake: false, kind };
     }
     if (!successful.length && pairSetups.length && random() < profile.planningRate) {
-      return { move: pick(pairSetups), intendedSuccess: false, mistake: false, kind };
+      return { move: pickScoredMove(pairSetups, snapshot, profile, kind, false, true), intendedSuccess: false, mistake: false, kind };
+    }
+    if (successful.length && profile.profileKey === "advanced") {
+      return { move: pickScoredMove(successful, snapshot, profile, kind, true, false), intendedSuccess: true, mistake: false, kind };
+    }
+    if (pairSetups.length && random() < profile.planningRate * Number(profile.setupBias || 0.65)) {
+      return { move: pickScoredMove(pairSetups, snapshot, profile, kind, false, true), intendedSuccess: false, mistake: false, kind };
     }
     const plannedKeys = new Set([...successful, ...pairSetups].map((move) => `${move.slot}:${move.cell}>${move.toSlot}:${move.toCell}`));
     const failures = general.filter((move) => !plannedKeys.has(`${move.slot}:${move.cell}>${move.toSlot}:${move.toCell}`));
     const pool = failures.length ? failures : general;
-    return pool.length ? { move: pick(pool), intendedSuccess: false, mistake: true, kind } : null;
+    if (!pool.length) return null;
+    const mistake = random() < Number(profile.mistakeRate || 0.08);
+    return { move: pickScoredMove(pool, snapshot, profile, kind, false, false), intendedSuccess: false, mistake, kind };
   }
 
   function chooseMove(snapshot, profile, profileKey, pressureMode) {
     const options = combinations(snapshot);
     const hasRepair = options.successful.repair.length || options.pairSetups.repair.length || options.general.repair.length;
     if (profileKey !== "advanced") {
-      if (pressureMode) return chooseMoveForKind(options, "attack", profile) || chooseMoveForKind(options, "repair", profile);
+      if (pressureMode) return chooseMoveForKind(options, "attack", profile, snapshot) || chooseMoveForKind(options, "repair", profile, snapshot);
       const preferRepair = hasRepair && random() < clamp(0.58 + profile.repairBias - profile.attackBias, 0.08, 0.88);
       const primary = preferRepair ? "repair" : "attack";
       const secondary = preferRepair ? "attack" : "repair";
-      return chooseMoveForKind(options, primary, profile) || chooseMoveForKind(options, secondary, profile);
+      return chooseMoveForKind(options, primary, profile, snapshot) || chooseMoveForKind(options, secondary, profile, snapshot);
     }
     const threat = snapshot.threat || {};
     const destroyed = Number(threat.destroyedSlotCount || 0);
@@ -255,7 +371,7 @@
     const preferRepair = hasRepair && random() < repairChance;
     const primary = preferRepair ? "repair" : "attack";
     const secondary = preferRepair ? "attack" : "repair";
-    return chooseMoveForKind(options, primary, profile) || chooseMoveForKind(options, secondary, profile);
+    return chooseMoveForKind(options, primary, profile, snapshot) || chooseMoveForKind(options, secondary, profile, snapshot);
   }
 
   function updatePressureMode(current, snapshot, profileKey) {
@@ -263,8 +379,8 @@
     const score = Number(threat.pressureScore || 0);
     const attacking = Number(threat.attackingEnemyCount || 0);
     const near = Number(threat.nearSlotEnemyCount || 0);
-    const enter = profileKey === "beginner" ? 0.58 : profileKey === "intermediate" ? 0.5 : 0.62;
-    const exit = profileKey === "beginner" ? 0.3 : 0.26;
+    const enter = profileKey === "beginner" ? 0.48 : profileKey === "intermediate" ? 0.38 : 0.38;
+    const exit = profileKey === "beginner" ? 0.24 : profileKey === "intermediate" ? 0.2 : 0.18;
     if (attacking > 0 || score >= enter) return true;
     if (score <= exit && attacking === 0 && near <= 1) return false;
     return current;
@@ -272,10 +388,10 @@
 
   function getPressureDelayMultiplier(snapshot, profileKey, pressureMode) {
     const threat = snapshot.threat || {};
-    let multiplier = pressureMode ? (profileKey === "advanced" ? 0.88 : 0.82) : 1;
-    if (Number(threat.attackingEnemyCount || 0) > 0) multiplier *= profileKey === "advanced" ? 0.88 : 0.84;
-    else if (Number(threat.nearSlotEnemyCount || 0) > 0) multiplier *= 0.94;
-    return Math.max(0.62, multiplier);
+    let multiplier = pressureMode ? (profileKey === "advanced" ? 0.56 : profileKey === "intermediate" ? 0.58 : 0.68) : 1;
+    if (Number(threat.attackingEnemyCount || 0) > 0) multiplier *= profileKey === "advanced" ? 0.58 : profileKey === "intermediate" ? 0.62 : 0.72;
+    else if (Number(threat.nearSlotEnemyCount || 0) > 0) multiplier *= profileKey === "advanced" ? 0.76 : profileKey === "intermediate" ? 0.78 : 0.84;
+    return Math.max(profileKey === "advanced" ? 0.28 : profileKey === "intermediate" ? 0.34 : 0.46, multiplier);
   }
 
   function slotHpRatio(snapshot) {
@@ -344,8 +460,8 @@
     }
 
     if (pressure > 0.5 || enemies > 35) {
-      if (tags.offense) score += 0.55 + Math.min(0.8, pressure * 0.75);
-      if (tags.area || tags.combo) score += enemies > 35 ? 0.55 : 0.24;
+      if (tags.offense) score += 0.9 + Math.min(1.15, pressure * 0.95);
+      if (tags.area || tags.combo) score += enemies > 35 ? 0.95 : 0.38;
       if (tags.survival && destroyed <= 0 && hpRatio > 0.7) score -= 0.28;
     }
     if (destroyed > 0 || hpRatio < 0.62) {
@@ -353,9 +469,9 @@
       if (tags.offense && hpRatio < 0.38) score -= 0.25;
     }
 
-    if (snapshot.combo >= 7 && tags.combo) score += 0.45;
-    if (tags.fireRate && pressure > 0.35) score += 0.25;
-    if (tags.ammo && enemies < 18 && hpRatio > 0.72) score += 0.14;
+    if (snapshot.combo >= 7 && tags.combo) score += 0.85;
+    if (tags.fireRate && (pressure > 0.25 || enemies > 20)) score += 0.65;
+    if (tags.ammo && hpRatio > 0.45) score += enemies > 45 ? 0.45 : 0.22;
 
     if (strategy === "combo" && tags.combo) score += 2.4;
     if (strategy === "survival" && (hpRatio < 0.72 || tags.survival)) score += 2.1;

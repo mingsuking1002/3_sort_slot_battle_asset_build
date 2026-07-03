@@ -46,9 +46,9 @@
   const NEUTRAL = "#8b98a2";
   const PIECE_MAX_LEVEL = 5;
   const SKILL_META = {
-    beginner: { label: "초보자", color: "#c73b3b", sortMin: 0, sortMax: 12, targetDelay: 6.78 },
-    intermediate: { label: "중급자", color: "#e7a91b", sortMin: 13, sortMax: 45, targetDelay: 4.17 },
-    advanced: { label: "상급자", color: "#14845f", sortMin: 46, sortMax: Infinity, targetDelay: 3.04 },
+    beginner: { label: "초보자", color: "#c73b3b", sortMin: 0, sortMax: 18, targetDelay: 5.8 },
+    intermediate: { label: "중급자", color: "#e7a91b", sortMin: 19, sortMax: 60, targetDelay: 3.35 },
+    advanced: { label: "상급자", color: "#14845f", sortMin: 61, sortMax: Infinity, targetDelay: 2.35 },
   };
   const SKILL_KEYS = Object.keys(SKILL_META);
   const SCENARIO_LABELS = {
@@ -77,6 +77,7 @@
     build: "all",
     snapshot: "all",
     stage: "all",
+    skillProfile: "all",
     loadout: "all",
     pieceTypes: "all",
     result: "all",
@@ -95,6 +96,7 @@
   const average = (items, getter) => items.length ? sum(items, getter) / items.length : 0;
   const percent = (value, digits = 1) => `${(number(value) * 100).toFixed(digits)}%`;
   const format = (value, digits = 0) => number(value).toLocaleString("ko-KR", { maximumFractionDigits: digits });
+  const intervalValue = (value, samples) => samples ? `${format(value, 2)}초` : "-";
   const clip = (value, length = 16) => {
     const text = String(value ?? "");
     return text.length > length ? `${text.slice(0, length - 1)}…` : text;
@@ -214,6 +216,11 @@
     return row.bot_profile || payload.simulation?.botProfile || "";
   }
 
+  function sessionSkillProfile(row) {
+    if (sessionSource(row) === "simulation") return sessionBotProfile(row) || "unknown";
+    return inferSkillProfile(row);
+  }
+
   function sessionBotStrategy(row) {
     const payload = safeJson(row.payload_json, {});
     return row.bot_strategy || payload.simulation?.botStrategy || "";
@@ -244,6 +251,7 @@
       && (state.build === "all" || sessionBuild(row) === state.build)
       && (state.snapshot === "all" || sessionSnapshot(row) === state.snapshot)
       && (state.stage === "all" || sessionStage(row) === state.stage)
+      && (state.skillProfile === "all" || sessionSkillProfile(row) === state.skillProfile)
       && (state.loadout === "all" || sessionLoadoutHash(row) === state.loadout)
       && (state.pieceTypes === "all" || sessionPieceTypeSignature(row) === state.pieceTypes)
       && (state.result === "all" || (row.result || "unknown") === state.result)
@@ -264,6 +272,7 @@
       && (state.build === "all" || sessionBuild(row) === state.build)
       && (state.snapshot === "all" || sessionSnapshot(row) === state.snapshot)
       && (state.stage === "all" || sessionStage(row) === state.stage)
+      && (state.skillProfile === "all" || sessionSkillProfile(row) === state.skillProfile)
       && (state.loadout === "all" || sessionLoadoutHash(row) === state.loadout)
       && (state.pieceTypes === "all" || sessionPieceTypeSignature(row) === state.pieceTypes)
       && (state.result === "all" || (row.result || "unknown") === state.result)
@@ -282,8 +291,8 @@
     const interval = sessionSortInterval(row);
     const reached = number(row.reached_wave);
     let score = successes >= SKILL_META.advanced.sortMin ? 2 : successes >= SKILL_META.intermediate.sortMin ? 1 : 0;
-    if (Number.isFinite(interval) && interval > 0) score += interval <= 3.45 ? 2 : interval <= 5.2 ? 1 : 0;
-    else score += attempts >= 70 ? 2 : attempts >= 24 ? 1 : 0;
+    if (Number.isFinite(interval) && interval > 0) score += interval <= 2.85 ? 2 : interval <= 4.45 ? 1 : 0;
+    else score += attempts >= 86 ? 2 : attempts >= 32 ? 1 : 0;
     if (row.result === "clear") score += 0.35;
     if (reached >= 9) score += 0.25;
     if (reached <= 4 && row.result !== "clear") score -= 0.25;
@@ -354,6 +363,16 @@
     return getSessionGroupSummary(sessionPieceTypeSignature, (row, key) => key);
   }
 
+  function getSkillSummaryRows(rows = filteredSessions()) {
+    return SKILL_KEYS.map((key) => ({
+      key,
+      label: SKILL_META[key].label,
+      color: SKILL_META[key].color,
+      targetDelay: SKILL_META[key].targetDelay,
+      ...sessionMetrics(rows.filter((row) => sessionSkillProfile(row) === key)),
+    }));
+  }
+
   function getSkillCalibrationRows() {
     const realRows = comparisonSessions("real");
     const simRows = comparisonSessions("simulation");
@@ -403,9 +422,9 @@
     return `${SKILL_META[inferSkillProfile(row)]?.label || "-"} 추정`;
   }
 
-  function fillSelect(id, values, label) {
+  function fillSelect(id, values, label, labelGetter = (value) => value) {
     const select = document.querySelector(id);
-    select.innerHTML = `<option value="all">${escape(label)}</option>${values.map((value) => `<option value="${escape(value)}">${escape(value)}</option>`).join("")}`;
+    select.innerHTML = `<option value="all">${escape(label)}</option>${values.map((value) => `<option value="${escape(value)}">${escape(labelGetter(value))}</option>`).join("")}`;
     select.addEventListener("change", () => {
       const stateKey = id.replace("#filter-", "").replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
       state[stateKey] = select.value;
@@ -419,6 +438,7 @@
     fillSelect("#filter-build", unique(sessions.map(sessionBuild)), "전체 빌드");
     fillSelect("#filter-snapshot", unique(sessions.map(sessionSnapshot)), "전체 스냅샷");
     fillSelect("#filter-stage", unique(sessions.map(sessionStage)), "전체 스테이지");
+    fillSelect("#filter-skill-profile", SKILL_KEYS, "전체 숙련도", (value) => SKILL_META[value]?.label || value);
     fillSelect("#filter-loadout", unique(sessions.map(sessionLoadoutHash)), "전체 조합");
     fillSelect("#filter-piece-types", unique(sessions.map(sessionPieceTypeSignature)), "전체 타입");
     fillSelect("#filter-result", unique(sessions.map((row) => row.result || "unknown")), "전체 결과");
@@ -438,7 +458,7 @@
       render();
     }));
     document.querySelector("#reset-filters").addEventListener("click", () => {
-      for (const key of ["source", "simVersion", "build", "snapshot", "stage", "loadout", "pieceTypes", "result", "device"]) {
+      for (const key of ["source", "simVersion", "build", "snapshot", "stage", "skillProfile", "loadout", "pieceTypes", "result", "device"]) {
         state[key] = "all";
         const filterId = key === "simVersion" ? "sim-version" : key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
         document.querySelector(`#filter-${filterId}`).value = "all";
@@ -1285,6 +1305,35 @@
         </tbody></table></div></section>`;
   }
 
+  function renderSkillSummary() {
+    const rows = getSkillSummaryRows();
+    if (!rows.some((row) => row.sessions)) return "";
+    return `<section class="chart-grid">
+        ${chartPanel("숙련도별 클리어율", "초급/중급을 밸런스 기준으로 먼저 확인", horizontalBarChart(rows, {
+          value: (item) => item.clearRate,
+          label: (item) => item.label,
+          color: (item) => item.color,
+          formatter: (value, item) => `${percent(value)} / ${item.sessions}건`,
+          max: 1,
+          limit: 3,
+          labelLength: 16,
+        }))}
+        ${chartPanel("숙련도별 평균 도달", "상급자보다 초급/중급 안정 구간을 우선 확인", horizontalBarChart(rows, {
+          value: (item) => item.reached,
+          label: (item) => item.label,
+          color: (item) => item.color,
+          formatter: (value, item) => `W${format(value, 1)} · 소팅 ${format(item.successes, 1)}`,
+          limit: 3,
+          labelLength: 16,
+        }))}
+      </section>
+      <section class="section">${sectionTitle("숙련도별 핵심 지표", "초보자는 초반 이탈, 중급자는 안정 클리어 가능성 확인")}
+        <div class="table-wrap"><table><thead><tr><th>숙련도</th><th>표본</th><th>클리어율</th><th>평균 도달</th><th>소팅 완성</th><th>소팅 시도</th><th>전환율</th><th>평균 간격</th><th>목표 간격</th><th>최대 콤보</th><th>슬롯 체력</th></tr></thead><tbody>
+          ${rows.map((row) => `<tr><td><span style="color:${row.color};font-weight:800">${escape(row.label)}</span></td><td>${format(row.sessions)}</td><td class="${row.clearRate < .25 ? "negative" : row.clearRate >= .55 ? "positive" : ""}">${percent(row.clearRate)}</td><td>W${format(row.reached, 1)}</td><td>${format(row.successes, 1)}</td><td>${format(row.attempts, 1)}</td><td>${percent(row.conversion)}</td><td>${intervalValue(row.interval, row.intervalSamples)}</td><td>${format(row.targetDelay, 2)}초</td><td>${format(row.combo, 1)}</td><td>${percent(row.slotHp)}</td></tr>`).join("")}
+        </tbody></table></div>
+      </section>`;
+  }
+
   function renderOverview() {
     const current = filteredSessions();
     const waves = getWaveDashboardRows();
@@ -1338,6 +1387,7 @@
           labelLength: 20,
         }))}
       </section>
+      ${renderSkillSummary()}
       ${renderExperimentSummary()}
       ${renderAlertList()}
       ${renderTowerTable(true)}`;
@@ -1608,7 +1658,6 @@
     const biggestGap = rows.filter((row) => row.real.sessions && row.sim.sessions).sort((a, b) => b.gapScore - a.gapScore)[0];
     const scenarioRows = getScenarioSummary();
     const labels = rows.map((row) => row.label);
-    const intervalValue = (value, samples) => samples ? `${format(value, 2)}초` : "-";
     const deltaClass = (value, reverse = false) => {
       const signed = reverse ? -number(value) : number(value);
       return signed > 0.001 ? "positive" : signed < -0.001 ? "negative" : "";
@@ -1650,9 +1699,9 @@
 
       <section class="section">${sectionTitle("실제 로그 숙련도 추정 기준", "완벽한 판정이 아니라 보정용 가벼운 분류")}
         <div class="table-wrap"><table><thead><tr><th>숙련도</th><th>기준 소팅 완성</th><th>참고 소팅 간격</th><th>해석</th></tr></thead><tbody>
-          <tr><td>초보자</td><td>12회 이하 중심</td><td>5.2초 초과 쪽</td><td>정렬 기회가 적거나 판단 간격이 긴 표본</td></tr>
-          <tr><td>중급자</td><td>13~45회 중심</td><td>3.45~5.2초</td><td>정렬 루프를 이해하고 압박 대응이 가능한 표본</td></tr>
-          <tr><td>상급자</td><td>46회 이상 중심</td><td>3.45초 이하 쪽</td><td>정렬 빈도와 클리어/후반 도달이 높은 표본</td></tr>
+          <tr><td>초보자</td><td>18회 이하 중심</td><td>4.45초 초과 쪽</td><td>느리지만 눈앞의 3매칭은 따라가는 표본</td></tr>
+          <tr><td>중급자</td><td>19~60회 중심</td><td>2.85~4.45초</td><td>정렬 루프를 이해하고 압박 대응이 가능한 표본</td></tr>
+          <tr><td>상급자</td><td>61회 이상 중심</td><td>2.85초 이하 쪽</td><td>콤보/위기 대응까지 적극적으로 가져가는 표본</td></tr>
         </tbody></table></div></section>
 
       <section class="section">${sectionTitle("실제 vs 시뮬 보정표", "양수 Δ는 시뮬이 실제보다 높은 값")}

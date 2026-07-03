@@ -251,7 +251,7 @@
 - `MonsterGroupData.11023.*`: `""` -> ``
 - `MonsterData.4111.MonsterName`: `"Monster_Normal_01"` -> ``
 - `MonsterData.4111.MonsterHp`: `150` -> `60`
-- `MonsterData.4111.MonsterAtk`: `1` -> `63`
+- `MonsterData.4111.MonsterAtk`: `1` -> `62`
 - `MonsterData.4111.MonsterAtkSpeed`: `1.35` -> `1.2`
 - `MonsterData.4111.MonsterAtkRange`: `0` -> `1`
 - `MonsterData.4111.MonsterMoveSpeed`: `34` -> `15`
@@ -262,7 +262,7 @@
 - `MonsterData.4121.MonsterType`: `2` -> `1`
 - `MonsterData.4121.ExpTypeID`: `82` -> `81`
 - `MonsterData.4121.MonsterHp`: `135` -> `65`
-- `MonsterData.4121.MonsterAtk`: `1` -> `69`
+- `MonsterData.4121.MonsterAtk`: `1` -> `68`
 - `MonsterData.4121.MonsterAtkSpeed`: `1.1` -> `1.2`
 - `MonsterData.4121.MonsterAtkRange`: `0` -> `1`
 - `MonsterData.4121.MonsterMoveSpeed`: `61` -> `15`
@@ -273,7 +273,7 @@
 - `MonsterData.4131.MonsterType`: `3` -> `1`
 - `MonsterData.4131.ExpTypeID`: `82` -> `81`
 - `MonsterData.4131.MonsterHp`: `720` -> `70`
-- `MonsterData.4131.MonsterAtk`: `1` -> `75`
+- `MonsterData.4131.MonsterAtk`: `1` -> `74`
 - `MonsterData.4131.MonsterAtkSpeed`: `1.55` -> `1.2`
 - `MonsterData.4131.MonsterAtkRange`: `0` -> `1`
 - `MonsterData.4131.MonsterMoveSpeed`: `19` -> `15`

@@ -42,12 +42,15 @@ const checks = [
   [files.dashboard.includes("sessionSimulationVersion") && files.dashboardHtml.includes("filter-sim-version"), "시뮬레이터 버전 필터"],
   [files.dashboardHtml.includes('data-view="calibration"') && files.dashboard.includes("renderCalibration"), "실제 로그/시뮬 보정 화면"],
   [files.dashboard.includes("inferSkillProfile") && files.dashboard.includes("getSkillCalibrationRows"), "실제 로그 숙련도 추정 비교"],
+  [files.dashboardHtml.includes("filter-skill-profile") && files.dashboard.includes("sessionSkillProfile"), "숙련도 필터"],
+  [files.dashboard.includes("renderSkillSummary") && files.dashboard.includes("getSkillSummaryRows"), "초보자/중급자/상급자 핵심 지표"],
   [files.dashboardHtml.includes("filter-stage") && files.dashboardHtml.includes("filter-loadout") && files.dashboard.includes("getLoadoutExperimentRows"), "스테이지/기물 조합 대시보드 필터와 지표"],
   [files.game.includes("sortIntervalAvg") && files.game.includes("sortIntervalStddev"), "실제 소팅 간격 텔레메트리"],
   [files.game.includes("botScenario") && files.telemetryScript.includes("bot_scenario"), "자동 플레이 시나리오 텔레메트리"],
   [files.telemetryScript.includes("bot_stage_key") && files.telemetryScript.includes("bot_loadout_hash"), "자동 플레이 스테이지/기물 조합 텔레메트리"],
   [files.dashboard.includes('kpi("평균 소팅 시도"') && files.dashboard.includes('kpi("소팅 전환율"') && files.dashboard.includes('kpi("평균 소팅 간격"'), "대시보드 소팅 품질 지표"],
-  [files.guide.includes("--scenario") && files.guide.includes("시뮬 보정"), "시뮬레이터 가이드 갱신"],
+  [files.dashboard.includes("const intervalValue =") && files.dashboard.includes("intervalValue(row.interval, row.intervalSamples)"), "대시보드 평균 소팅 간격 포맷터"],
+  [files.guide.includes("--scenario") && files.guide.includes("시뮬 보정") && files.guide.includes("숙련도 기준"), "시뮬레이터 가이드 갱신"],
 ];
 
 let failures = 0;

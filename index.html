@@ -5673,7 +5673,11 @@
 
       function getSpecialProjectileDamage(projectile, enemy) {
         const level = getSpecialProjectileLevel(projectile.id);
-        const flatMultiplier = 1 + level * Math.max(0, numberOr(projectile.flatDamageBonusPerLevel, 0));
+        const flatDamageBonusPerLevel = numberOr(
+          state.mods?.specialProjectileFlatDamageBonusPerLevel?.[projectile.id],
+          numberOr(projectile.flatDamageBonusPerLevel, 0),
+        );
+        const flatMultiplier = 1 + level * Math.max(0, flatDamageBonusPerLevel);
         const flatDamage = Math.max(0, numberOr(projectile.flatDamage, 0)) * flatMultiplier;
         const maxHpDamage =
           Math.max(0, numberOr(enemy?.maxHp, 0)) *
@@ -5727,6 +5731,10 @@
           combo,
         });
         const level = getSpecialProjectileLevel(projectile.id);
+        const flatDamageBonusPerLevel = numberOr(
+          state.mods?.specialProjectileFlatDamageBonusPerLevel?.[projectile.id],
+          numberOr(projectile.flatDamageBonusPerLevel, 0),
+        );
         telemetryEvent("special_projectile_fire", {
           projectileId: projectile.id,
           projectileName: projectile.name || projectile.id,
@@ -5734,7 +5742,7 @@
           level,
           flatDamage: roundTelemetryNumber(
             numberOr(projectile.flatDamage, 0) *
-            (1 + level * numberOr(projectile.flatDamageBonusPerLevel, 0)),
+            (1 + level * flatDamageBonusPerLevel),
           ),
           maxHpDamageRatio: roundTelemetryNumber(projectile.maxHpDamageRatio, 4),
         });
@@ -7120,6 +7128,7 @@
           timedFireRateTimer: 0,
           rerollMaxCharges: config.baseRerollCharges,
           specialProjectileLevels: {},
+          specialProjectileFlatDamageBonusPerLevel: {},
         };
       }
 
@@ -7185,8 +7194,25 @@
         }
       }
 
+      function getStageMaxLevel() {
+        return Math.max(1, Math.floor(numberOr(LEVEL_DATA.stageMaxLevel, 99)));
+      }
+
+      function getLevelDataRow(level) {
+        const targetLevel = Math.max(1, Math.floor(numberOr(level, 1)));
+        return (LEVEL_DATA.levels || []).find((row) => Math.floor(numberOr(row.goalLevel, 0)) === targetLevel) || null;
+      }
+
+      function shouldGrantPerkForLevel(level) {
+        const row = getLevelDataRow(level);
+        const eventType = String(row?.perkEventType ?? "").trim().toLowerCase();
+        if (!eventType) return true;
+        if (["0", "false", "none", "no", "skip", "off", "없음", "미지급"].includes(eventType)) return false;
+        return true;
+      }
+
       function xpNeedForLevel(level) {
-        const maxLevel = Math.max(1, Math.floor(numberOr(LEVEL_DATA.stageMaxLevel, 99)));
+        const maxLevel = getStageMaxLevel();
         const currentLevel = clamp(Math.floor(numberOr(level, 1)), 1, maxLevel);
         const tableCost = numberOr(LEVEL_DATA.xpCostByLevel?.[String(currentLevel)] ?? LEVEL_DATA.xpCostByLevel?.[currentLevel], 0);
         if (tableCost > 0) return Math.max(1, Math.floor(tableCost));
@@ -9195,7 +9221,13 @@
           return;
         }
         if (action.type === "addSpecialProjectileLevel") {
-          addSpecialProjectileLevel(action.projectileId || COMBO_SPECIAL_PROJECTILE_ID, Number(action.amount || 1));
+          const projectileId = action.projectileId || COMBO_SPECIAL_PROJECTILE_ID;
+          const flatDamageBonusPerLevel = Number(action.flatDamageBonusPerLevel);
+          if (Number.isFinite(flatDamageBonusPerLevel) && flatDamageBonusPerLevel > 0) {
+            if (!state.mods.specialProjectileFlatDamageBonusPerLevel) state.mods.specialProjectileFlatDamageBonusPerLevel = {};
+            state.mods.specialProjectileFlatDamageBonusPerLevel[projectileId] = flatDamageBonusPerLevel;
+          }
+          addSpecialProjectileLevel(projectileId, Number(action.amount || 1));
           return;
         }
         if (action.type === "addRerollCharge") {
@@ -9867,17 +9899,32 @@
 
       function checkLevelUp() {
         let gained = 0;
-        while (state.xp >= state.xpNeed) {
+        let gainedPerks = 0;
+        const maxLevel = getStageMaxLevel();
+        while (state.level < maxLevel && state.xp >= state.xpNeed) {
           state.xp -= state.xpNeed;
           state.level += 1;
           state.xpNeed = xpNeedForLevel(state.level);
-          state.pendingLevelUps += 1;
+          if (shouldGrantPerkForLevel(state.level)) {
+            state.pendingLevelUps += 1;
+            gainedPerks += 1;
+          }
           gained += 1;
+        }
+        if (state.level >= maxLevel) {
+          state.level = maxLevel;
+          state.xpNeed = xpNeedForLevel(state.level);
+          state.xp = Math.min(state.xp, Math.max(0, state.xpNeed - 1));
         }
         if (gained > 0) {
           showLevelUpFeedback(gained);
-          showWaveBanner(`정비 특전 +${gained}`);
-          log(`레벨업: 강화 ${state.pendingLevelUps}개 대기`);
+          if (gainedPerks > 0) {
+            showWaveBanner(`정비 특전 +${gainedPerks}`);
+            log(`레벨업: 강화 ${state.pendingLevelUps}개 대기`);
+          } else {
+            showWaveBanner(`레벨 ${state.level}`);
+            log(`레벨업: 특전 이벤트 없음`);
+          }
           renderLevelUpButton();
         }
       }

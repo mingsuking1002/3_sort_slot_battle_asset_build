@@ -1945,7 +1945,7 @@
     PieceUpgradeData: ["UpgradeID"],
     PerkActionData: ["ActionID"],
     PerkLimitData: ["LimitID"],
-    LevelData: ["LevelID"],
+    LevelData: ["GoalLevel"],
     ExpData: ["ExpTypeID"],
   };
 
@@ -3003,7 +3003,13 @@
     } else if (buffType === 4 && buffValue) {
       actions.push({ type: "addSlotMaxHp", amount: buffValue });
     } else if (buffType === 6 && Number(perkRow?.PerkTarget) === 8) {
-      actions.push({ type: "addSpecialProjectileLevel", projectileId: "combo_pierce", amount: 1 });
+      const flatDamageBonusPerLevel = normalizeDesignEffectRatio(buffValue);
+      actions.push({
+        type: "addSpecialProjectileLevel",
+        projectileId: "combo_pierce",
+        amount: 1,
+        ...(flatDamageBonusPerLevel > 0 ? { flatDamageBonusPerLevel } : {}),
+      });
     }
     return actions.filter((action) => action.type && Number(action.amount || 0) !== 0);
   }
@@ -3195,6 +3201,20 @@
             maxLevel: perkRow.MaxLevel,
             perkTarget: perkRow.PerkTarget,
             perkTargetText: perkRow.PerkTargetText,
+            effectMeta: effectRow ? {
+              buffTowerType: effectRow.BuffTowerType,
+              atk: Number(effectRow.ATK) || 0,
+              atkSpeed: Number(effectRow.ATKSpeed) || 0,
+              shotProjCount: Number(effectRow.ShotProjCount) || 0,
+              maxProj: Number(effectRow.MaxProj) || 0,
+              projSize: Number(effectRow.ProjSize) || 0,
+              projPiercing: Number(effectRow.ProjPiercing) || 0,
+              currentHp: normalizeDesignPercentDamage(effectRow.current_hp, 0),
+              buffType: Number(effectRow.BuffType) || 0,
+              buffValue: Number(effectRow.BuffValue) || 0,
+              isOneOff: effectRow.IsOneOff === true || String(effectRow.IsOneOff).toLowerCase() === "true" || Number(effectRow.IsOneOff) === 1,
+              duration: Number(effectRow.Duration) || 0,
+            } : null,
           },
         };
       })
@@ -3208,16 +3228,20 @@
   }
 
   function buildDesignLevelExpRuntimeTables() {
-    const levelRows = [...(designTables.LevelData || [])]
-      .map((row) => ({
+    const levelRowsByGoal = new Map();
+    for (const row of designTables.LevelData || []) {
+      const goalLevel = Math.max(1, Math.floor(Number(row.GoalLevel) || 1));
+      levelRowsByGoal.set(String(goalLevel), {
         levelId: row.LevelID,
-        goalLevel: Math.max(1, Math.floor(Number(row.GoalLevel) || 1)),
+        goalLevel,
         requiredXp: Math.max(0, Math.floor(Number(row.RequiredXP) || 0)),
         isMaxLevel: Number(row.IsMaxLevel) === 1,
         perkEventType: row.PerkEventType || "Normal",
         description: row.Description || "",
         source: "designTables",
-      }))
+      });
+    }
+    const levelRows = [...levelRowsByGoal.values()]
       .sort((a, b) => a.goalLevel - b.goalLevel);
 
     const requiredXpByLevel = {};
@@ -3236,7 +3260,8 @@
       }
     }
 
-    const maxLevelRow = levelRows.find((row) => row.isMaxLevel) || levelRows[levelRows.length - 1] || null;
+    const maxLevelRows = levelRows.filter((row) => row.isMaxLevel);
+    const maxLevelRow = maxLevelRows[maxLevelRows.length - 1] || levelRows[levelRows.length - 1] || null;
     const stageMaxLevel = Math.max(1, Math.floor(Number(maxLevelRow?.goalLevel) || Number(levelData.stageMaxLevel) || 20));
     const firstPlayableRow = levelRows.find((row) => row.goalLevel > 1);
     const xpBase = Math.max(1, Number(xpCostByLevel[1] || firstPlayableRow?.requiredXp || levelData.xpBase || 20));

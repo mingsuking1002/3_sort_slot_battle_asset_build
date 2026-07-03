@@ -192,6 +192,36 @@ function validateBalanceDataMode(playData, html) {
     fail("BALANCE_DATA", "EffectData CurrentHp perk adapter mismatch", JSON.stringify(runtimePercentHpPerk));
   }
 
+  const comboPerkRow = (generated.designTables?.PerkData || []).find((row) => Number(row.IsActive) === 1 && Number(row.PerkTarget) === 8);
+  const comboEffectRow = generatedEffectById.get(String(comboPerkRow?.EffectID));
+  const runtimeComboPerk = (balanceData.perks?.upgrades || []).find((perk) => String(perk.design?.perkId) === String(comboPerkRow?.PerkID));
+  const runtimeComboAction = runtimeComboPerk?.actions?.find((action) => action.type === "addSpecialProjectileLevel");
+  const expectedComboBonus = Math.abs(Number(comboEffectRow?.BuffValue || 0)) > 1
+    ? Number(comboEffectRow?.BuffValue || 0) / 100
+    : Number(comboEffectRow?.BuffValue || 0);
+  if (
+    comboPerkRow
+    && runtimeComboAction?.projectileId === "combo_pierce"
+    && Number(runtimeComboAction?.amount) === 1
+    && Math.abs(Number(runtimeComboAction?.flatDamageBonusPerLevel || 0) - expectedComboBonus) < 0.0001
+  ) {
+    pass("BALANCE_DATA", "EffectData BuffValue feeds combo special projectile growth");
+  } else {
+    fail("BALANCE_DATA", "Combo special projectile perk adapter mismatch", JSON.stringify({ comboPerkRow, comboEffectRow, runtimeComboAction }));
+  }
+
+  const oneOffMismatches = (generated.designTables?.PerkData || [])
+    .filter((row) => Number(row.IsActive) === 1)
+    .map((perkRow) => {
+      const effectRow = generatedEffectById.get(String(perkRow.EffectID));
+      const expected = effectRow?.IsOneOff === true || String(effectRow?.IsOneOff).toLowerCase() === "true" || Number(effectRow?.IsOneOff) === 1;
+      const runtimePerk = (balanceData.perks?.upgrades || []).find((perk) => String(perk.design?.perkId) === String(perkRow.PerkID));
+      return runtimePerk?.design?.effectMeta?.isOneOff === expected ? null : perkRow.PerkID;
+    })
+    .filter(Boolean);
+  if (oneOffMismatches.length === 0) pass("BALANCE_DATA", "EffectData IsOneOff is preserved in runtime perk metadata");
+  else fail("BALANCE_DATA", "EffectData IsOneOff metadata mismatch", oneOffMismatches.join(", "));
+
   const diagnostics = balanceData.balanceDataStatus?.diagnostics || [];
   if (diagnostics.every((item) => item.code && item.perkId)) pass("BALANCE_DATA", "Perk fallback diagnostics are structured", String(diagnostics.length));
   else fail("BALANCE_DATA", "Perk fallback diagnostics malformed", JSON.stringify(diagnostics));
@@ -214,6 +244,18 @@ function validateBalanceDataMode(playData, html) {
     pass("BALANCE_DATA", "Default build enables free levels and permanently hides console");
   } else {
     fail("BALANCE_DATA", "Default balance build flags are incomplete");
+  }
+
+  if (html.includes("function shouldGrantPerkForLevel") && html.includes("state.level < maxLevel")) {
+    pass("BALANCE_DATA", "LevelData max level and PerkEventType feed runtime level-up loop");
+  } else {
+    fail("BALANCE_DATA", "LevelData max level or PerkEventType runtime bridge missing");
+  }
+
+  if (html.includes("specialProjectileFlatDamageBonusPerLevel") && html.includes("flatDamageBonusPerLevel")) {
+    pass("BALANCE_DATA", "Combo special projectile damage uses perk EffectData override");
+  } else {
+    fail("BALANCE_DATA", "Combo special projectile EffectData override missing");
   }
 
   const inspectorControls = [
@@ -1052,6 +1094,11 @@ function validateDesignTables(data) {
     else fail("DESIGN_TABLE", `PerkData ${perk.PerkID} runtime perk missing`, `${expectedId} / ${runtimePerk?.source}`);
     if (runtimePerk?.actions?.length > 0) pass("DESIGN_TABLE", `PerkData ${perk.PerkID} runtime actions exist`);
     else fail("DESIGN_TABLE", `PerkData ${perk.PerkID} runtime actions missing`, expectedId);
+    if (Number(runtimePerk?.design?.maxLevel) === Number(perk.MaxLevel)) pass("DESIGN_TABLE", `PerkData ${perk.PerkID} MaxLevel feeds runtime limit`);
+    else fail("DESIGN_TABLE", `PerkData ${perk.PerkID} MaxLevel mismatch`, `${runtimePerk?.design?.maxLevel} / ${perk.MaxLevel}`);
+    const runtimeRarityKey = designRarityToRuntime((tables.RarityData || []).find((rarity) => String(rarity.PerkRarityID) === String(perk.PerkRarityType)));
+    if (runtimePerk?.rarity === runtimeRarityKey) pass("DESIGN_TABLE", `PerkData ${perk.PerkID} PerkRarityType feeds runtime rarity`);
+    else fail("DESIGN_TABLE", `PerkData ${perk.PerkID} rarity mismatch`, `${runtimePerk?.rarity} / ${runtimeRarityKey}`);
     const actionRows = (tables.PerkActionData || []).filter((action) => String(action.PerkID) === String(perk.PerkID));
     if (actionRows.length > 0) pass("DESIGN_TABLE", `PerkData ${perk.PerkID} actions sourced from PerkActionData`, String(actionRows.length));
     else fail("DESIGN_TABLE", `PerkData ${perk.PerkID} has no PerkActionData rows`, expectedId);
@@ -1087,6 +1134,19 @@ function validateDesignTables(data) {
     const expectedXp = Number((tables.ExpData || []).find((row) => String(row.ExpTypeID) === String(monster.ExpTypeID))?.ExpAmount ?? runtimeMonster?.xp);
     if (Number(runtimeMonster?.xp) === expectedXp) pass("DESIGN_TABLE", `MonsterData ${monster.MonsterID} ExpData XP applied`);
     else fail("DESIGN_TABLE", `MonsterData ${monster.MonsterID} XP mismatch`, `${runtimeMonster?.xp} / ${expectedXp}`);
+    const expectedHpMult = Number(monster.MonsterHp) > 0 ? Number(monster.MonsterHp) / 22 : 1;
+    const expectedDamageMult = Number(monster.MonsterAtk) > 0 ? Number(monster.MonsterAtk) : Number(monster.MonsterType) === 99 ? 0.01 : 1;
+    const expectedSpeedMult = Number(monster.MonsterMoveSpeed) > 0 ? Number(monster.MonsterMoveSpeed) / 34 : Number(monster.MonsterType) === 99 ? 0.01 : 1;
+    const expectedAttackRateMult = Number(monster.MonsterAtkSpeed) > 0 ? Number(monster.MonsterAtkSpeed) / 1.35 : 1;
+    const expectedAttackRange = Number(monster.MonsterAtkRange) > 0 ? Number(monster.MonsterAtkRange) : 0;
+    const statMismatches = [];
+    if (Math.abs(Number(runtimeMonster?.hpMult || 0) - expectedHpMult) > 0.0001) statMismatches.push(`hpMult ${runtimeMonster?.hpMult}/${expectedHpMult}`);
+    if (Math.abs(Number(runtimeMonster?.damageMult || 0) - expectedDamageMult) > 0.0001) statMismatches.push(`damageMult ${runtimeMonster?.damageMult}/${expectedDamageMult}`);
+    if (Math.abs(Number(runtimeMonster?.speedMult || 0) - expectedSpeedMult) > 0.0001) statMismatches.push(`speedMult ${runtimeMonster?.speedMult}/${expectedSpeedMult}`);
+    if (Math.abs(Number(runtimeMonster?.attackRateMult || 0) - expectedAttackRateMult) > 0.0001) statMismatches.push(`attackRateMult ${runtimeMonster?.attackRateMult}/${expectedAttackRateMult}`);
+    if (Math.abs(Number(runtimeMonster?.attackRange || 0) - expectedAttackRange) > 0.0001) statMismatches.push(`attackRange ${runtimeMonster?.attackRange}/${expectedAttackRange}`);
+    if (statMismatches.length === 0) pass("DESIGN_TABLE", `MonsterData ${monster.MonsterID} combat stats feed runtime`);
+    else fail("DESIGN_TABLE", `MonsterData ${monster.MonsterID} combat stat mismatch`, statMismatches.join(", "));
   }
 
   for (const boss of tables.BossData || []) {
@@ -1134,6 +1194,18 @@ function validateDesignTables(data) {
     fail("DESIGN_TABLE", "LevelData runtime rows mismatch", String(data.levelData?.levels?.length || 0));
   }
   const sortedLevelRows = [...(tables.LevelData || [])].sort((a, b) => Number(a.GoalLevel) - Number(b.GoalLevel));
+  const maxLevelRows = sortedLevelRows.filter((row) => Number(row.IsMaxLevel) === 1);
+  const expectedStageMaxLevel = Number((maxLevelRows[maxLevelRows.length - 1] || sortedLevelRows[sortedLevelRows.length - 1] || {}).GoalLevel || 0);
+  if (Number(data.levelData?.stageMaxLevel) === expectedStageMaxLevel) pass("DESIGN_TABLE", "LevelData IsMaxLevel feeds runtime stageMaxLevel", String(expectedStageMaxLevel));
+  else fail("DESIGN_TABLE", "LevelData stageMaxLevel mismatch", `${data.levelData?.stageMaxLevel} / ${expectedStageMaxLevel}`);
+  const levelEventMismatches = sortedLevelRows
+    .filter((row) => {
+      const runtimeRow = (data.levelData?.levels || []).find((item) => Number(item.goalLevel) === Number(row.GoalLevel));
+      return String(runtimeRow?.perkEventType || "") !== String(row.PerkEventType || "Normal");
+    })
+    .map((row) => row.GoalLevel);
+  if (levelEventMismatches.length === 0) pass("DESIGN_TABLE", "LevelData PerkEventType is exposed at runtime");
+  else fail("DESIGN_TABLE", "LevelData PerkEventType mismatch", levelEventMismatches.join(", "));
   for (let index = 0; index < sortedLevelRows.length - 1; index += 1) {
     const from = sortedLevelRows[index];
     const to = sortedLevelRows[index + 1];
