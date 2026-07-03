@@ -276,6 +276,12 @@ function simulationEventRow(event) {
     data_source: event.dataSource || "simulation",
     bot_profile: event.botProfile || "",
     bot_strategy: event.botStrategy || "",
+    bot_scenario: event.botScenario || event.payload?.simulation?.botScenario || "",
+    bot_stage_key: event.botStageKey || event.payload?.simulation?.botStageKey || "",
+    bot_piece_ids: event.botPieceIds || event.payload?.simulation?.botPieceIds || "",
+    bot_piece_types: event.botPieceTypes || event.payload?.simulation?.botPieceTypes || "",
+    bot_piece_levels: event.botPieceLevels || event.payload?.simulation?.botPieceLevels || "",
+    bot_loadout_hash: event.botLoadoutHash || event.payload?.simulation?.botLoadoutHash || "",
     simulation_version: event.simulationVersion || "",
     simulation_seed: event.simulationSeed ?? "",
     simulation_speed: event.simulationSpeed ?? "",
@@ -283,6 +289,8 @@ function simulationEventRow(event) {
     decision_delay_stddev: event.decisionDelayStddev ?? "",
     mistake_count: event.mistakeCount ?? "",
     invalid_sort_attempts: event.invalidSortAttempts ?? "",
+    sort_interval_avg: event.sortIntervalAvg ?? "",
+    sort_interval_stddev: event.sortIntervalStddev ?? "",
     payload_json: JSON.stringify(event.payload || {}),
   };
 }
@@ -304,6 +312,7 @@ function simulationToLogs(payload) {
       rerolls: event.rerolls ?? "",
       perk_choices: event.perkChoices ?? "",
       selected_pieces: (detail.loadout || []).map((piece) => piece.name || piece.pieceKey).join(" | "),
+      selected_piece_keys: (detail.loadout || []).map((piece) => piece.pieceKey).filter(Boolean).join(", "),
       picked_perks: (detail.pickedPerks || []).map((perk) => perk.title || perk.id).join(" | "),
       tower_composition: (detail.towerComposition || []).map((piece) => `${piece.pieceName || piece.pieceKey}: ${piece.count}`).join(" | "),
     };

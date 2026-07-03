@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>기물 ID 파생 이름 확인 도구</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #161923;
+    --panel-2: #1d212e;
+    --border: #2a2f3d;
+    --text: #e6e8ee;
+    --text-dim: #8b90a3;
+    --accent: #5b8cff;
+    --ok: #33c17a;
+    --ok-bg: rgba(51, 193, 122, 0.12);
+    --warn: #ff5c72;
+    --warn-bg: rgba(255, 92, 114, 0.12);
+    --mono: "JetBrains Mono", "SFMono-Regular", Consolas, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Pretendard", sans-serif;
+    padding: 28px;
+    line-height: 1.5;
+  }
+  h1 { font-size: 19px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { color: var(--text-dim); font-size: 13px; margin-bottom: 20px; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .drop-row { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end; }
+  .field { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 240px; }
+  .field label { font-size: 12px; color: var(--text-dim); }
+  .field .hint { font-size: 11px; color: var(--text-dim); opacity: 0.75; }
+  input[type="file"] {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-size: 12px;
+    width: 100%;
+  }
+  button {
+    background: var(--accent);
+    color: #0b0d12;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button.secondary {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  #status { margin-top: 12px; font-size: 12.5px; font-family: var(--mono); white-space: pre-wrap; }
+  #status.err { color: var(--warn); }
+  #status.ok { color: var(--ok); }
+
+  .summary { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .chip {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12.5px;
+    font-family: var(--mono);
+  }
+  .chip.warn { color: var(--warn); border-color: rgba(255,92,114,0.4); }
+  .chip.ok { color: var(--ok); border-color: rgba(51,193,122,0.4); }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .tab {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 12.5px;
+    cursor: pointer;
+    color: var(--text-dim);
+  }
+  .tab.active { color: var(--text); border-color: var(--accent); background: rgba(91,140,255,0.1); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; font-family: var(--mono); }
+  thead th {
+    text-align: left;
+    color: var(--text-dim);
+    font-weight: 500;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: var(--panel);
+  }
+  tbody td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: top; }
+  tbody tr:hover { background: rgba(255,255,255,0.02); }
+  tbody tr.warn-row { background: var(--warn-bg); }
+  tbody tr.warn-row:hover { background: rgba(255,92,114,0.18); }
+  .derived-key { color: var(--accent); font-weight: 600; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge.ok { background: var(--ok-bg); color: var(--ok); }
+  .badge.warn { background: var(--warn-bg); color: var(--warn); }
+  .reason { color: var(--text-dim); font-size: 11.5px; margin-top: 2px; }
+  .table-wrap { max-height: 480px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+  .filter-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+  .filter-row input[type="text"] {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-size: 12.5px;
+    font-family: var(--mono);
+    flex: 1;
+  }
+  .filter-row label { font-size: 12px; color: var(--text-dim); display: flex; align-items: center; gap: 6px; }
+
+  .selector-panel { display: none; }
+  .selector-panel.show { display: block; }
+  textarea {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    padding: 12px;
+    min-height: 80px;
+    resize: vertical;
+  }
+  .copy-row { display: flex; gap: 10px; margin-top: 8px; align-items: center; }
+  .copy-msg { font-size: 12px; color: var(--ok); opacity: 0; transition: opacity 0.2s; }
+  .copy-msg.show { opacity: 1; }
+  #emptyHint { color: var(--text-dim); font-size: 13px; padding: 30px; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>기물 ID 파생 이름 확인 도구</h1>
+<div class="sub">PieceID(숫자)가 실제로 어떤 문자열 key(<span style="color:var(--accent)">basic_1</span> 같은)로 자동 변환되는지 game-data.js의 실제 로직을 그대로 돌려서 확인합니다. 확인이 필요한 항목은 빨간색으로 표시돼요.</div>
+
+<div class="panel">
+  <div class="drop-row">
+    <div class="field">
+      <label>game-data.js (필수)</label>
+      <input type="file" id="fileGameData" accept=".js" />
+      <span class="hint">기물/타워 기본 정의 + 파생 로직이 담긴 원본 스크립트</span>
+    </div>
+    <div class="field">
+      <label>game-data_generated.js (선택)</label>
+      <input type="file" id="fileGenerated" accept=".js" />
+      <span class="hint">있으면 시트에서 동기화된 최신 상태 기준으로 분석</span>
+    </div>
+    <button id="analyzeBtn">분석하기</button>
+  </div>
+  <div id="status"></div>
+</div>
+
+<div id="results" style="display:none;">
+  <div class="summary" id="summaryChips"></div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="pieces">기물 (PieceData)</div>
+    <div class="tab" data-tab="towers">타워 (TowerData)</div>
+    <div class="tab" data-tab="picker">선택 코드 생성</div>
+  </div>
+
+  <div class="panel" id="tabPieces">
+    <div class="filter-row">
+      <input type="text" id="filterPieces" placeholder="PieceID, 이름, 파생 key로 검색..." />
+      <label><input type="checkbox" id="onlyWarnPieces" /> 확인 필요한 것만</label>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:28px;"></th>
+            <th>PieceID</th>
+            <th>PieceName</th>
+            <th>PieceType</th>
+            <th>Lv</th>
+            <th>ConnectTower</th>
+            <th>파생된 Key</th>
+            <th>상태</th>
+          </tr>
+        </thead>
+        <tbody id="piecesBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel" id="tabTowers" style="display:none;">
+    <div class="filter-row">
+      <input type="text" id="filterTowers" placeholder="TowerID, 파생 key로 검색..." />
+      <label><input type="checkbox" id="onlyWarnTowers" /> 확인 필요한 것만</label>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>TowerID</th>
+            <th>TowerType</th>
+            <th>Lv</th>
+            <th>파생된 Key</th>
+            <th>상태</th>
+          </tr>
+        </thead>
+        <tbody id="towersBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel" id="tabPicker" style="display:none;">
+    <div class="sub" style="margin-bottom:12px;">아래 표에서 원하는 기물을 체크하면 <span class="derived-key">selectablePieceKeys</span> / <span class="derived-key">--pieces</span>에 바로 붙여넣을 수 있는 코드를 만들어줘요.</div>
+    <div class="table-wrap" style="max-height:360px;">
+      <table>
+        <thead><tr><th style="width:28px;"></th><th>PieceID</th><th>이름</th><th>파생 Key</th></tr></thead>
+        <tbody id="pickerBody"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:14px;">
+      <label style="font-size:12px;color:var(--text-dim);">game-data.js의 selectablePieceKeys용:</label>
+      <textarea id="outSelectable" readonly></textarea>
+    </div>
+    <div style="margin-top:10px;">
+      <label style="font-size:12px;color:var(--text-dim);">--pieces 커맨드라인용:</label>
+      <textarea id="outCli" readonly style="min-height:44px;"></textarea>
+    </div>
+    <div class="copy-row">
+      <button class="secondary" id="copySelectable">selectablePieceKeys 복사</button>
+      <button class="secondary" id="copyCli">--pieces 값 복사</button>
+      <span class="copy-msg" id="copyMsg">복사됨!</span>
+    </div>
+  </div>
+</div>
+
+<div id="emptyHint">game-data.js 파일을 선택하고 분석하기를 눌러주세요.</div>
+
+<script>
+const KNOWN_TYPE_ALIASES = new Set([
+  "1","ar","basic","2","scatter","shotgun","3","ranger","lange","range","ranged","sniper",
+  "4","breaker","tank","tanker","5","blast","area","wide","explode","6","support","buffer","heal"
+]);
+
+function readFile(inputEl) {
+  return new Promise((resolve, reject) => {
+    const file = inputEl.files && inputEl.files[0];
+    if (!file) { resolve(null); return; }
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error(`${file.name} 읽기 실패`));
+    reader.readAsText(file, "utf-8");
+  });
+}
+
+function runDataScript(code, sandbox) {
+  const fn = new Function("window", code);
+  fn(sandbox);
+}
+
+function setStatus(message, kind) {
+  const el = document.getElementById("status");
+  el.textContent = message;
+  el.className = kind || "";
+}
+
+let PIECE_ROWS = [];
+let TOWER_ROWS = [];
+
+async function analyze() {
+  const btn = document.getElementById("analyzeBtn");
+  btn.disabled = true;
+  setStatus("분석 중...", "");
+  try {
+    const gameDataCode = await readFile(document.getElementById("fileGameData"));
+    if (!gameDataCode) throw new Error("game-data.js 파일을 선택해주세요.");
+    const generatedCode = await readFile(document.getElementById("fileGenerated"));
+
+    const sandbox = {};
+    if (generatedCode) runDataScript(generatedCode, sandbox);
+    runDataScript(gameDataCode, sandbox);
+
+    const GAME_DATA = sandbox.GAME_DATA;
+    if (!GAME_DATA || !GAME_DATA.designTables) {
+      throw new Error("GAME_DATA.designTables를 찾지 못했습니다. 파일이 맞는지 확인해주세요.");
+    }
+
+    const pieceRows = GAME_DATA.designTables.PieceData || [];
+    const towerRows = GAME_DATA.designTables.TowerData || [];
+    const pieceKeyMap = (GAME_DATA.designRuntimeKeyMap && GAME_DATA.designRuntimeKeyMap.PieceData) || {};
+    const towerKeyMap = (GAME_DATA.designRuntimeKeyMap && GAME_DATA.designRuntimeKeyMap.TowerData) || {};
+
+    PIECE_ROWS = buildPieceRows(pieceRows, towerRows, pieceKeyMap);
+    TOWER_ROWS = buildTowerRows(towerRows, towerKeyMap);
+
+    const activeNote = GAME_DATA.balanceDataStatus && GAME_DATA.balanceDataStatus.active
+      ? `시트 동기화 데이터 적용됨 (${GAME_DATA.balanceDataStatus.generatedAt || ""})`
+      : "임베디드(내장) 데이터만 사용됨 — generated 파일을 같이 올리면 시트 반영본으로 분석해요.";
+    setStatus(`OK · PieceData ${pieceRows.length}행 / TowerData ${towerRows.length}행 · ${activeNote}`, "ok");
+
+    document.getElementById("results").style.display = "block";
+    document.getElementById("emptyHint").style.display = "none";
+    renderSummary();
+    renderPieces();
+    renderTowers();
+    renderPicker();
+  } catch (error) {
+    console.error(error);
+    setStatus(`오류: ${error.message}`, "err");
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function buildPieceRows(pieceRows, towerRows, pieceKeyMap) {
+  const towerIdSet = new Set(towerRows.map((row) => String(row.TowerID)));
+  const derivedCount = {};
+  const prelim = pieceRows.map((row) => {
+    const derived = pieceKeyMap[row.PieceID] || pieceKeyMap[String(row.PieceID)] || `piece_${row.PieceID}`;
+    derivedCount[derived] = (derivedCount[derived] || 0) + 1;
+    return { row, derived };
+  });
+  return prelim.map(({ row, derived }) => {
+    const reasons = [];
+    const typeNorm = String(row.PieceType || "").toLowerCase();
+    if (!KNOWN_TYPE_ALIASES.has(typeNorm)) {
+      reasons.push(`새로운 PieceType "${row.PieceType}" — 등록된 타입 목록에 없어서 파생 key가 원본값 그대로 쓰였을 수 있어요.`);
+    }
+    if (!towerIdSet.has(String(row.ConnectTower))) {
+      reasons.push(`ConnectTower(${row.ConnectTower})에 해당하는 TowerData 행이 없어요.`);
+    }
+    if (derivedCount[derived] > 1) {
+      reasons.push(`다른 PieceID와 파생 key("${derived}")가 겹쳐요.`);
+    }
+    return {
+      pieceId: row.PieceID,
+      pieceName: row.PieceName || "",
+      pieceType: row.PieceType,
+      pieceLv: row.PieceLv,
+      connectTower: row.ConnectTower,
+      derived,
+      warn: reasons.length > 0,
+      reasons,
+    };
+  });
+}
+
+function buildTowerRows(towerRows, towerKeyMap) {
+  const derivedCount = {};
+  const prelim = towerRows.map((row) => {
+    const derived = towerKeyMap[row.TowerID] || towerKeyMap[String(row.TowerID)] || `tower_${row.TowerID}`;
+    derivedCount[derived] = (derivedCount[derived] || 0) + 1;
+    return { row, derived };
+  });
+  return prelim.map(({ row, derived }) => {
+    const reasons = [];
+    if (derivedCount[derived] > 1) {
+      reasons.push(`다른 TowerID와 파생 key("${derived}")가 겹쳐요.`);
+    }
+    return {
+      towerId: row.TowerID,
+      towerType: row.TowerType,
+      towerLv: row.TowerLv,
+      derived,
+      warn: reasons.length > 0,
+      reasons,
+    };
+  });
+}
+
+function renderSummary() {
+  const warnCount = PIECE_ROWS.filter((r) => r.warn).length;
+  const okCount = PIECE_ROWS.length - warnCount;
+  const groups = new Set(PIECE_ROWS.map((r) => r.pieceType));
+  const el = document.getElementById("summaryChips");
+  el.innerHTML = `
+    <div class="chip">기물 총 ${PIECE_ROWS.length}개</div>
+    <div class="chip">타입 ${groups.size}종</div>
+    <div class="chip ok">정상 ${okCount}개</div>
+    <div class="chip ${warnCount ? "warn" : ""}">확인 필요 ${warnCount}개</div>
+  `;
+}
+
+function renderPieces() {
+  const filterVal = document.getElementById("filterPieces").value.trim().toLowerCase();
+  const onlyWarn = document.getElementById("onlyWarnPieces").checked;
+  const body = document.getElementById("piecesBody");
+  body.innerHTML = "";
+  PIECE_ROWS
+    .filter((r) => !onlyWarn || r.warn)
+    .filter((r) => !filterVal || [r.pieceId, r.pieceName, r.derived, r.pieceType].join(" ").toLowerCase().includes(filterVal))
+    .forEach((r) => {
+      const tr = document.createElement("tr");
+      if (r.warn) tr.className = "warn-row";
+      tr.innerHTML = `
+        <td><input type="checkbox" class="row-check" data-id="${r.pieceId}" ${r.warn ? "" : ""}></td>
+        <td>${r.pieceId}</td>
+        <td>${escapeHtml(r.pieceName)}</td>
+        <td>${escapeHtml(String(r.pieceType))}</td>
+        <td>${r.pieceLv}</td>
+        <td>${r.connectTower}</td>
+        <td class="derived-key">${escapeHtml(r.derived)}</td>
+        <td>
+          ${r.warn
+            ? `<span class="badge warn">필요!</span><div class="reason">${r.reasons.map(escapeHtml).join("<br/>")}</div>`
+            : `<span class="badge ok">OK</span>`}
+        </td>
+      `;
+      body.appendChild(tr);
+    });
+}
+
+function renderTowers() {
+  const filterVal = document.getElementById("filterTowers").value.trim().toLowerCase();
+  const onlyWarn = document.getElementById("onlyWarnTowers").checked;
+  const body = document.getElementById("towersBody");
+  body.innerHTML = "";
+  TOWER_ROWS
+    .filter((r) => !onlyWarn || r.warn)
+    .filter((r) => !filterVal || [r.towerId, r.derived].join(" ").toLowerCase().includes(filterVal))
+    .forEach((r) => {
+      const tr = document.createElement("tr");
+      if (r.warn) tr.className = "warn-row";
+      tr.innerHTML = `
+        <td>${r.towerId}</td>
+        <td>${escapeHtml(String(r.towerType))}</td>
+        <td>${r.towerLv}</td>
+        <td class="derived-key">${escapeHtml(r.derived)}</td>
+        <td>${r.warn
+          ? `<span class="badge warn">필요!</span><div class="reason">${r.reasons.map(escapeHtml).join("<br/>")}</div>`
+          : `<span class="badge ok">OK</span>`}</td>
+      `;
+      body.appendChild(tr);
+    });
+}
+
+function renderPicker() {
+  const body = document.getElementById("pickerBody");
+  body.innerHTML = "";
+  PIECE_ROWS.forEach((r) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input type="checkbox" class="picker-check" data-derived="${escapeHtml(r.derived)}"></td>
+      <td>${r.pieceId}</td>
+      <td>${escapeHtml(r.pieceName)}</td>
+      <td class="derived-key">${escapeHtml(r.derived)}</td>
+    `;
+    body.appendChild(tr);
+  });
+  document.querySelectorAll(".picker-check").forEach((cb) => cb.addEventListener("change", updatePickerOutput));
+  updatePickerOutput();
+}
+
+function updatePickerOutput() {
+  const checked = Array.from(document.querySelectorAll(".picker-check:checked")).map((cb) => cb.dataset.derived);
+  document.getElementById("outSelectable").value = checked.length
+    ? `selectablePieceKeys: [${checked.map((k) => `"${k}"`).join(", ")}],`
+    : "";
+  document.getElementById("outCli").value = checked.length ? `--pieces ${checked.join(",")}` : "";
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+}
+
+function flashCopy() {
+  const msg = document.getElementById("copyMsg");
+  msg.classList.add("show");
+  setTimeout(() => msg.classList.remove("show"), 1200);
+}
+
+document.getElementById("analyzeBtn").addEventListener("click", analyze);
+document.getElementById("filterPieces").addEventListener("input", renderPieces);
+document.getElementById("onlyWarnPieces").addEventListener("change", renderPieces);
+document.getElementById("filterTowers").addEventListener("input", renderTowers);
+document.getElementById("onlyWarnTowers").addEventListener("change", renderTowers);
+
+document.querySelectorAll(".tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById("tabPieces").style.display = tab.dataset.tab === "pieces" ? "block" : "none";
+    document.getElementById("tabTowers").style.display = tab.dataset.tab === "towers" ? "block" : "none";
+    document.getElementById("tabPicker").style.display = tab.dataset.tab === "picker" ? "block" : "none";
+  });
+});
+
+document.getElementById("copySelectable").addEventListener("click", () => {
+  const text = document.getElementById("outSelectable").value;
+  if (text) navigator.clipboard.writeText(text).then(flashCopy);
+});
+document.getElementById("copyCli").addEventListener("click", () => {
+  const text = document.getElementById("outCli").value;
+  if (text) navigator.clipboard.writeText(text).then(flashCopy);
+});
+</script>
+</body>
+</html>

@@ -7,7 +7,7 @@
   "dataProfile": "balance",
   "valid": true,
   "runtimeEnabled": true,
-  "generatedAt": "2026-07-02T17:39:46.569Z",
+  "generatedAt": "2026-07-03T05:47:10.578Z",
   "sourceMode": "google-sheet-overrides",
   "spreadsheetId": "13GmSWRxvcBWgMDpW0ypgrPBkkb3zXRAefZBM2W-YA0g",
   "csvTables": [],
@@ -50,8 +50,8 @@
         "MonsterGroupID_Normal": 11011,
         "MonsterGroupID_Speedy": 11012,
         "MonsterGroupID_Tanker": 11013,
-        "WaveReward": 5,
-        "StageReward": 5,
+        "WaveReward": 100,
+        "StageReward": 10,
         "WaveDuration": ""
       },
       {
@@ -60,8 +60,8 @@
         "MonsterGroupID_Normal": 11021,
         "MonsterGroupID_Speedy": 11022,
         "MonsterGroupID_Tanker": 11023,
-        "WaveReward": 5,
-        "StageReward": 5,
+        "WaveReward": 100,
+        "StageReward": 20,
         "WaveDuration": ""
       },
       {
@@ -70,8 +70,8 @@
         "MonsterGroupID_Normal": 11031,
         "MonsterGroupID_Speedy": 11032,
         "MonsterGroupID_Tanker": 11033,
-        "WaveReward": 5,
-        "StageReward": 5,
+        "WaveReward": 120,
+        "StageReward": 30,
         "WaveDuration": ""
       },
       {
@@ -80,8 +80,8 @@
         "MonsterGroupID_Normal": 11041,
         "MonsterGroupID_Speedy": 11042,
         "MonsterGroupID_Tanker": 11043,
-        "WaveReward": 5,
-        "StageReward": 5,
+        "WaveReward": 120,
+        "StageReward": 40,
         "WaveDuration": ""
       },
       {
@@ -90,8 +90,8 @@
         "MonsterGroupID_Normal": 11051,
         "MonsterGroupID_Speedy": 11052,
         "MonsterGroupID_Tanker": 11053,
-        "WaveReward": 5,
-        "StageReward": 5,
+        "WaveReward": 150,
+        "StageReward": 80,
         "WaveDuration": ""
       },
       {
@@ -100,8 +100,8 @@
         "MonsterGroupID_Normal": 11061,
         "MonsterGroupID_Speedy": 11062,
         "MonsterGroupID_Tanker": 11063,
-        "WaveReward": 5,
-        "StageReward": 5,
+        "WaveReward": 240,
+        "StageReward": 100,
         "WaveDuration": ""
       },
       {
@@ -110,8 +110,8 @@
         "MonsterGroupID_Normal": 11071,
         "MonsterGroupID_Speedy": 11072,
         "MonsterGroupID_Tanker": 11073,
-        "WaveReward": 5,
-        "StageReward": 5,
+        "WaveReward": 260,
+        "StageReward": 110,
         "WaveDuration": ""
       },
       {
@@ -120,8 +120,8 @@
         "MonsterGroupID_Normal": 11081,
         "MonsterGroupID_Speedy": 11082,
         "MonsterGroupID_Tanker": 11083,
-        "WaveReward": 5,
-        "StageReward": 5,
+        "WaveReward": 280,
+        "StageReward": 120,
         "WaveDuration": ""
       },
       {
@@ -130,8 +130,8 @@
         "MonsterGroupID_Normal": 11091,
         "MonsterGroupID_Speedy": 11092,
         "MonsterGroupID_Tanker": 11093,
-        "WaveReward": 5,
-        "StageReward": 5,
+        "WaveReward": 300,
+        "StageReward": 130,
         "WaveDuration": ""
       },
       {
@@ -140,8 +140,8 @@
         "MonsterGroupID_Normal": 11101,
         "MonsterGroupID_Speedy": 11102,
         "MonsterGroupID_Tanker": 11103,
-        "WaveReward": 5,
-        "StageReward": 5,
+        "WaveReward": 350,
+        "StageReward": 160,
         "WaveDuration": ""
       },
       {
@@ -150,8 +150,8 @@
         "MonsterGroupID_Normal": 11111,
         "MonsterGroupID_Speedy": 11112,
         "MonsterGroupID_Tanker": 11113,
-        "WaveReward": 5,
-        "StageReward": 5,
+        "WaveReward": 450,
+        "StageReward": 180,
         "WaveDuration": ""
       },
       {
@@ -160,8 +160,8 @@
         "MonsterGroupID_Normal": 11121,
         "MonsterGroupID_Speedy": 11122,
         "MonsterGroupID_Tanker": 11123,
-        "WaveReward": 5,
-        "StageReward": 5,
+        "WaveReward": 500,
+        "StageReward": 200,
         "WaveDuration": ""
       },
       {
@@ -170,8 +170,8 @@
         "MonsterGroupID_Normal": 11131,
         "MonsterGroupID_Speedy": 11132,
         "MonsterGroupID_Tanker": 11133,
-        "WaveReward": 5,
-        "StageReward": 5,
+        "WaveReward": 550,
+        "StageReward": 220,
         "WaveDuration": ""
       },
       {
@@ -180,8 +180,8 @@
         "MonsterGroupID_Normal": 11141,
         "MonsterGroupID_Speedy": 11142,
         "MonsterGroupID_Tanker": 11143,
-        "WaveReward": 5,
-        "StageReward": 5,
+        "WaveReward": 600,
+        "StageReward": 250,
         "WaveDuration": ""
       },
       {
@@ -190,8 +190,8 @@
         "MonsterGroupID_Normal": 11151,
         "MonsterGroupID_Speedy": 11152,
         "MonsterGroupID_Tanker": 11153,
-        "WaveReward": 5,
-        "StageReward": 5,
+        "WaveReward": 700,
+        "StageReward": 300,
         "WaveDuration": ""
       }
     ],
@@ -606,750 +606,750 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 20,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4012,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 20,
-        "MonsterAtk": 2,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4013,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 20,
-        "MonsterAtk": 3,
+        "MonsterAtk": 7,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4021,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 25,
-        "MonsterAtk": 4,
+        "MonsterAtk": 9,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4022,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 25,
-        "MonsterAtk": 5,
+        "MonsterAtk": 11,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4023,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 25,
-        "MonsterAtk": 6,
+        "MonsterAtk": 13,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4031,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 20,
-        "MonsterAtk": 7,
+        "MonsterAtk": 15,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4032,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 20,
-        "MonsterAtk": 8,
+        "MonsterAtk": 17,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4033,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 20,
-        "MonsterAtk": 9,
+        "MonsterAtk": 19,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4041,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 25,
-        "MonsterAtk": 10,
+        "MonsterAtk": 21,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4042,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 25,
-        "MonsterAtk": 11,
+        "MonsterAtk": 23,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4043,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 25,
-        "MonsterAtk": 12,
+        "MonsterAtk": 25,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4051,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 30,
-        "MonsterAtk": 13,
+        "MonsterAtk": 27,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4052,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 30,
-        "MonsterAtk": 14,
+        "MonsterAtk": 29,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4053,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 30,
-        "MonsterAtk": 15,
+        "MonsterAtk": 31,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4061,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 35,
-        "MonsterAtk": 16,
+        "MonsterAtk": 33,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4062,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 35,
-        "MonsterAtk": 17,
+        "MonsterAtk": 35,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4063,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 35,
-        "MonsterAtk": 18,
+        "MonsterAtk": 37,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4071,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 40,
-        "MonsterAtk": 19,
+        "MonsterAtk": 39,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4072,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 40,
-        "MonsterAtk": 20,
+        "MonsterAtk": 41,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4073,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 40,
-        "MonsterAtk": 21,
+        "MonsterAtk": 43,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4081,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 45,
-        "MonsterAtk": 22,
+        "MonsterAtk": 45,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4082,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 45,
-        "MonsterAtk": 23,
+        "MonsterAtk": 47,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4083,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 45,
-        "MonsterAtk": 24,
+        "MonsterAtk": 49,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4091,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 50,
-        "MonsterAtk": 25,
+        "MonsterAtk": 51,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4092,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 50,
-        "MonsterAtk": 26,
+        "MonsterAtk": 53,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4093,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 50,
-        "MonsterAtk": 27,
+        "MonsterAtk": 55,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4101,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 55,
-        "MonsterAtk": 28,
+        "MonsterAtk": 57,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4102,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 55,
-        "MonsterAtk": 29,
+        "MonsterAtk": 59,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4103,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 55,
-        "MonsterAtk": 30,
+        "MonsterAtk": 61,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4111,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 60,
-        "MonsterAtk": 31,
+        "MonsterAtk": 63,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4112,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 60,
-        "MonsterAtk": 32,
+        "MonsterAtk": 65,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4113,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 60,
-        "MonsterAtk": 33,
+        "MonsterAtk": 67,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4121,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 65,
-        "MonsterAtk": 34,
+        "MonsterAtk": 69,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4122,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 65,
-        "MonsterAtk": 35,
+        "MonsterAtk": 71,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4123,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 65,
-        "MonsterAtk": 36,
+        "MonsterAtk": 73,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4131,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 70,
-        "MonsterAtk": 37,
+        "MonsterAtk": 75,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4132,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 70,
-        "MonsterAtk": 38,
+        "MonsterAtk": 77,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4133,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 70,
-        "MonsterAtk": 39,
+        "MonsterAtk": 79,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4141,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 75,
-        "MonsterAtk": 40,
+        "MonsterAtk": 81,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4142,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 75,
-        "MonsterAtk": 41,
+        "MonsterAtk": 83,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4143,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 75,
-        "MonsterAtk": 42,
+        "MonsterAtk": 85,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4151,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 80,
-        "MonsterAtk": 43,
+        "MonsterAtk": 87,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4152,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 80,
-        "MonsterAtk": 44,
+        "MonsterAtk": 89,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4153,
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 80,
-        "MonsterAtk": 45,
+        "MonsterAtk": 91,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4014,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 10,
-        "MonsterAtk": 1,
+        "MonsterAtk": 8,
         "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 3
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4024,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 15,
-        "MonsterAtk": 1,
+        "MonsterAtk": 14,
         "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 3
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4034,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 20,
-        "MonsterAtk": 1,
+        "MonsterAtk": 20,
         "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 3
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4044,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 25,
-        "MonsterAtk": 1,
+        "MonsterAtk": 26,
         "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 3
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4054,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 30,
-        "MonsterAtk": 1,
+        "MonsterAtk": 32,
         "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 3
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4064,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 35,
-        "MonsterAtk": 4,
+        "MonsterAtk": 38,
         "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 3
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4074,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 40,
-        "MonsterAtk": 4,
+        "MonsterAtk": 44,
         "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 3
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4084,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 45,
-        "MonsterAtk": 4,
+        "MonsterAtk": 50,
         "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 3
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4094,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 50,
-        "MonsterAtk": 4,
+        "MonsterAtk": 56,
         "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 3
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4104,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 55,
-        "MonsterAtk": 4,
+        "MonsterAtk": 62,
         "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 3
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4114,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 60,
-        "MonsterAtk": 7,
+        "MonsterAtk": 68,
         "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 3
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4124,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 65,
-        "MonsterAtk": 7,
+        "MonsterAtk": 74,
         "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 3
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4134,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 70,
-        "MonsterAtk": 7,
+        "MonsterAtk": 80,
         "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 3
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4144,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 75,
-        "MonsterAtk": 7,
+        "MonsterAtk": 86,
         "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 3
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4154,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 80,
-        "MonsterAtk": 7,
+        "MonsterAtk": 92,
         "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 3
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4015,
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 50,
-        "MonsterAtk": 5,
+        "MonsterAtk": 15,
         "MonsterAtkSpeed": 0.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.5
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4025,
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 65,
-        "MonsterAtk": 12,
-        "MonsterAtkSpeed": 0.7,
+        "MonsterAtk": 30,
+        "MonsterAtkSpeed": "",
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.5
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4035,
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 80,
-        "MonsterAtk": 19,
+        "MonsterAtk": 45,
         "MonsterAtkSpeed": 0.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.5
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4045,
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 95,
-        "MonsterAtk": 26,
+        "MonsterAtk": 60,
         "MonsterAtkSpeed": 0.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.5
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4055,
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 110,
-        "MonsterAtk": 33,
+        "MonsterAtk": 75,
         "MonsterAtkSpeed": 0.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.5
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4065,
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 125,
-        "MonsterAtk": 40,
+        "MonsterAtk": 90,
         "MonsterAtkSpeed": 0.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.5
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4075,
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 140,
-        "MonsterAtk": 47,
+        "MonsterAtk": 105,
         "MonsterAtkSpeed": 0.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.5
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4085,
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 155,
-        "MonsterAtk": 54,
+        "MonsterAtk": 120,
         "MonsterAtkSpeed": 0.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.5
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4095,
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 170,
-        "MonsterAtk": 61,
+        "MonsterAtk": 135,
         "MonsterAtkSpeed": 0.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.5
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4105,
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 185,
-        "MonsterAtk": 68,
+        "MonsterAtk": 150,
         "MonsterAtkSpeed": 0.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.5
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4115,
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 200,
-        "MonsterAtk": 75,
+        "MonsterAtk": 165,
         "MonsterAtkSpeed": 0.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.5
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4125,
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 215,
-        "MonsterAtk": 82,
+        "MonsterAtk": 180,
         "MonsterAtkSpeed": 0.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.5
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4135,
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 230,
-        "MonsterAtk": 89,
+        "MonsterAtk": 195,
         "MonsterAtkSpeed": 0.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.5
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4145,
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 245,
-        "MonsterAtk": 96,
+        "MonsterAtk": 210,
         "MonsterAtkSpeed": 0.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.5
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4155,
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 260,
-        "MonsterAtk": 103,
+        "MonsterAtk": 225,
         "MonsterAtkSpeed": 0.7,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.5
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4901,
@@ -1359,7 +1359,7 @@
         "MonsterAtk": 40,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4902,
@@ -1369,7 +1369,7 @@
         "MonsterAtk": 40,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4903,
@@ -1379,7 +1379,7 @@
         "MonsterAtk": 40,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4904,
@@ -1389,7 +1389,7 @@
         "MonsterAtk": 40,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4905,
@@ -1399,7 +1399,7 @@
         "MonsterAtk": 40,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4906,
@@ -1409,7 +1409,7 @@
         "MonsterAtk": 40,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4907,
@@ -1419,7 +1419,7 @@
         "MonsterAtk": 40,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4908,
@@ -1429,7 +1429,7 @@
         "MonsterAtk": 40,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4909,
@@ -1439,7 +1439,7 @@
         "MonsterAtk": 40,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4910,
@@ -1449,7 +1449,7 @@
         "MonsterAtk": 40,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4911,
@@ -1459,7 +1459,7 @@
         "MonsterAtk": 40,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4912,
@@ -1469,7 +1469,7 @@
         "MonsterAtk": 40,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4913,
@@ -1479,7 +1479,7 @@
         "MonsterAtk": 40,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4914,
@@ -1489,7 +1489,7 @@
         "MonsterAtk": 40,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.2
+        "MonsterMoveSpeed": 15
       },
       {
         "MonsterID": 4915,
@@ -1499,7 +1499,7 @@
         "MonsterAtk": 40,
         "MonsterAtkSpeed": 1.2,
         "MonsterAtkRange": 1,
-        "MonsterMoveSpeed": 0.2
+        "MonsterMoveSpeed": 15
       }
     ],
     "PieceData": [
@@ -1927,8 +1927,8 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 10,
-        "TowerAtkSpeed": 0.3,
+        "TowerAtk": 9,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -1946,8 +1946,8 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 12,
-        "TowerAtkSpeed": 0.3,
+        "TowerAtk": 11,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -1965,8 +1965,8 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 15,
-        "TowerAtkSpeed": 0.3,
+        "TowerAtk": 13,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -1984,8 +1984,8 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 20,
-        "TowerAtkSpeed": 0.3,
+        "TowerAtk": 15,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2003,8 +2003,8 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 30,
-        "TowerAtkSpeed": 0.3,
+        "TowerAtk": 17,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2022,8 +2022,8 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 30,
-        "TowerAtkSpeed": 0.3,
+        "TowerAtk": 19,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2041,8 +2041,8 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 30,
-        "TowerAtkSpeed": 0.3,
+        "TowerAtk": 21,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2060,8 +2060,8 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 30,
-        "TowerAtkSpeed": 0.3,
+        "TowerAtk": 23,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2079,8 +2079,8 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 30,
-        "TowerAtkSpeed": 0.3,
+        "TowerAtk": 25,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2098,8 +2098,8 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 30,
-        "TowerAtkSpeed": 0.3,
+        "TowerAtk": 27,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2117,8 +2117,8 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 30,
-        "TowerAtkSpeed": 0.3,
+        "TowerAtk": 29,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2136,8 +2136,8 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 30,
-        "TowerAtkSpeed": 0.3,
+        "TowerAtk": 31,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2155,8 +2155,8 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 30,
-        "TowerAtkSpeed": 0.3,
+        "TowerAtk": 33,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2174,8 +2174,8 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 30,
-        "TowerAtkSpeed": 0.3,
+        "TowerAtk": 35,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2193,8 +2193,8 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 30,
-        "TowerAtkSpeed": 0.3,
+        "TowerAtk": 37,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2212,8 +2212,8 @@
         "TowerAiType": 3,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 3,
-        "TowerAtkSpeed": 0.6,
+        "TowerAtk": 2,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 8,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2232,7 +2232,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 4,
-        "TowerAtkSpeed": 0.6,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 8,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2251,7 +2251,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 6,
-        "TowerAtkSpeed": 0.6,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 8,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2270,7 +2270,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 9,
-        "TowerAtkSpeed": 0.6,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 8,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2289,7 +2289,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 13,
-        "TowerAtkSpeed": 0.6,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 8,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2308,7 +2308,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 13,
-        "TowerAtkSpeed": 0.6,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 8,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2327,7 +2327,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 13,
-        "TowerAtkSpeed": 0.6,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 8,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2346,7 +2346,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 13,
-        "TowerAtkSpeed": 0.6,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 8,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2365,7 +2365,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 13,
-        "TowerAtkSpeed": 0.6,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 8,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2384,7 +2384,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 13,
-        "TowerAtkSpeed": 0.6,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 8,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2403,7 +2403,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 13,
-        "TowerAtkSpeed": 0.6,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 8,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2422,7 +2422,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 13,
-        "TowerAtkSpeed": 0.6,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 8,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2441,7 +2441,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 13,
-        "TowerAtkSpeed": 0.6,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 8,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2460,7 +2460,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 13,
-        "TowerAtkSpeed": 0.6,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 8,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2479,7 +2479,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 13,
-        "TowerAtkSpeed": 0.6,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 8,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6001,
@@ -2497,7 +2497,7 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 20,
+        "TowerAtk": 30,
         "TowerAtkSpeed": 1,
         "TowerMaxLange": 20,
         "TowerMaxAmmo": 20,
@@ -2516,7 +2516,7 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 30,
+        "TowerAtk": 40,
         "TowerAtkSpeed": 1,
         "TowerMaxLange": 20,
         "TowerMaxAmmo": 20,
@@ -2535,7 +2535,7 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 50,
+        "TowerAtk": 60,
         "TowerAtkSpeed": 1,
         "TowerMaxLange": 20,
         "TowerMaxAmmo": 20,
@@ -2554,7 +2554,7 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 70,
+        "TowerAtk": 80,
         "TowerAtkSpeed": 1,
         "TowerMaxLange": 20,
         "TowerMaxAmmo": 20,
@@ -2573,7 +2573,7 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 100,
+        "TowerAtk": 110,
         "TowerAtkSpeed": 1,
         "TowerMaxLange": 20,
         "TowerMaxAmmo": 20,
@@ -2782,8 +2782,8 @@
         "TowerAiType": 1,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 7,
-        "TowerAtkSpeed": 0.5,
+        "TowerAtk": 9,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2802,7 +2802,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 9,
-        "TowerAtkSpeed": 0.5,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2821,7 +2821,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 12,
-        "TowerAtkSpeed": 0.5,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2840,7 +2840,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 16,
-        "TowerAtkSpeed": 0.5,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2859,7 +2859,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.5,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2878,7 +2878,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.5,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2897,7 +2897,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.5,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2916,7 +2916,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.5,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2935,7 +2935,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.5,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2954,7 +2954,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.5,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2973,7 +2973,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.5,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -2992,7 +2992,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.5,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -3011,7 +3011,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.5,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -3030,7 +3030,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.5,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -3049,7 +3049,7 @@
         "TargetPriority": "",
         "ProjectileType": "",
         "TowerAtk": 21,
-        "TowerAtkSpeed": 0.5,
+        "TowerAtkSpeed": 0.8,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
         "TowerProjectile": 6003,
@@ -3067,7 +3067,7 @@
         "TowerAiType": 2,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 20,
+        "TowerAtk": 30,
         "TowerAtkSpeed": 1.5,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 10,
@@ -3352,7 +3352,7 @@
         "TowerAiType": 4,
         "TargetPriority": "",
         "ProjectileType": "",
-        "TowerAtk": 5,
+        "TowerAtk": 10,
         "TowerAtkSpeed": 0.75,
         "TowerMaxLange": 10,
         "TowerMaxAmmo": 20,
@@ -4802,133 +4802,133 @@
       {
         "LevelID": 12,
         "GoalLevel": 2,
-        "RequiredXP": 300,
+        "RequiredXP": 322,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 13,
         "GoalLevel": 3,
-        "RequiredXP": 400,
+        "RequiredXP": 370,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 14,
         "GoalLevel": 4,
-        "RequiredXP": 600,
+        "RequiredXP": 426,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 15,
         "GoalLevel": 5,
-        "RequiredXP": 250,
+        "RequiredXP": 490,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 16,
         "GoalLevel": 6,
-        "RequiredXP": 310,
+        "RequiredXP": 563,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 17,
         "GoalLevel": 7,
-        "RequiredXP": 378,
+        "RequiredXP": 648,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 18,
         "GoalLevel": 8,
-        "RequiredXP": 446,
+        "RequiredXP": 745,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 19,
         "GoalLevel": 9,
-        "RequiredXP": 514,
+        "RequiredXP": 857,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 20,
         "GoalLevel": 10,
-        "RequiredXP": 582,
+        "RequiredXP": 985,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 21,
         "GoalLevel": 11,
-        "RequiredXP": 650,
+        "RequiredXP": 1133,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 22,
         "GoalLevel": 12,
-        "RequiredXP": 718,
+        "RequiredXP": 1303,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 23,
         "GoalLevel": 13,
-        "RequiredXP": 786,
+        "RequiredXP": 1498,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 24,
         "GoalLevel": 14,
-        "RequiredXP": 854,
+        "RequiredXP": 1723,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 25,
         "GoalLevel": 15,
-        "RequiredXP": 922,
-        "IsMaxLevel": 0,
+        "RequiredXP": 1981,
+        "IsMaxLevel": 1,
         "PerkEventType": ""
       },
       {
         "LevelID": 26,
         "GoalLevel": 16,
-        "RequiredXP": 990,
+        "RequiredXP": 2278,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 27,
         "GoalLevel": 17,
-        "RequiredXP": 1058,
+        "RequiredXP": 2620,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 28,
         "GoalLevel": 18,
-        "RequiredXP": 1126,
+        "RequiredXP": 3013,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 29,
         "GoalLevel": 19,
-        "RequiredXP": 1194,
+        "RequiredXP": 3465,
         "IsMaxLevel": 0,
         "PerkEventType": ""
       },
       {
         "LevelID": 30,
         "GoalLevel": 20,
-        "RequiredXP": 1262,
+        "RequiredXP": 3985,
         "IsMaxLevel": 1,
         "PerkEventType": ""
       }
@@ -4936,11 +4936,11 @@
     "ExpData": [
       {
         "ExpTypeID": 81,
-        "ExpAmount": 40
+        "ExpAmount": 30
       },
       {
         "ExpTypeID": 82,
-        "ExpAmount": 100
+        "ExpAmount": 90
       }
     ]
   }

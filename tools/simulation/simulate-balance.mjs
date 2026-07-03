@@ -17,6 +17,9 @@ function parseArgs(argv) {
     seed: null,
     mix: "beginner:34,intermediate:33,advanced:33",
     profile: "",
+    scenario: "",
+    stage: "",
+    pieces: [],
     coverage: true,
     show: false,
     dashboard: true,
@@ -29,6 +32,9 @@ function parseArgs(argv) {
     else if (arg === "--seed") options.seed = Number(argv[++index]);
     else if (arg === "--mix") options.mix = argv[++index] || options.mix;
     else if (arg === "--profile") options.profile = argv[++index] || "";
+    else if (arg === "--scenario") options.scenario = argv[++index] || "";
+    else if (arg === "--stage") options.stage = argv[++index] || "";
+    else if (arg === "--pieces") options.pieces = String(argv[++index] || "").split(",").map((key) => key.trim()).filter(Boolean);
     else if (arg === "--coverage") options.coverage = true;
     else if (arg === "--random-mix") options.coverage = false;
     else if (arg === "--show") options.show = true;
@@ -42,6 +48,16 @@ function parseArgs(argv) {
   options.seed = Math.max(1, Math.floor(options.seed || (Date.now() % 2147483647)));
   if (options.profile && !["beginner", "intermediate", "advanced"].includes(options.profile)) {
     throw new Error(`지원하지 않는 프로필입니다: ${options.profile}`);
+  }
+  const scenarios = ["standard", "weakStart", "highRoll", "lowRoll", "mistakeHeavy", "pressureAttack", "repairFirst", "comboFocus"];
+  if (options.scenario && !scenarios.includes(options.scenario)) {
+    throw new Error(`지원하지 않는 시나리오입니다: ${options.scenario}`);
+  }
+  if (options.pieces.length) {
+    if (options.pieces.length !== 6) throw new Error(`--pieces는 정확히 6개 입력해야 합니다: ${options.pieces.length}개`);
+    if (new Set(options.pieces).size !== options.pieces.length) {
+      throw new Error(`--pieces에는 중복 Piece ID를 넣을 수 없습니다: ${options.pieces.join(",")}`);
+    }
   }
   return options;
 }
@@ -175,6 +191,8 @@ async function main() {
   if (options.help) {
     console.log("node tools/simulation/simulate-balance.mjs [--sessions 9] [--speed 50] [--seed <number>]");
     console.log("  [--mix beginner:34,intermediate:33,advanced:33] [--profile beginner|intermediate|advanced]");
+    console.log("  [--scenario standard|weakStart|highRoll|lowRoll|mistakeHeavy|pressureAttack|repairFirst|comboFocus]");
+    console.log("  [--stage stage-1] [--pieces basic_1,scatter_1,sniper_1,breaker_1,blast_1,support_1]");
     console.log("  [--coverage|--random-mix] [--show] [--no-dashboard] [--dry-run]");
     return;
   }
@@ -187,6 +205,8 @@ async function main() {
   if (options.dryRun) {
     console.log(`OK game: ${root}`);
     console.log(`OK browser: ${browser}`);
+    if (options.stage) console.log(`OK stage option: ${options.stage}`);
+    if (options.pieces.length) console.log(`OK pieces option: ${options.pieces.join(",")}`);
     console.log("OK storage: Google Sheet only");
     return;
   }
@@ -219,6 +239,9 @@ async function main() {
     runId,
   });
   if (options.profile) query.set("profile", options.profile);
+  if (options.scenario) query.set("scenario", options.scenario);
+  if (options.stage) query.set("stage", options.stage);
+  if (options.pieces.length) query.set("pieces", options.pieces.join(","));
   if (options.coverage) query.set("coverage", "1");
   const url = `http://127.0.0.1:${port}/index.html?${query}`;
   const profileDir = path.join(os.tmpdir(), `3sort-balance-sim-${process.pid}`);
@@ -236,7 +259,7 @@ async function main() {
   if (!options.show) browserArgs.push("--headless=new", "--disable-gpu");
   browserArgs.push(url);
 
-  console.log(`[SIM] ${options.sessions} sessions / speed x${options.speed} / seed ${options.seed} / ${options.coverage ? "coverage" : "random mix"}`);
+  console.log(`[SIM] ${options.sessions} sessions / speed x${options.speed} / seed ${options.seed} / ${options.coverage ? "coverage" : "random mix"}${options.scenario ? ` / scenario ${options.scenario}` : ""}${options.stage ? ` / stage ${options.stage}` : ""}${options.pieces.length ? ` / pieces ${options.pieces.join(",")}` : ""}`);
   console.log("[SIM] telemetry Google Sheet only");
   console.log(`[SIM] browser ${path.basename(browser)} ${options.show ? "visible" : "headless"}`);
   const child = spawn(browser, browserArgs, { stdio: "ignore", windowsHide: !options.show });
@@ -245,7 +268,7 @@ async function main() {
     if (!resultReceived) console.warn(`[SIM] browser launcher exited before completion (code=${code}); waiting for browser worker`);
   });
 
-  const estimatedMs = Math.max(180000, Math.ceil(options.sessions * (500 / options.speed + 12) * 1000));
+  const estimatedMs = Math.max(300000, Math.ceil(options.sessions * (500 / options.speed + 12) * 1000));
   const timeout = setTimeout(() => rejectResult(new Error(`시뮬레이션 제한시간 초과 (${Math.round(estimatedMs / 60000)}분)`)), estimatedMs);
   try {
     const payload = await resultPromise;
@@ -261,21 +284,18 @@ async function main() {
       console.log(`[SIM] ${profile}: ${summary.sessions} sessions / attempts ${summary.averageAttempts.toFixed(2)} / delay ${summary.averageDecisionSec.toFixed(2)}s / clear ${(summary.clearRate * 100).toFixed(1)}%`);
     }
     console.log(`[SIM] strategies ${Object.entries(payload.summary?.strategies || {}).map(([key, count]) => `${key}:${count}`).join(" / ")}`);
+    console.log(`[SIM] scenarios ${Object.entries(payload.summary?.scenarios || {}).map(([key, count]) => `${key}:${count}`).join(" / ")}`);
     if (options.dashboard) {
       await new Promise((resolve) => setTimeout(resolve, 1500));
       updateDashboard();
     }
   } finally {
     clearTimeout(timeout);
-    if (!child.killed) child.kill();
-    if (process.platform === "win32") {
-      const escapedProfile = profileDir.replace(/'/g, "''");
-      spawnSync("powershell.exe", [
-        "-NoProfile",
-        "-Command",
-        `$needle='${escapedProfile}'; Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like \"*$needle*\" } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`,
-      ], { stdio: "ignore", windowsHide: true });
-    }
+    if (process.platform === "win32" && child.pid) {
+      spawnSync("taskkill.exe", ["/PID", String(child.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
+    } else if (!child.killed) child.kill();
+    server.closeIdleConnections?.();
+    server.closeAllConnections?.();
     await new Promise((resolve) => server.close(resolve));
     const tempRoot = path.resolve(os.tmpdir());
     const resolvedProfile = path.resolve(profileDir);

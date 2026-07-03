@@ -60,6 +60,12 @@ const EVENT_HEADERS = [
   "data_source",
   "bot_profile",
   "bot_strategy",
+  "bot_scenario",
+  "bot_stage_key",
+  "bot_piece_ids",
+  "bot_piece_types",
+  "bot_piece_levels",
+  "bot_loadout_hash",
   "simulation_version",
   "simulation_seed",
   "simulation_speed",
@@ -67,6 +73,8 @@ const EVENT_HEADERS = [
   "decision_delay_stddev",
   "mistake_count",
   "invalid_sort_attempts",
+  "sort_interval_avg",
+  "sort_interval_stddev",
 ];
 
 const EVENT_DESCRIPTIONS = [
@@ -123,6 +131,12 @@ const EVENT_DESCRIPTIONS = [
   "실사용자(real) 또는 자동 플레이(simulation) 구분",
   "자동 플레이 숙련도 프로필",
   "자동 플레이 특전 빌드 성향",
+  "자동 플레이 시나리오 프리셋",
+  "자동 플레이가 강제 선택한 스테이지 key",
+  "자동 플레이가 강제 선택한 Piece ID 목록",
+  "자동 플레이 편성의 기물 타입 목록",
+  "자동 플레이 편성의 기물 레벨 목록",
+  "같은 자동 플레이 기물 조합을 묶는 정렬된 키",
   "자동 플레이 로직 버전",
   "동일 결과 재현용 난수 시드",
   "자동 플레이 게임 배속",
@@ -130,6 +144,8 @@ const EVENT_DESCRIPTIONS = [
   "소팅 판단시간 표준편차(초)",
   "의도적으로 비최적 행동을 한 횟수",
   "실행되지 못한 소팅 명령 횟수",
+  "실제 소팅 시도 사이 평균 간격(게임 진행 초)",
+  "소팅 시도 간격의 표준편차(초)",
 ];
 
 const SESSION_HEADERS = [
@@ -186,6 +202,12 @@ const SESSION_HEADERS = [
   "data_source",
   "bot_profile",
   "bot_strategy",
+  "bot_scenario",
+  "bot_stage_key",
+  "bot_piece_ids",
+  "bot_piece_types",
+  "bot_piece_levels",
+  "bot_loadout_hash",
   "simulation_version",
   "simulation_seed",
   "simulation_speed",
@@ -193,6 +215,8 @@ const SESSION_HEADERS = [
   "decision_delay_stddev",
   "mistake_count",
   "invalid_sort_attempts",
+  "sort_interval_avg",
+  "sort_interval_stddev",
 ];
 
 const SESSION_DESCRIPTIONS = [
@@ -249,6 +273,12 @@ const SESSION_DESCRIPTIONS = [
   "실사용자(real) 또는 자동 플레이(simulation) 구분",
   "자동 플레이 숙련도 프로필",
   "자동 플레이 특전 빌드 성향",
+  "자동 플레이 시나리오 프리셋",
+  "자동 플레이가 강제 선택한 스테이지 key",
+  "자동 플레이가 강제 선택한 Piece ID 목록",
+  "자동 플레이 편성의 기물 타입 목록",
+  "자동 플레이 편성의 기물 레벨 목록",
+  "같은 자동 플레이 기물 조합을 묶는 정렬된 키",
   "자동 플레이 로직 버전",
   "동일 결과 재현용 난수 시드",
   "자동 플레이 게임 배속",
@@ -256,6 +286,8 @@ const SESSION_DESCRIPTIONS = [
   "소팅 판단시간 표준편차(초)",
   "의도적으로 비최적 행동을 한 횟수",
   "실행되지 못한 소팅 명령 횟수",
+  "실제 소팅 시도 사이 평균 간격(게임 진행 초)",
+  "소팅 시도 간격의 표준편차(초)",
 ];
 
 const PIECE_DAMAGE_HEADERS = [
@@ -567,6 +599,12 @@ function toEventRow_(event, receivedAt) {
     text_(event.dataSource || "real"),
     text_(event.botProfile),
     text_(event.botStrategy),
+    text_(event.botScenario),
+    text_(event.botStageKey),
+    text_(event.botPieceIds),
+    text_(event.botPieceTypes),
+    text_(event.botPieceLevels),
+    text_(event.botLoadoutHash),
     text_(event.simulationVersion),
     number_(event.simulationSeed),
     number_(event.simulationSpeed),
@@ -574,6 +612,8 @@ function toEventRow_(event, receivedAt) {
     number_(event.decisionDelayStddev),
     number_(event.mistakeCount),
     number_(event.invalidSortAttempts),
+    number_(event.sortIntervalAvg),
+    number_(event.sortIntervalStddev),
   ];
 }
 
@@ -637,6 +677,12 @@ function toSessionRow_(event, receivedAt) {
     text_(event.dataSource || "real"),
     text_(event.botProfile),
     text_(event.botStrategy),
+    text_(event.botScenario),
+    text_(event.botStageKey),
+    text_(event.botPieceIds),
+    text_(event.botPieceTypes),
+    text_(event.botPieceLevels),
+    text_(event.botLoadoutHash),
     text_(event.simulationVersion),
     number_(event.simulationSeed),
     number_(event.simulationSpeed),
@@ -644,6 +690,8 @@ function toSessionRow_(event, receivedAt) {
     number_(event.decisionDelayStddev),
     number_(event.mistakeCount),
     number_(event.invalidSortAttempts),
+    number_(event.sortIntervalAvg),
+    number_(event.sortIntervalStddev),
   ];
 }
 
@@ -856,7 +904,13 @@ function text_(value) {
 
 function json_(value) {
   try {
-    return JSON.stringify(value == null ? null : value);
+    const serialized = JSON.stringify(value == null ? null : value);
+    if (serialized.length <= 49000) return serialized;
+    return JSON.stringify({
+      truncated: true,
+      originalLength: serialized.length,
+      reason: "google_sheets_cell_limit",
+    });
   } catch (error) {
     return "";
   }

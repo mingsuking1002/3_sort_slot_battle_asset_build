@@ -45,6 +45,22 @@
   const MONSTER_COLORS = { normal: "#276dcc", speedy: "#e3a51b", tanker: "#c33d3d" };
   const NEUTRAL = "#8b98a2";
   const PIECE_MAX_LEVEL = 5;
+  const SKILL_META = {
+    beginner: { label: "초보자", color: "#c73b3b", sortMin: 0, sortMax: 12, targetDelay: 6.78 },
+    intermediate: { label: "중급자", color: "#e7a91b", sortMin: 13, sortMax: 45, targetDelay: 4.17 },
+    advanced: { label: "상급자", color: "#14845f", sortMin: 46, sortMax: Infinity, targetDelay: 3.04 },
+  };
+  const SKILL_KEYS = Object.keys(SKILL_META);
+  const SCENARIO_LABELS = {
+    standard: "기본 랜덤",
+    weakStart: "초반 약세",
+    highRoll: "특전 운 좋음",
+    lowRoll: "특전 운 나쁨",
+    mistakeHeavy: "실수 많음",
+    pressureAttack: "압박 공격 우선",
+    repairFirst: "수리 우선",
+    comboFocus: "콤보 중심",
+  };
   const LEGACY_TYPE_SPRITES = {
     basic: "../assets/images/ui/PIECE/기본형.png",
     scatter: "../assets/images/ui/PIECE/산탄형.png",
@@ -57,8 +73,12 @@
   const state = {
     view: "overview",
     source: "all",
+    simVersion: "all",
     build: "all",
     snapshot: "all",
+    stage: "all",
+    loadout: "all",
+    pieceTypes: "all",
     result: "all",
     device: "all",
     previewType: "basic",
@@ -118,6 +138,59 @@
     return row.balance_snapshot_id || "legacy";
   }
 
+  function sessionStage(row) {
+    return row.bot_stage_key || row.stage_key || "unknown";
+  }
+
+  function normalizeTokenList(value) {
+    if (Array.isArray(value)) return value.map((item) => String(item || "").trim()).filter(Boolean);
+    return String(value || "")
+      .split(/[|,]/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  function sessionPieceIds(row) {
+    const payload = safeJson(row.payload_json, {});
+    const fromBot = normalizeTokenList(row.bot_piece_ids || payload.simulation?.botPieceIds);
+    if (fromBot.length) return fromBot;
+    const fromKeys = normalizeTokenList(row.selected_piece_keys);
+    if (fromKeys.length) return fromKeys;
+    const loadout = Array.isArray(payload.loadout) ? payload.loadout : [];
+    return loadout.map((piece) => piece.pieceKey).filter(Boolean);
+  }
+
+  function sessionLoadoutHash(row) {
+    const payload = safeJson(row.payload_json, {});
+    const explicit = row.bot_loadout_hash || payload.simulation?.botLoadoutHash;
+    if (explicit) return explicit;
+    const ids = sessionPieceIds(row);
+    return ids.length ? ids.slice().sort().join("|") : "unknown";
+  }
+
+  function sessionPieceTypes(row) {
+    const payload = safeJson(row.payload_json, {});
+    const explicit = normalizeTokenList(row.bot_piece_types || payload.simulation?.botPieceTypes);
+    if (explicit.length) return explicit;
+    const loadout = Array.isArray(payload.loadout) ? payload.loadout : [];
+    return loadout.map((piece) => piece.towerType).filter(Boolean);
+  }
+
+  function sessionPieceTypeSignature(row) {
+    const types = sessionPieceTypes(row);
+    if (!types.length) return "unknown";
+    const counts = new Map();
+    types.forEach((type) => counts.set(type, (counts.get(type) || 0) + 1));
+    return [...counts.entries()].sort((a, b) => String(a[0]).localeCompare(String(b[0]), "ko"))
+      .map(([type, count]) => `${type}x${count}`)
+      .join(" ");
+  }
+
+  function sessionLoadoutLabel(row) {
+    const ids = sessionPieceIds(row);
+    return ids.length ? ids.join(", ") : sessionLoadoutHash(row);
+  }
+
   function sessionDevice(row) {
     return row.device_class || "unknown";
   }
@@ -131,6 +204,35 @@
     return row.data_source || payload.simulation?.dataSource || "real";
   }
 
+  function sessionSimulationVersion(row) {
+    const payload = safeJson(row.payload_json, {});
+    return row.simulation_version || payload.simulation?.simulationVersion || "";
+  }
+
+  function sessionBotProfile(row) {
+    const payload = safeJson(row.payload_json, {});
+    return row.bot_profile || payload.simulation?.botProfile || "";
+  }
+
+  function sessionBotStrategy(row) {
+    const payload = safeJson(row.payload_json, {});
+    return row.bot_strategy || payload.simulation?.botStrategy || "";
+  }
+
+  function sessionBotScenario(row) {
+    const payload = safeJson(row.payload_json, {});
+    return row.bot_scenario || payload.simulation?.botScenario || "";
+  }
+
+  function sessionSortInterval(row) {
+    const payload = safeJson(row.payload_json, {});
+    const value = row.sort_interval_avg
+      || row.decision_delay_avg
+      || payload.sortIntervalAvg
+      || payload.simulation?.decisionDelayAvg;
+    return value === "" || value === null || value === undefined ? NaN : number(value, NaN);
+  }
+
   function unique(items) {
     return [...new Set(items.filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "ko"));
   }
@@ -138,8 +240,12 @@
   function filteredSessions() {
     return sessions.filter((row) =>
       (state.source === "all" || sessionSource(row) === state.source)
+      && (state.simVersion === "all" || sessionSimulationVersion(row) === state.simVersion)
       && (state.build === "all" || sessionBuild(row) === state.build)
       && (state.snapshot === "all" || sessionSnapshot(row) === state.snapshot)
+      && (state.stage === "all" || sessionStage(row) === state.stage)
+      && (state.loadout === "all" || sessionLoadoutHash(row) === state.loadout)
+      && (state.pieceTypes === "all" || sessionPieceTypeSignature(row) === state.pieceTypes)
       && (state.result === "all" || (row.result || "unknown") === state.result)
       && (state.device === "all" || sessionDevice(row) === state.device));
   }
@@ -151,30 +257,191 @@
     return rows.filter((row) => ids.has(row.session_id));
   }
 
+  function comparisonSessions(source) {
+    return sessions.filter((row) =>
+      sessionSource(row) === source
+      && (state.simVersion === "all" || source !== "simulation" || sessionSimulationVersion(row) === state.simVersion)
+      && (state.build === "all" || sessionBuild(row) === state.build)
+      && (state.snapshot === "all" || sessionSnapshot(row) === state.snapshot)
+      && (state.stage === "all" || sessionStage(row) === state.stage)
+      && (state.loadout === "all" || sessionLoadoutHash(row) === state.loadout)
+      && (state.pieceTypes === "all" || sessionPieceTypeSignature(row) === state.pieceTypes)
+      && (state.result === "all" || (row.result || "unknown") === state.result)
+      && (state.device === "all" || sessionDevice(row) === state.device));
+  }
+
+  function sessionDurationSec(row) {
+    const fromDuration = number(row.duration_ms, NaN);
+    if (Number.isFinite(fromDuration) && fromDuration > 0) return fromDuration / 1000;
+    return number(row.elapsed_sec, 0);
+  }
+
+  function inferSkillProfile(row) {
+    const successes = number(row.sort_successes);
+    const attempts = number(row.sort_attempts);
+    const interval = sessionSortInterval(row);
+    const reached = number(row.reached_wave);
+    let score = successes >= SKILL_META.advanced.sortMin ? 2 : successes >= SKILL_META.intermediate.sortMin ? 1 : 0;
+    if (Number.isFinite(interval) && interval > 0) score += interval <= 3.45 ? 2 : interval <= 5.2 ? 1 : 0;
+    else score += attempts >= 70 ? 2 : attempts >= 24 ? 1 : 0;
+    if (row.result === "clear") score += 0.35;
+    if (reached >= 9) score += 0.25;
+    if (reached <= 4 && row.result !== "clear") score -= 0.25;
+    if (score >= 3.05) return "advanced";
+    if (score >= 1.25) return "intermediate";
+    return "beginner";
+  }
+
+  function sessionMetrics(rows) {
+    const intervalRows = rows.filter((row) => Number.isFinite(sessionSortInterval(row)) && sessionSortInterval(row) > 0);
+    const attempts = sum(rows, (row) => row.sort_attempts);
+    const successes = sum(rows, (row) => row.sort_successes);
+    return {
+      sessions: rows.length,
+      clears: rows.filter((row) => row.result === "clear").length,
+      clearRate: rows.length ? rows.filter((row) => row.result === "clear").length / rows.length : 0,
+      reached: average(rows, (row) => row.reached_wave),
+      attempts: average(rows, (row) => row.sort_attempts),
+      successes: average(rows, (row) => row.sort_successes),
+      conversion: attempts ? successes / attempts : 0,
+      interval: average(intervalRows, sessionSortInterval),
+      intervalSamples: intervalRows.length,
+      combo: average(rows, (row) => row.max_combo),
+      slotHp: average(rows, (row) => normalizePercentValue(row.slot_hp_ratio_avg)),
+      duration: average(rows, sessionDurationSec),
+    };
+  }
+
+  function sessionSystemDamage(row) {
+    const payload = safeJson(row.payload_json, {});
+    return sumObject(payload.systemDamageBySource);
+  }
+
+  function sessionTotalDamage(row) {
+    const payload = safeJson(row.payload_json, {});
+    return number(row.damage_done) || sessionSystemDamage(row) + sumPieceDamage(payload.damageByPiece);
+  }
+
+  function getSessionGroupSummary(keyGetter, labelGetter, rows = filteredSessions()) {
+    const groups = new Map();
+    for (const row of rows) {
+      const key = keyGetter(row) || "unknown";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(row);
+    }
+    return [...groups.entries()].map(([key, groupRows]) => {
+      const metrics = sessionMetrics(groupRows);
+      const systemDamage = sum(groupRows, sessionSystemDamage);
+      const totalDamage = sum(groupRows, sessionTotalDamage);
+      return {
+        key,
+        label: labelGetter(groupRows[0], key),
+        ...metrics,
+        systemShare: totalDamage ? systemDamage / totalDamage : 0,
+      };
+    }).sort((a, b) => b.sessions - a.sessions || b.reached - a.reached);
+  }
+
+  function getStageExperimentRows() {
+    return getSessionGroupSummary(sessionStage, (row, key) => `${key}${row.stage_title ? ` · ${row.stage_title}` : ""}`);
+  }
+
+  function getLoadoutExperimentRows() {
+    return getSessionGroupSummary(sessionLoadoutHash, (row) => sessionLoadoutLabel(row));
+  }
+
+  function getPieceTypeExperimentRows() {
+    return getSessionGroupSummary(sessionPieceTypeSignature, (row, key) => key);
+  }
+
+  function getSkillCalibrationRows() {
+    const realRows = comparisonSessions("real");
+    const simRows = comparisonSessions("simulation");
+    return SKILL_KEYS.map((key) => {
+      const real = sessionMetrics(realRows.filter((row) => inferSkillProfile(row) === key));
+      const sim = sessionMetrics(simRows.filter((row) => sessionBotProfile(row) === key));
+      const gapScore = real.sessions && sim.sessions
+        ? Math.abs(sim.clearRate - real.clearRate) * 2.2
+          + Math.abs(sim.reached - real.reached) / 5
+          + Math.abs(sim.successes - real.successes) / 45
+          + Math.abs(sim.interval - real.interval) / 5
+        : 0;
+      return {
+        key,
+        label: SKILL_META[key].label,
+        color: SKILL_META[key].color,
+        real,
+        sim,
+        gapScore,
+        clearDelta: sim.clearRate - real.clearRate,
+        reachedDelta: sim.reached - real.reached,
+        sortDelta: sim.successes - real.successes,
+        intervalDelta: sim.interval - real.interval,
+      };
+    });
+  }
+
+  function getScenarioSummary() {
+    const groups = new Map();
+    for (const row of comparisonSessions("simulation")) {
+      const scenario = sessionBotScenario(row) || "standard";
+      if (!groups.has(scenario)) groups.set(scenario, []);
+      groups.get(scenario).push(row);
+    }
+    return [...groups.entries()].map(([scenario, rows]) => ({
+      scenario,
+      label: SCENARIO_LABELS[scenario] || scenario,
+      ...sessionMetrics(rows),
+    })).sort((a, b) => b.sessions - a.sessions || b.reached - a.reached);
+  }
+
+  function sessionSkillDisplay(row) {
+    if (sessionSource(row) === "simulation") {
+      const profile = sessionBotProfile(row);
+      return `${SKILL_META[profile]?.label || profile || "-"} · ${SCENARIO_LABELS[sessionBotScenario(row)] || sessionBotScenario(row) || "기본 랜덤"}`;
+    }
+    return `${SKILL_META[inferSkillProfile(row)]?.label || "-"} 추정`;
+  }
+
   function fillSelect(id, values, label) {
     const select = document.querySelector(id);
     select.innerHTML = `<option value="all">${escape(label)}</option>${values.map((value) => `<option value="${escape(value)}">${escape(value)}</option>`).join("")}`;
     select.addEventListener("change", () => {
-      state[id.replace("#filter-", "")] = select.value;
+      const stateKey = id.replace("#filter-", "").replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+      state[stateKey] = select.value;
       render();
     });
   }
 
   function initControls() {
     fillSelect("#filter-source", unique(sessions.map(sessionSource)), "전체 표본");
+    fillSelect("#filter-sim-version", unique(sessions.map(sessionSimulationVersion)), "전체 버전");
     fillSelect("#filter-build", unique(sessions.map(sessionBuild)), "전체 빌드");
     fillSelect("#filter-snapshot", unique(sessions.map(sessionSnapshot)), "전체 스냅샷");
+    fillSelect("#filter-stage", unique(sessions.map(sessionStage)), "전체 스테이지");
+    fillSelect("#filter-loadout", unique(sessions.map(sessionLoadoutHash)), "전체 조합");
+    fillSelect("#filter-piece-types", unique(sessions.map(sessionPieceTypeSignature)), "전체 타입");
     fillSelect("#filter-result", unique(sessions.map((row) => row.result || "unknown")), "전체 결과");
     fillSelect("#filter-device", unique(sessions.map(sessionDevice)), "전체 기기");
+    document.querySelector("#filter-source").addEventListener("change", (event) => {
+      const versionSelect = document.querySelector("#filter-sim-version");
+      if (event.target.value === "simulation") {
+        const versions = unique(sessions.filter((row) => sessionSource(row) === "simulation").map(sessionSimulationVersion));
+        state.simVersion = versions[versions.length - 1] || "all";
+      } else state.simVersion = "all";
+      versionSelect.value = state.simVersion;
+      render();
+    });
     document.querySelectorAll(".tab").forEach((button) => button.addEventListener("click", () => {
       state.view = button.dataset.view;
       document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab === button));
       render();
     }));
     document.querySelector("#reset-filters").addEventListener("click", () => {
-      for (const key of ["source", "build", "snapshot", "result", "device"]) {
+      for (const key of ["source", "simVersion", "build", "snapshot", "stage", "loadout", "pieceTypes", "result", "device"]) {
         state[key] = "all";
-        document.querySelector(`#filter-${key}`).value = "all";
+        const filterId = key === "simVersion" ? "sim-version" : key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+        document.querySelector(`#filter-${filterId}`).value = "all";
       }
       render();
     });
@@ -972,6 +1239,52 @@
     </section>`;
   }
 
+  function renderExperimentSummary() {
+    const stageRows = getStageExperimentRows();
+    const loadoutRows = getLoadoutExperimentRows();
+    const typeRows = getPieceTypeExperimentRows();
+    if (!stageRows.length && !loadoutRows.length) return "";
+    const resultClass = (value) => value >= .65 ? "positive" : value < .25 ? "negative" : "";
+    return `<section class="chart-grid">
+        ${chartPanel("스테이지별 클리어율", "현재 필터 기준 세션 결과", horizontalBarChart(stageRows, {
+          value: (item) => item.clearRate,
+          label: (item) => item.label,
+          color: (item) => item.clearRate < .25 ? "#c33d3d" : item.clearRate < .55 ? "#e3a51b" : "#15946f",
+          formatter: (value, item) => `${percent(value)} / ${item.sessions}건`,
+          max: 1,
+          limit: 12,
+          labelLength: 26,
+        }))}
+        ${chartPanel("기물 조합별 평균 도달", "같은 조합 hash 기준", horizontalBarChart(loadoutRows.slice(0, 12), {
+          value: (item) => item.reached,
+          label: (item) => clip(item.label, 34),
+          color: (item) => item.clearRate < .25 ? "#c33d3d" : "#276dcc",
+          formatter: (value, item) => `W${format(value, 1)} · 클리어 ${percent(item.clearRate)}`,
+          limit: 12,
+          labelLength: 34,
+        }))}
+        ${chartPanel("타입 구성별 성과", "가져간 기물 역할 구성을 기준으로 묶음", horizontalBarChart(typeRows.slice(0, 12), {
+          value: (item) => item.reached,
+          label: (item) => item.label,
+          color: (item) => item.systemShare > .5 ? "#c33d3d" : "#14845f",
+          formatter: (value, item) => `W${format(value, 1)} · 시스템 ${percent(item.systemShare)}`,
+          limit: 12,
+          labelLength: 32,
+        }))}
+      </section>
+      <section class="section">${sectionTitle("스테이지별 실험 지표", `${stageRows.length}개 스테이지`)}
+        <div class="table-wrap"><table><thead><tr><th>스테이지</th><th>세션</th><th>클리어율</th><th>평균 도달</th><th>평균 소팅</th><th>슬롯 체력</th><th>시스템 피해</th></tr></thead><tbody>
+          ${stageRows.map((row) => `<tr><td>${escape(row.label)}</td><td>${format(row.sessions)}</td><td class="${resultClass(row.clearRate)}">${percent(row.clearRate)}</td><td>W${format(row.reached, 1)}</td><td>${format(row.successes, 1)}</td><td>${percent(row.slotHp)}</td><td class="${row.systemShare > .5 ? "negative" : ""}">${percent(row.systemShare)}</td></tr>`).join("")}
+        </tbody></table></div></section>
+      <section class="section">${sectionTitle("기물 조합별 실험 지표", `${loadoutRows.length}개 조합`)}
+        <div class="table-wrap"><table><thead><tr><th>기물 조합</th><th>타입 구성</th><th>세션</th><th>클리어율</th><th>평균 도달</th><th>평균 소팅</th><th>슬롯 체력</th><th>시스템 피해</th></tr></thead><tbody>
+          ${loadoutRows.slice(0, 24).map((row) => {
+            const sample = filteredSessions().find((session) => sessionLoadoutHash(session) === row.key) || {};
+            return `<tr><td>${escape(row.label)}</td><td>${escape(sessionPieceTypeSignature(sample))}</td><td>${format(row.sessions)}</td><td class="${resultClass(row.clearRate)}">${percent(row.clearRate)}</td><td>W${format(row.reached, 1)}</td><td>${format(row.successes, 1)}</td><td>${percent(row.slotHp)}</td><td class="${row.systemShare > .5 ? "negative" : ""}">${percent(row.systemShare)}</td></tr>`;
+          }).join("")}
+        </tbody></table></div></section>`;
+  }
+
   function renderOverview() {
     const current = filteredSessions();
     const waves = getWaveDashboardRows();
@@ -979,6 +1292,10 @@
     const pieces = getObservedPieceSummary();
     const perks = getPerkSummary();
     const clears = current.filter((row) => row.result === "clear").length;
+    const totalSortAttempts = sum(current, (row) => row.sort_attempts);
+    const totalSortSuccesses = sum(current, (row) => row.sort_successes);
+    const intervalSessions = current.filter((row) => Number.isFinite(sessionSortInterval(row)) && sessionSortInterval(row) > 0);
+    const averageSortInterval = average(intervalSessions, sessionSortInterval);
     const dangerWave = waves.slice().sort((a, b) => (b.remaining + b.slotDanger / 12 + b.systemShare * 8) - (a.remaining + a.slotDanger / 12 + a.systemShare * 8))[0];
 
     return `${notice()}
@@ -986,7 +1303,10 @@
         ${kpi("세션", format(current.length), `전체 ${sessions.length}건`)}
         ${kpi("클리어율", percent(current.length ? clears / current.length : 0), `${clears}회 클리어`, current.length && clears / current.length < .35 ? "red" : "green")}
         ${kpi("평균 도달 웨이브", format(average(current, (row) => row.reached_wave), 1), "세션 종료 기준", "yellow")}
-        ${kpi("평균 소팅 성공", format(average(current, (row) => row.sort_successes), 1), "세션당")}
+        ${kpi("평균 소팅 시도", format(average(current, (row) => row.sort_attempts), 1), "세션당 이동")}
+        ${kpi("평균 3-Sort 완성", format(average(current, (row) => row.sort_successes), 1), "세션당")}
+        ${kpi("소팅 전환율", percent(totalSortAttempts ? totalSortSuccesses / totalSortAttempts : 0), "완성 ÷ 이동", totalSortAttempts && totalSortSuccesses / totalSortAttempts < .3 ? "red" : "green")}
+        ${kpi("평균 소팅 간격", intervalSessions.length ? `${format(averageSortInterval, 2)}초` : "-", intervalSessions.length ? `${intervalSessions.length}세션 기준` : "간격 로그 없음")}
         ${kpi("평균 최대 콤보", format(average(current, (row) => row.max_combo), 1), "세션당")}
         ${kpi("종료 슬롯 체력", percent(average(current, (row) => row.slot_hp_ratio_avg)), "평균 잔존율", "green")}
         ${kpi("시스템 피해 비중", percent(source.systemShare), "콤보/전체정렬/기타", source.systemShare > .45 ? "red" : "yellow")}
@@ -1018,6 +1338,7 @@
           labelLength: 20,
         }))}
       </section>
+      ${renderExperimentSummary()}
       ${renderAlertList()}
       ${renderTowerTable(true)}`;
   }
@@ -1100,9 +1421,9 @@
       ${chartPanel("몬스터 체력 구성", "NormalRate_1~3은 기본 몬스터 3종 가중치로만 계산", stackedWaveChart(getWaveTheoryRows()))}
     </section>
     <section class="section">${sectionTitle("웨이브 상세", "데이터 테이블 이론값 + 플레이 로그 관측값")}
-      <div class="table-wrap"><table><thead><tr><th>웨이브</th><th>패턴</th><th>구성</th><th>총 체력</th><th>평균 HP</th><th>공격 압력</th><th>표본</th><th>잔존</th><th>소팅 성공</th><th>슬롯 체력</th><th>기물 피해</th><th>시스템 피해</th><th>시스템 의존도</th></tr></thead>
+      <div class="table-wrap"><table><thead><tr><th>웨이브</th><th>패턴</th><th>구성</th><th>총 체력</th><th>평균 HP</th><th>공격 압력</th><th>표본</th><th>잔존</th><th>소팅 성공/시도</th><th>슬롯 체력</th><th>기물 피해</th><th>시스템 피해</th><th>시스템 의존도</th></tr></thead>
       <tbody>${rows.map((row) => { const obs = row.observed || {}; return `<tr>
-        <td>W${row.wave}</td><td>${escape(row.patternId || "-")}</td><td>${format(row.normalCount)} / ${format(row.speedyCount)} / ${format(row.tankerCount)}</td><td>${format(row.totalHp)}</td><td>${format(row.avgHp, 1)}</td><td>${format(row.attackPressure, 1)}</td><td>${row.samples || 0}</td><td class="${row.remaining > 5 ? "negative" : ""}">${row.samples ? format(row.remaining, 1) : "-"}</td><td>${row.samples ? format(obs.sorts, 1) : "-"}</td><td class="${row.samples && row.slotHp < .35 ? "negative" : row.samples && row.slotHp < .6 ? "warning" : "positive"}">${row.samples ? percent(row.slotHp) : "-"}</td><td>${row.samples ? format(obs.pieceDamage) : "-"}</td><td>${row.samples ? format(obs.systemDamage) : "-"}</td><td class="${row.systemShare > .45 ? "negative" : ""}">${row.samples ? percent(row.systemShare) : "-"}</td>
+        <td>W${row.wave}</td><td>${escape(row.patternId || "-")}</td><td>${format(row.normalCount)} / ${format(row.speedyCount)} / ${format(row.tankerCount)}</td><td>${format(row.totalHp)}</td><td>${format(row.avgHp, 1)}</td><td>${format(row.attackPressure, 1)}</td><td>${row.samples || 0}</td><td class="${row.remaining > 5 ? "negative" : ""}">${row.samples ? format(row.remaining, 1) : "-"}</td><td>${row.samples ? `${format(obs.sorts, 1)} / ${format(obs.attempts, 1)}` : "-"}</td><td class="${row.samples && row.slotHp < .35 ? "negative" : row.samples && row.slotHp < .6 ? "warning" : "positive"}">${row.samples ? percent(row.slotHp) : "-"}</td><td>${row.samples ? format(obs.pieceDamage) : "-"}</td><td>${row.samples ? format(obs.systemDamage) : "-"}</td><td class="${row.systemShare > .45 ? "negative" : ""}">${row.samples ? percent(row.systemShare) : "-"}</td>
       </tr>`; }).join("")}</tbody></table></div></section>`;
   }
 
@@ -1277,6 +1598,74 @@
     </section>`;
   }
 
+  function renderCalibration() {
+    const rows = getSkillCalibrationRows();
+    const realTotal = sum(rows, (row) => row.real.sessions);
+    const simTotal = sum(rows, (row) => row.sim.sessions);
+    const realOverall = sessionMetrics(comparisonSessions("real"));
+    const simOverall = sessionMetrics(comparisonSessions("simulation"));
+    const dominantReal = rows.slice().sort((a, b) => b.real.sessions - a.real.sessions)[0];
+    const biggestGap = rows.filter((row) => row.real.sessions && row.sim.sessions).sort((a, b) => b.gapScore - a.gapScore)[0];
+    const scenarioRows = getScenarioSummary();
+    const labels = rows.map((row) => row.label);
+    const intervalValue = (value, samples) => samples ? `${format(value, 2)}초` : "-";
+    const deltaClass = (value, reverse = false) => {
+      const signed = reverse ? -number(value) : number(value);
+      return signed > 0.001 ? "positive" : signed < -0.001 ? "negative" : "";
+    };
+
+    return `${notice()}
+      <section class="kpis">
+        ${kpi("실제 표본", format(realTotal), "추정 숙련도 분류")}
+        ${kpi("시뮬 표본", format(simTotal), "botProfile 기준")}
+        ${kpi("주요 실제군", dominantReal?.real.sessions ? dominantReal.label : "-", dominantReal?.real.sessions ? `${dominantReal.real.sessions}건` : "실제 로그 대기", "yellow")}
+        ${kpi("보정 우선", biggestGap ? biggestGap.label : "-", biggestGap ? `차이 ${format(biggestGap.gapScore, 2)}점` : "비교 표본 부족", biggestGap?.gapScore > 1.1 ? "red" : "green")}
+        ${kpi("실제 평균 도달", format(realOverall.reached, 1), "전체 실제 표본")}
+        ${kpi("시뮬 평균 도달", format(simOverall.reached, 1), "전체 시뮬 표본")}
+        ${kpi("실제 평균 소팅", format(realOverall.successes, 1), "3-Sort 완성")}
+        ${kpi("시뮬 평균 소팅", format(simOverall.successes, 1), "3-Sort 완성")}
+      </section>
+
+      <section class="chart-grid">
+        ${chartPanel("숙련도별 클리어율: 실제 vs 시뮬", "실제는 추정 숙련도, 시뮬은 botProfile 기준", lineChart([
+          { name: "실제", color: "#276dcc", values: rows.map((row) => ({ x: row.label, y: row.real.clearRate })) },
+          { name: "시뮬", color: "#14845f", values: rows.map((row) => ({ x: row.label, y: row.sim.clearRate })) },
+        ], { labels, minY: 0, maxY: 1, formatter: (value) => percent(value) }))}
+        ${chartPanel("숙련도별 평균 도달 웨이브", "시뮬이 실제보다 높으면 봇이 과하게 잘하는 상태", lineChart([
+          { name: "실제", color: "#276dcc", values: rows.map((row) => ({ x: row.label, y: row.real.reached })) },
+          { name: "시뮬", color: "#14845f", values: rows.map((row) => ({ x: row.label, y: row.sim.reached })) },
+        ], { labels, minY: 0, maxY: 10, formatter: (value) => `W${format(value, 1)}` }))}
+        ${chartPanel("숙련도별 평균 3-Sort 완성", "행동량/판단 적극성 보정용", lineChart([
+          { name: "실제", color: "#276dcc", values: rows.map((row) => ({ x: row.label, y: row.real.successes })) },
+          { name: "시뮬", color: "#14845f", values: rows.map((row) => ({ x: row.label, y: row.sim.successes })) },
+        ], { labels, minY: 0, formatter: (value) => `${format(value, 1)}회` }))}
+        ${chartPanel("보정 필요도", "클리어율/도달/소팅/간격 차이를 합친 참고 점수", horizontalBarChart(rows.filter((row) => row.real.sessions && row.sim.sessions).sort((a, b) => b.gapScore - a.gapScore), {
+          value: (item) => item.gapScore,
+          label: (item) => item.label,
+          color: (item) => item.gapScore > 1.1 ? "#c73b3b" : item.gapScore > .55 ? "#e7a91b" : "#14845f",
+          formatter: (value, item) => `${format(value, 2)}점 · 도달 ${item.reachedDelta >= 0 ? "+" : ""}${format(item.reachedDelta, 1)}W`,
+          max: 2,
+        }))}
+      </section>
+
+      <section class="section">${sectionTitle("실제 로그 숙련도 추정 기준", "완벽한 판정이 아니라 보정용 가벼운 분류")}
+        <div class="table-wrap"><table><thead><tr><th>숙련도</th><th>기준 소팅 완성</th><th>참고 소팅 간격</th><th>해석</th></tr></thead><tbody>
+          <tr><td>초보자</td><td>12회 이하 중심</td><td>5.2초 초과 쪽</td><td>정렬 기회가 적거나 판단 간격이 긴 표본</td></tr>
+          <tr><td>중급자</td><td>13~45회 중심</td><td>3.45~5.2초</td><td>정렬 루프를 이해하고 압박 대응이 가능한 표본</td></tr>
+          <tr><td>상급자</td><td>46회 이상 중심</td><td>3.45초 이하 쪽</td><td>정렬 빈도와 클리어/후반 도달이 높은 표본</td></tr>
+        </tbody></table></div></section>
+
+      <section class="section">${sectionTitle("실제 vs 시뮬 보정표", "양수 Δ는 시뮬이 실제보다 높은 값")}
+        <div class="table-wrap"><table><thead><tr><th>숙련도</th><th>실제 표본</th><th>시뮬 표본</th><th>클리어율 실제/시뮬</th><th>Δ 클리어</th><th>도달 실제/시뮬</th><th>Δ 도달</th><th>소팅 실제/시뮬</th><th>Δ 소팅</th><th>간격 실제/시뮬</th><th>Δ 간격</th><th>슬롯 체력 실제/시뮬</th></tr></thead><tbody>
+          ${rows.map((row) => `<tr><td>${escape(row.label)}</td><td>${format(row.real.sessions)}</td><td>${format(row.sim.sessions)}</td><td>${percent(row.real.clearRate)} / ${percent(row.sim.clearRate)}</td><td class="${deltaClass(row.clearDelta)}">${row.sim.sessions && row.real.sessions ? percent(row.clearDelta) : "-"}</td><td>${format(row.real.reached, 1)} / ${format(row.sim.reached, 1)}</td><td class="${deltaClass(row.reachedDelta)}">${row.sim.sessions && row.real.sessions ? `${row.reachedDelta >= 0 ? "+" : ""}${format(row.reachedDelta, 2)}` : "-"}</td><td>${format(row.real.successes, 1)} / ${format(row.sim.successes, 1)}</td><td class="${deltaClass(row.sortDelta)}">${row.sim.sessions && row.real.sessions ? `${row.sortDelta >= 0 ? "+" : ""}${format(row.sortDelta, 1)}` : "-"}</td><td>${intervalValue(row.real.interval, row.real.intervalSamples)} / ${intervalValue(row.sim.interval, row.sim.intervalSamples)}</td><td class="${deltaClass(row.intervalDelta, true)}">${row.sim.intervalSamples && row.real.intervalSamples ? `${row.intervalDelta >= 0 ? "+" : ""}${format(row.intervalDelta, 2)}초` : "-"}</td><td>${percent(row.real.slotHp)} / ${percent(row.sim.slotHp)}</td></tr>`).join("")}
+        </tbody></table></div></section>
+
+      <section class="section">${sectionTitle("시뮬 시나리오 프리셋 결과", `${scenarioRows.length}개 시나리오`)}
+        <div class="table-wrap"><table><thead><tr><th>시나리오</th><th>표본</th><th>클리어율</th><th>평균 도달</th><th>평균 소팅</th><th>소팅 간격</th><th>최대 콤보</th><th>슬롯 체력</th><th>플레이 시간</th></tr></thead><tbody>
+          ${scenarioRows.map((row) => `<tr><td>${escape(row.label)}</td><td>${format(row.sessions)}</td><td>${percent(row.clearRate)}</td><td>${format(row.reached, 1)}</td><td>${format(row.successes, 1)}</td><td>${intervalValue(row.interval, row.intervalSamples)}</td><td>${format(row.combo, 1)}</td><td>${percent(row.slotHp)}</td><td>${format(row.duration, 1)}초</td></tr>`).join("")}
+        </tbody></table></div></section>`;
+  }
+
   function renderSessions() {
     const rows = filteredSessions().slice().sort((a, b) => String(b.event_at || b.received_at).localeCompare(String(a.event_at || a.received_at)));
     if (!rows.length) return empty();
@@ -1295,8 +1684,8 @@
       }))}
     </section>
     <section class="section">${sectionTitle("플레이 세션", `${rows.length}건`)}
-      <div class="table-wrap"><table><thead><tr><th>종료 시각</th><th>세션 ID</th><th>결과</th><th>빌드</th><th>도달</th><th>소팅</th><th>최대 콤보</th><th>피해량</th><th>슬롯 체력</th><th>기물</th><th>특전</th></tr></thead><tbody>
-      ${rows.map((row) => `<tr><td>${escape(row.event_at || row.received_at)}</td><td>${escape(String(row.session_id || "").slice(0, 12))}</td><td>${escape(row.result)}</td><td>${escape(row.build_version)}</td><td>${format(row.reached_wave)}</td><td>${format(row.sort_successes)}</td><td>${format(row.max_combo)}</td><td>${format(row.damage_done)}</td><td>${percent(row.slot_hp_ratio_avg)}</td><td>${escape(row.selected_pieces)}</td><td>${escape(row.picked_perks)}</td></tr>`).join("")}
+      <div class="table-wrap"><table><thead><tr><th>종료 시각</th><th>세션 ID</th><th>표본</th><th>숙련/시나리오</th><th>스테이지</th><th>조합</th><th>결과</th><th>빌드</th><th>도달</th><th>소팅</th><th>최대 콤보</th><th>피해량</th><th>슬롯 체력</th><th>기물</th><th>특전</th></tr></thead><tbody>
+      ${rows.map((row) => `<tr><td>${escape(row.event_at || row.received_at)}</td><td>${escape(String(row.session_id || "").slice(0, 12))}</td><td>${escape(sessionSource(row))}</td><td>${escape(sessionSkillDisplay(row))}</td><td>${escape(sessionStage(row))}</td><td>${escape(clip(sessionLoadoutLabel(row), 42))}</td><td>${escape(row.result)}</td><td>${escape(row.build_version)}</td><td>${format(row.reached_wave)}</td><td>${format(row.sort_successes)} / ${format(row.sort_attempts)}${Number.isFinite(sessionSortInterval(row)) ? ` · ${format(sessionSortInterval(row), 2)}초` : ""}</td><td>${format(row.max_combo)}</td><td>${format(row.damage_done)}</td><td>${percent(row.slot_hp_ratio_avg)}</td><td>${escape(row.selected_pieces)}</td><td>${escape(row.picked_perks)}</td></tr>`).join("")}
       </tbody></table></div></section>`;
   }
 
@@ -1601,6 +1990,7 @@
       waves: renderWaves,
       perks: renderPerks,
       preview: renderPreview,
+      calibration: renderCalibration,
       diagnostics: renderDiagnostics,
       versions: renderVersions,
       sessions: renderSessions,

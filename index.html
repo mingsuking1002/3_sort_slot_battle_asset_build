@@ -4435,11 +4435,17 @@
       const SIMULATION_QUERY = (() => {
         const params = new URLSearchParams(window.location.search);
         const active = params.get("simulation") === "1";
+        const pieceKeys = String(params.get("pieces") || "")
+          .split(",")
+          .map((key) => key.trim())
+          .filter(Boolean);
         return Object.freeze({
           active,
           upload: active && params.get("simulationUpload") === "1",
           speed: active ? Math.max(1, Math.min(50, Number(params.get("speed")) || 20)) : 1,
           seed: Math.max(1, Math.floor(Number(params.get("seed")) || 20260702)),
+          stageKey: active ? String(params.get("stage") || "").trim() : "",
+          pieceKeys,
         });
       })();
       const SIMULATION_RUNTIME = {
@@ -4448,7 +4454,13 @@
           dataSource: SIMULATION_QUERY.active ? "simulation" : "real",
           botProfile: "",
           botStrategy: "",
-          simulationVersion: "1.0.0",
+          botScenario: "",
+          botStageKey: SIMULATION_QUERY.stageKey,
+          botPieceIds: SIMULATION_QUERY.pieceKeys.join(","),
+          botPieceTypes: "",
+          botPieceLevels: "",
+          botLoadoutHash: "",
+          simulationVersion: "1.4.0-stage-loadout-experiments",
           simulationSeed: SIMULATION_QUERY.seed,
           simulationSpeed: SIMULATION_QUERY.speed,
           decisionDelayAvg: 0,
@@ -5061,6 +5073,10 @@
           sortAttempts: 0,
           sortSuccesses: 0,
           sortFailures: 0,
+          lastSortAttemptElapsed: null,
+          sortIntervalTotal: 0,
+          sortIntervalSquareTotal: 0,
+          sortIntervalCount: 0,
           repairCount: 0,
           repairHealTotal: 0,
           slotDamageTaken: 0,
@@ -5217,6 +5233,31 @@
           }));
       }
 
+      function getSessionWaveTelemetrySummary(waveSnapshots = state.telemetryStats?.waveSnapshots || []) {
+        return (Array.isArray(waveSnapshots) ? waveSnapshots : []).map((snapshot) => ({
+          reason: snapshot.reason || "",
+          wave: snapshot.wave,
+          waveOrdinal: snapshot.waveOrdinal,
+          remainingEnemyCount: Math.max(0, Math.floor(finiteNumber(snapshot.remainingEnemyCount ?? snapshot.enemyCount, 0))),
+          elapsedSec: roundTelemetryNumber(snapshot.elapsedSec),
+          enemySpawned: Math.max(0, Math.floor(finiteNumber(snapshot.enemySpawned, 0))),
+          enemyDefeated: Math.max(0, Math.floor(finiteNumber(snapshot.enemyDefeated, 0))),
+          sortAttempts: Math.max(0, Math.floor(finiteNumber(snapshot.sortAttempts, 0))),
+          sortSuccesses: Math.max(0, Math.floor(finiteNumber(snapshot.sortSuccesses, 0))),
+          sortFailures: Math.max(0, Math.floor(finiteNumber(snapshot.sortFailures, 0))),
+          repairCount: Math.max(0, Math.floor(finiteNumber(snapshot.repairCount, 0))),
+          maxCombo: Math.max(0, Math.floor(finiteNumber(snapshot.maxCombo, 0))),
+          pieceDamage: roundTelemetryNumber((snapshot.damageByPiece || []).reduce((sum, piece) => sum + finiteNumber(piece.damage, 0), 0)),
+          systemDamage: roundTelemetryNumber(Object.values(snapshot.systemDamageBySource || {}).reduce((sum, damage) => sum + finiteNumber(damage, 0), 0)),
+          slotHp: {
+            aliveSlotCount: snapshot.slotHp?.aliveSlotCount ?? 0,
+            destroyedSlotCount: snapshot.slotHp?.destroyedSlotCount ?? 0,
+            slotHpTotal: roundTelemetryNumber(snapshot.slotHp?.slotHpTotal),
+            slotHpRatioAvg: roundTelemetryNumber(snapshot.slotHp?.slotHpRatioAvg, 3),
+          },
+        }));
+      }
+
       function recordTelemetryPieceDamage(pieceKey, amount, source = "tower") {
         const damage = Math.max(0, finiteNumber(amount, 0));
         if (!state.telemetryStats || !pieceKey || damage <= 0) return;
@@ -5263,6 +5304,12 @@
       function getTelemetryBasePayload(eventType) {
         const stage = getStageData();
         const stats = state.telemetryStats || createTelemetryStats();
+        const sortIntervalAverage = stats.sortIntervalCount > 0
+          ? stats.sortIntervalTotal / stats.sortIntervalCount
+          : 0;
+        const sortIntervalVariance = stats.sortIntervalCount > 0
+          ? Math.max(0, stats.sortIntervalSquareTotal / stats.sortIntervalCount - sortIntervalAverage ** 2)
+          : 0;
         return {
           eventType,
           eventId: `${state.telemetrySessionId || "no-session"}-${state.telemetryEventSeq}`,
@@ -5292,6 +5339,8 @@
           sortAttempts: stats.sortAttempts,
           sortSuccesses: stats.sortSuccesses,
           sortFailures: stats.sortFailures,
+          sortIntervalAvg: roundTelemetryNumber(sortIntervalAverage, 3),
+          sortIntervalStddev: roundTelemetryNumber(Math.sqrt(sortIntervalVariance), 3),
           repairCount: stats.repairCount,
           repairHealTotal: roundTelemetryNumber(stats.repairHealTotal),
           slotDamageTaken: roundTelemetryNumber(stats.slotDamageTaken),
@@ -5306,6 +5355,12 @@
           dataSource: SIMULATION_RUNTIME.meta.dataSource,
           botProfile: SIMULATION_RUNTIME.meta.botProfile,
           botStrategy: SIMULATION_RUNTIME.meta.botStrategy,
+          botScenario: SIMULATION_RUNTIME.meta.botScenario,
+          botStageKey: SIMULATION_RUNTIME.meta.botStageKey,
+          botPieceIds: SIMULATION_RUNTIME.meta.botPieceIds,
+          botPieceTypes: SIMULATION_RUNTIME.meta.botPieceTypes,
+          botPieceLevels: SIMULATION_RUNTIME.meta.botPieceLevels,
+          botLoadoutHash: SIMULATION_RUNTIME.meta.botLoadoutHash,
           simulationVersion: SIMULATION_RUNTIME.meta.simulationVersion,
           simulationSeed: SIMULATION_RUNTIME.meta.simulationSeed,
           simulationSpeed: SIMULATION_RUNTIME.meta.simulationSpeed,
@@ -5328,9 +5383,17 @@
                 dataSource: SIMULATION_RUNTIME.meta.dataSource,
                 botProfile: SIMULATION_RUNTIME.meta.botProfile,
                 botStrategy: SIMULATION_RUNTIME.meta.botStrategy,
+                botScenario: SIMULATION_RUNTIME.meta.botScenario,
+                botStageKey: SIMULATION_RUNTIME.meta.botStageKey,
+                botPieceIds: SIMULATION_RUNTIME.meta.botPieceIds,
+                botPieceTypes: SIMULATION_RUNTIME.meta.botPieceTypes,
+                botPieceLevels: SIMULATION_RUNTIME.meta.botPieceLevels,
+                botLoadoutHash: SIMULATION_RUNTIME.meta.botLoadoutHash,
                 simulationVersion: SIMULATION_RUNTIME.meta.simulationVersion,
                 simulationSeed: SIMULATION_RUNTIME.meta.simulationSeed,
                 simulationSpeed: SIMULATION_RUNTIME.meta.simulationSpeed,
+                decisionDelayAvg: SIMULATION_RUNTIME.meta.decisionDelayAvg,
+                decisionDelayStddev: SIMULATION_RUNTIME.meta.decisionDelayStddev,
               },
             }
           : payload;
@@ -5389,6 +5452,15 @@
 
       function recordTelemetrySortAttempt() {
         if (!state.telemetryStats) return;
+        const now = Math.max(0, finiteNumber(state.elapsed, 0));
+        const previous = state.telemetryStats.lastSortAttemptElapsed;
+        if (Number.isFinite(previous) && now >= previous) {
+          const interval = now - previous;
+          state.telemetryStats.sortIntervalTotal += interval;
+          state.telemetryStats.sortIntervalSquareTotal += interval * interval;
+          state.telemetryStats.sortIntervalCount += 1;
+        }
+        state.telemetryStats.lastSortAttemptElapsed = now;
         state.telemetryStats.sortAttempts += 1;
       }
 
@@ -5539,7 +5611,7 @@
             : Math.max(0, Date.now() - state.telemetryStartedAtMs),
           loadout: getLoadoutTelemetrySummary(),
           pickedPerks: stats.pickedPerks,
-          waveSnapshots: stats.waveSnapshots,
+          waveSnapshots: getSessionWaveTelemetrySummary(stats.waveSnapshots),
           waveRemainingEnemies: getWaveRemainingEnemyTelemetrySummary(stats.waveSnapshots),
           maxCombo: stats.maxCombo,
           damageByPiece: getDamageByPieceTelemetrySummary(stats.damageByPiece),
@@ -5838,6 +5910,54 @@
 
       function getPieceLevel(pieceKey) {
         return getPieceDataLevel(pieceKey);
+      }
+
+      function getSimulationLoadoutMeta(pieceKeys = getActivePieceKeys(), stageKey = state.selectedStageKey) {
+        const keys = (Array.isArray(pieceKeys) ? pieceKeys : []).filter((key) => PIECES[key]);
+        const types = keys.map((key) => PIECES[key]?.type || "");
+        const levels = keys.map((key) => getPieceLevel(key));
+        return {
+          botStageKey: stageKey || "",
+          botPieceIds: keys.join(","),
+          botPieceTypes: types.join(","),
+          botPieceLevels: levels.join(","),
+          botLoadoutHash: keys.slice().sort().join("|"),
+        };
+      }
+
+      function applySimulationExperimentConfig(meta = {}) {
+        if (!SIMULATION_QUERY.active) return getSimulationLoadoutMeta();
+        const requestedStageKey = String(meta.stageKey || SIMULATION_QUERY.stageKey || "").trim();
+        if (requestedStageKey) {
+          const stage = STAGES.find((item) => item.key === requestedStageKey);
+          if (!stage) throw new Error(`시뮬레이션 스테이지를 찾을 수 없습니다: ${requestedStageKey}`);
+          state.selectedStageKey = stage.key;
+        }
+
+        const requestedPieceKeys = Array.isArray(meta.pieceKeys) && meta.pieceKeys.length
+          ? meta.pieceKeys
+          : SIMULATION_QUERY.pieceKeys;
+        if (requestedPieceKeys.length) {
+          const keys = requestedPieceKeys.map((key) => String(key || "").trim()).filter(Boolean);
+          const uniqueKeys = [...new Set(keys)];
+          if (keys.length !== LOADOUT_PIECE_COUNT) {
+            throw new Error(`--pieces는 정확히 ${LOADOUT_PIECE_COUNT}개여야 합니다: ${keys.length}개 입력됨`);
+          }
+          if (uniqueKeys.length !== keys.length) {
+            throw new Error(`--pieces에는 같은 Piece ID를 중복 입력할 수 없습니다: ${keys.join(",")}`);
+          }
+          for (const pieceKey of keys) {
+            if (!PIECES[pieceKey]) throw new Error(`PieceData에 없는 Piece ID입니다: ${pieceKey}`);
+            if (!SELECTABLE_PIECE_KEYS.includes(pieceKey)) throw new Error(`편성 가능한 기물이 아닙니다: ${pieceKey}`);
+          }
+          keys.forEach((pieceKey) => { PIECES[pieceKey].owned = true; });
+          state.selectedPieceKeys = keys;
+          state.focusedPieceKey = keys[0] || state.focusedPieceKey;
+        }
+
+        const summary = getSimulationLoadoutMeta(getActivePieceKeys(), state.selectedStageKey);
+        SIMULATION_RUNTIME.meta = { ...SIMULATION_RUNTIME.meta, ...summary };
+        return summary;
       }
 
       function getPieceStar(pieceKey) {
@@ -12334,6 +12454,49 @@
         if (!startExhibitionPreWaveTutorial(firstWave)) startWave(firstWave);
       }
 
+      function getSimulationThreatSnapshot() {
+        const pressuredSlots = new Set();
+        let attackingEnemyCount = 0;
+        let nearSlotEnemyCount = 0;
+        for (const enemy of state.enemies) {
+          if (["meleeAttack", "rangedAttack"].includes(enemy.aiState)) attackingEnemyCount += 1;
+          const slot = state.slots[enemy.targetSlot];
+          if (!slot || slot.destroyed) continue;
+          const center = getSlotCenter(slot.id);
+          const distance = Math.hypot(center.x - enemy.x, center.y - enemy.y);
+          const attackDistance = enemy.attackRange > 0
+            ? enemy.attackRange
+            : enemy.meleeRange || enemy.radius + 34;
+          if (distance <= attackDistance + 58) {
+            nearSlotEnemyCount += 1;
+            pressuredSlots.add(slot.id);
+          }
+        }
+        const live = state.slots.filter((slot) => !slot.destroyed);
+        const lowestLiveHpRatio = live.length
+          ? Math.min(...live.map((slot) => Math.max(0, slot.hp) / Math.max(1, slot.maxHp)))
+          : 0;
+        const enemyCount = state.enemies.length;
+        const pressureScore = clamp(
+          enemyCount / 80 * 0.55
+          + nearSlotEnemyCount / 12 * 0.25
+          + attackingEnemyCount / 5 * 0.35
+          + (1 - lowestLiveHpRatio) * 0.25,
+          0,
+          1,
+        );
+        return {
+          pressureScore: roundTelemetryNumber(pressureScore, 3),
+          enemyCount,
+          attackingEnemyCount,
+          nearSlotEnemyCount,
+          pressuredSlotIds: [...pressuredSlots],
+          aliveSlotCount: live.length,
+          destroyedSlotCount: state.slots.length - live.length,
+          lowestLiveHpRatio: roundTelemetryNumber(lowestLiveHpRatio, 3),
+        };
+      }
+
       function getSimulationSnapshot() {
         const stage = getStageData();
         return {
@@ -12347,6 +12510,7 @@
           elapsed: roundTelemetryNumber(state.elapsed, 3),
           combo: state.combo,
           enemies: state.enemies.length,
+          threat: getSimulationThreatSnapshot(),
           pendingLevelUps: state.pendingLevelUps,
           perkRerollUsed: state.perkRerollUsed,
           rerollCharges: state.rerollCharges,
@@ -12418,8 +12582,13 @@
               perkDecisionDelayTotal: 0,
               ...cloneGameData(meta),
             };
+            applySimulationExperimentConfig(meta);
             state.started = true;
             resetGame();
+            SIMULATION_RUNTIME.meta = {
+              ...SIMULATION_RUNTIME.meta,
+              ...getSimulationLoadoutMeta(getActivePieceKeys(), state.selectedStageKey),
+            };
             return getSimulationSnapshot();
           },
           movePiece(fromSlot, fromCell, toSlot, toCell) {

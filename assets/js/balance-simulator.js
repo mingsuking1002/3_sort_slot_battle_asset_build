@@ -9,30 +9,70 @@
   const baseSeed = Math.max(1, Math.floor(Number(params.get("seed")) || 20260702));
   const runId = params.get("runId") || `sim-${Date.now()}`;
   const coverageMode = params.get("coverage") === "1";
+  const experimentStage = String(params.get("stage") || "").trim();
+  const experimentPieces = String(params.get("pieces") || "")
+    .split(",")
+    .map((key) => key.trim())
+    .filter(Boolean);
   const STRATEGIES = ["balanced", "tower-focus", "combo", "survival", "firepower", "experimental"];
+  const SCENARIOS = {
+    standard: {
+      label: "기본 랜덤", delay: 1, success: 0, planning: 0, perkNoise: 1,
+      reroll: 0, attackBias: 0, repairBias: 0, perkQuality: 0,
+    },
+    weakStart: {
+      label: "초반 약세", delay: 1.08, success: -0.06, planning: -0.08, perkNoise: 1.08,
+      reroll: -0.04, attackBias: -0.06, repairBias: 0.04, perkQuality: -0.15,
+    },
+    highRoll: {
+      label: "특전 운 좋음", delay: 0.98, success: 0.02, planning: 0.03, perkNoise: 0.78,
+      reroll: 0.08, attackBias: 0.04, repairBias: 0, perkQuality: 0.55,
+    },
+    lowRoll: {
+      label: "특전 운 나쁨", delay: 1.02, success: -0.02, planning: -0.02, perkNoise: 1.35,
+      reroll: -0.06, attackBias: 0, repairBias: 0.02, perkQuality: -0.5,
+    },
+    mistakeHeavy: {
+      label: "실수 많음", delay: 1.12, success: -0.16, planning: -0.18, perkNoise: 1.2,
+      reroll: -0.02, attackBias: -0.04, repairBias: 0.06, perkQuality: -0.25,
+    },
+    pressureAttack: {
+      label: "압박 공격 우선", delay: 0.92, success: 0.01, planning: 0.04, perkNoise: 0.94,
+      reroll: 0.02, attackBias: 0.22, repairBias: -0.1, perkQuality: 0.15,
+    },
+    repairFirst: {
+      label: "수리 우선", delay: 1.03, success: 0.02, planning: 0.04, perkNoise: 0.96,
+      reroll: 0.02, attackBias: -0.08, repairBias: 0.24, perkQuality: 0.1,
+    },
+    comboFocus: {
+      label: "콤보 중심", delay: 0.96, success: 0.04, planning: 0.08, perkNoise: 0.88,
+      reroll: 0.05, attackBias: 0.08, repairBias: -0.04, perkQuality: 0.22,
+    },
+  };
+  const SCENARIO_KEYS = Object.keys(SCENARIOS);
   const COVERAGE_PLAN = [
-    { profile: "beginner", strategy: "balanced" },
-    { profile: "beginner", strategy: "survival" },
-    { profile: "beginner", strategy: "experimental" },
-    { profile: "intermediate", strategy: "firepower" },
-    { profile: "intermediate", strategy: "combo" },
-    { profile: "intermediate", strategy: "tower-focus" },
-    { profile: "advanced", strategy: "balanced" },
-    { profile: "advanced", strategy: "combo" },
-    { profile: "advanced", strategy: "survival" },
+    { profile: "beginner", strategy: "balanced", scenario: "standard" },
+    { profile: "intermediate", strategy: "firepower", scenario: "pressureAttack" },
+    { profile: "advanced", strategy: "combo", scenario: "comboFocus" },
+    { profile: "beginner", strategy: "survival", scenario: "mistakeHeavy" },
+    { profile: "intermediate", strategy: "combo", scenario: "lowRoll" },
+    { profile: "advanced", strategy: "balanced", scenario: "highRoll" },
+    { profile: "beginner", strategy: "experimental", scenario: "weakStart" },
+    { profile: "intermediate", strategy: "tower-focus", scenario: "repairFirst" },
+    { profile: "advanced", strategy: "survival", scenario: "standard" },
   ];
   const PROFILES = {
     beginner: {
       label: "초보자", delayMean: 6.78, delayCv: 0.38, perkDelayMean: 7.2,
-      successRate: 0.48, perkNoise: 1.45, rerollRate: 0.08,
+      successRate: 0.68, planningRate: 0.72, perkNoise: 1.45, rerollRate: 0.08,
     },
     intermediate: {
       label: "중급자", delayMean: 4.17, delayCv: 0.29, perkDelayMean: 4.8,
-      successRate: 0.73, perkNoise: 0.85, rerollRate: 0.23,
+      successRate: 0.88, planningRate: 0.9, perkNoise: 0.85, rerollRate: 0.23,
     },
     advanced: {
       label: "상급자", delayMean: 3.04, delayCv: 0.24, perkDelayMean: 3.1,
-      successRate: 0.91, perkNoise: 0.42, rerollRate: 0.42,
+      successRate: 0.97, planningRate: 0.98, perkNoise: 0.42, rerollRate: 0.42,
     },
   };
 
@@ -58,6 +98,7 @@
 
   const random = makeRandom(hashSeed(`${baseSeed}:${runId}`));
   const pick = (items) => items[Math.floor(random() * items.length)];
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, Number(value)));
 
   function normal() {
     const u = Math.max(Number.EPSILON, random());
@@ -95,15 +136,47 @@
     return mix[mix.length - 1][0];
   }
 
+  function resolveScenario(raw) {
+    return SCENARIOS[raw] ? raw : "";
+  }
+
+  function buildSessionProfile(profileKey, scenarioKey) {
+    const resolvedProfileKey = PROFILES[profileKey] ? profileKey : "intermediate";
+    const resolvedScenarioKey = SCENARIOS[scenarioKey] ? scenarioKey : "standard";
+    const base = PROFILES[resolvedProfileKey];
+    const scenario = SCENARIOS[resolvedScenarioKey];
+    return {
+      ...base,
+      profileKey: resolvedProfileKey,
+      scenarioKey: resolvedScenarioKey,
+      scenarioLabel: scenario.label,
+      delayMean: Math.max(0.65, base.delayMean * scenario.delay),
+      perkDelayMean: Math.max(0.5, base.perkDelayMean * scenario.delay),
+      successRate: clamp(base.successRate + scenario.success, 0.28, 0.99),
+      planningRate: clamp(base.planningRate + scenario.planning, 0.25, 0.99),
+      perkNoise: Math.max(0.08, base.perkNoise * scenario.perkNoise),
+      rerollRate: clamp(base.rerollRate + scenario.reroll, 0, 0.85),
+      attackBias: scenario.attackBias || 0,
+      repairBias: scenario.repairBias || 0,
+      perkQuality: scenario.perkQuality || 0,
+    };
+  }
+
   function coverageAssignment(index) {
     const forced = params.get("profile");
+    const forcedScenario = resolveScenario(params.get("scenario"));
     if (PROFILES[forced]) {
-      return { profile: forced, strategy: STRATEGIES[index % STRATEGIES.length] };
+      return {
+        profile: forced,
+        strategy: STRATEGIES[index % STRATEGIES.length],
+        scenario: forcedScenario || SCENARIO_KEYS[index % SCENARIO_KEYS.length],
+      };
     }
     const base = COVERAGE_PLAN[index % COVERAGE_PLAN.length];
     const cycle = Math.floor(index / COVERAGE_PLAN.length);
     const strategyIndex = (STRATEGIES.indexOf(base.strategy) + cycle * 2) % STRATEGIES.length;
-    return { profile: base.profile, strategy: STRATEGIES[strategyIndex] };
+    const scenarioIndex = (SCENARIO_KEYS.indexOf(base.scenario) + cycle) % SCENARIO_KEYS.length;
+    return { profile: base.profile, strategy: STRATEGIES[strategyIndex], scenario: forcedScenario || SCENARIO_KEYS[scenarioIndex] };
   }
 
   function combinations(snapshot) {
@@ -115,35 +188,94 @@
         else emptyTargets.push({ slot: slot.id, cell: cellIndex });
       });
     }
-    const successful = [];
+    const successful = { attack: [], repair: [] };
+    const pairSetups = { attack: [], repair: [] };
     for (const targetSlot of snapshot.slots) {
       const pieces = targetSlot.cells.filter(Boolean);
       const emptyCell = targetSlot.cells.findIndex((piece) => !piece);
       if (pieces.length !== 2 || pieces[0] !== pieces[1] || emptyCell < 0) continue;
       for (const source of sources) {
         if (source.slot === targetSlot.id || source.pieceKey !== pieces[0]) continue;
-        successful.push({ ...source, toSlot: targetSlot.id, toCell: emptyCell });
+        const kind = targetSlot.destroyed ? "repair" : "attack";
+        successful[kind].push({ ...source, toSlot: targetSlot.id, toCell: emptyCell, kind });
       }
     }
-    const general = [];
+    for (const targetSlot of snapshot.slots) {
+      const pieces = targetSlot.cells.filter(Boolean);
+      const emptyCells = targetSlot.cells.map((piece, index) => piece ? -1 : index).filter((index) => index >= 0);
+      if (pieces.length !== 1 || emptyCells.length !== 2) continue;
+      for (const source of sources) {
+        if (source.slot === targetSlot.id || source.pieceKey !== pieces[0]) continue;
+        const kind = targetSlot.destroyed ? "repair" : "attack";
+        pairSetups[kind].push({ ...source, toSlot: targetSlot.id, toCell: emptyCells[0], kind });
+      }
+    }
+    const general = { attack: [], repair: [] };
     for (const source of sources) {
       for (const target of emptyTargets) {
         if (source.slot === target.slot) continue;
-        general.push({ ...source, toSlot: target.slot, toCell: target.cell });
+        const kind = snapshot.slots[target.slot]?.destroyed ? "repair" : "attack";
+        general[kind].push({ ...source, toSlot: target.slot, toCell: target.cell, kind });
       }
     }
-    return { successful, general };
+    return { successful, pairSetups, general };
   }
 
-  function chooseMove(snapshot, profile) {
-    const options = combinations(snapshot);
-    if (options.successful.length && random() < profile.successRate) {
-      return { move: pick(options.successful), intendedSuccess: true };
+  function chooseMoveForKind(options, kind, profile) {
+    const successful = options.successful[kind];
+    const pairSetups = options.pairSetups[kind];
+    const general = options.general[kind];
+    if (successful.length && random() < profile.successRate) {
+      return { move: pick(successful), intendedSuccess: true, mistake: false, kind };
     }
-    const successKeys = new Set(options.successful.map((move) => `${move.slot}:${move.cell}>${move.toSlot}:${move.toCell}`));
-    const failures = options.general.filter((move) => !successKeys.has(`${move.slot}:${move.cell}>${move.toSlot}:${move.toCell}`));
-    const pool = failures.length ? failures : options.general;
-    return pool.length ? { move: pick(pool), intendedSuccess: false } : null;
+    if (!successful.length && pairSetups.length && random() < profile.planningRate) {
+      return { move: pick(pairSetups), intendedSuccess: false, mistake: false, kind };
+    }
+    const plannedKeys = new Set([...successful, ...pairSetups].map((move) => `${move.slot}:${move.cell}>${move.toSlot}:${move.toCell}`));
+    const failures = general.filter((move) => !plannedKeys.has(`${move.slot}:${move.cell}>${move.toSlot}:${move.toCell}`));
+    const pool = failures.length ? failures : general;
+    return pool.length ? { move: pick(pool), intendedSuccess: false, mistake: true, kind } : null;
+  }
+
+  function chooseMove(snapshot, profile, profileKey, pressureMode) {
+    const options = combinations(snapshot);
+    const hasRepair = options.successful.repair.length || options.pairSetups.repair.length || options.general.repair.length;
+    if (profileKey !== "advanced") {
+      if (pressureMode) return chooseMoveForKind(options, "attack", profile) || chooseMoveForKind(options, "repair", profile);
+      const preferRepair = hasRepair && random() < clamp(0.58 + profile.repairBias - profile.attackBias, 0.08, 0.88);
+      const primary = preferRepair ? "repair" : "attack";
+      const secondary = preferRepair ? "attack" : "repair";
+      return chooseMoveForKind(options, primary, profile) || chooseMoveForKind(options, secondary, profile);
+    }
+    const threat = snapshot.threat || {};
+    const destroyed = Number(threat.destroyedSlotCount || 0);
+    const repairChance = destroyed
+      ? clamp(0.16 + destroyed * 0.15 + (Number(threat.aliveSlotCount || 9) <= 4 ? 0.22 : 0) - Number(threat.pressureScore || 0) * 0.3 + profile.repairBias - profile.attackBias, 0.08, 0.78)
+      : 0;
+    const preferRepair = hasRepair && random() < repairChance;
+    const primary = preferRepair ? "repair" : "attack";
+    const secondary = preferRepair ? "attack" : "repair";
+    return chooseMoveForKind(options, primary, profile) || chooseMoveForKind(options, secondary, profile);
+  }
+
+  function updatePressureMode(current, snapshot, profileKey) {
+    const threat = snapshot.threat || {};
+    const score = Number(threat.pressureScore || 0);
+    const attacking = Number(threat.attackingEnemyCount || 0);
+    const near = Number(threat.nearSlotEnemyCount || 0);
+    const enter = profileKey === "beginner" ? 0.58 : profileKey === "intermediate" ? 0.5 : 0.62;
+    const exit = profileKey === "beginner" ? 0.3 : 0.26;
+    if (attacking > 0 || score >= enter) return true;
+    if (score <= exit && attacking === 0 && near <= 1) return false;
+    return current;
+  }
+
+  function getPressureDelayMultiplier(snapshot, profileKey, pressureMode) {
+    const threat = snapshot.threat || {};
+    let multiplier = pressureMode ? (profileKey === "advanced" ? 0.88 : 0.82) : 1;
+    if (Number(threat.attackingEnemyCount || 0) > 0) multiplier *= profileKey === "advanced" ? 0.88 : 0.84;
+    else if (Number(threat.nearSlotEnemyCount || 0) > 0) multiplier *= 0.94;
+    return Math.max(0.62, multiplier);
   }
 
   function slotHpRatio(snapshot) {
@@ -151,26 +283,100 @@
     return snapshot.slots.reduce((sum, slot) => sum + Math.max(0, slot.hp) / Math.max(1, slot.maxHp), 0) / snapshot.slots.length;
   }
 
-  function perkScore(choice, snapshot, profile, strategy) {
-    const rarity = { common: 0.2, rare: 0.75, unique: 1.05, legendary: 1.4 }[choice.rarity] || 0;
+  function normalizePieceType(value) {
+    const raw = String(value || "").toLowerCase();
+    if (raw.includes("scatter") || raw.includes("shotgun")) return "scatter";
+    if (raw.includes("sniper") || raw.includes("sr")) return "sniper";
+    if (raw.includes("breaker") || raw.includes("mortar")) return "breaker";
+    if (raw.includes("blast") || raw.includes("boomer")) return "blast";
+    if (raw.includes("support") || raw.includes("buffer")) return "support";
+    if (raw.includes("basic")) return "basic";
+    return raw.split("_")[0] || "";
+  }
+
+  function boardTypeCounts(snapshot) {
+    const counts = {};
+    for (const slot of snapshot.slots || []) {
+      for (const pieceKey of slot.cells || []) {
+        const type = normalizePieceType(pieceKey);
+        if (type) counts[type] = (counts[type] || 0) + 1;
+      }
+    }
+    return counts;
+  }
+
+  function actionTags(choice) {
     const actions = choice.actions || [];
     const id = String(choice.id || "").toLowerCase();
+    const title = String(choice.title || "").toLowerCase();
+    const body = String(choice.body || "").toLowerCase();
     const actionTypes = actions.map((action) => String(action.type || ""));
+    const haystack = `${id} ${title} ${body} ${actionTypes.join(" ")}`;
+    return {
+      actionTypes,
+      offense: /damage|atk|firerate|projectilecount|percenthp|attack|공격|발사|관통|폭발|탄창/i.test(haystack),
+      survival: /heal|slot|maxhp|regen|repair|회복|체력|수리/i.test(haystack),
+      combo: /combo|specialprojectile|콤보|전체|필살/i.test(haystack) || Number(choice.design?.perkTarget) === 8,
+      area: /blast|splash|explode|projectilecount|범위|폭발|산탄/i.test(haystack),
+      fireRate: /firerate|speed|공격 속도|공속|가속/i.test(haystack),
+      ammo: /ammo|magazine|탄창|탄약/i.test(haystack),
+    };
+  }
+
+  function perkScore(choice, snapshot, profile, strategy) {
+    const rarity = { common: 0.2, rare: 0.75, unique: 1.05, legendary: 1.4 }[choice.rarity] || 0;
+    const id = String(choice.id || "").toLowerCase();
+    const tags = actionTags(choice);
+    const actionTypes = tags.actionTypes;
+    const threat = snapshot.threat || {};
+    const hpRatio = slotHpRatio(snapshot);
+    const pressure = Number(threat.pressureScore || 0);
+    const destroyed = Number(threat.destroyedSlotCount || 0);
+    const enemies = Number(snapshot.enemies || 0);
+    const typeCounts = boardTypeCounts(snapshot);
     let score = 1 + rarity + (choice.perkLevel < choice.maxLevel ? 0.25 : -2);
-    if (choice.targetType) score += 0.25;
-    if (strategy === "combo" && (Number(choice.design?.perkTarget) === 8 || id.includes("combo") || actionTypes.includes("addSpecialProjectileLevel"))) score += 2.4;
-    if (strategy === "survival" && (slotHpRatio(snapshot) < 0.72 || actionTypes.some((type) => /heal|slot|maxhp|regen/i.test(type)))) score += 2.1;
-    if (strategy === "firepower" && actionTypes.some((type) => /damage|fireRate|ProjectileCount|PercentHp/i.test(type))) score += 1.8;
+
+    const targetType = normalizePieceType(choice.targetType);
+    if (targetType) {
+      const owned = Number(typeCounts[targetType] || 0);
+      score += 0.1 + Math.min(1.25, owned * 0.16);
+      if (!owned && profile.scenarioKey === "weakStart") score -= 0.28;
+    }
+
+    if (pressure > 0.5 || enemies > 35) {
+      if (tags.offense) score += 0.55 + Math.min(0.8, pressure * 0.75);
+      if (tags.area || tags.combo) score += enemies > 35 ? 0.55 : 0.24;
+      if (tags.survival && destroyed <= 0 && hpRatio > 0.7) score -= 0.28;
+    }
+    if (destroyed > 0 || hpRatio < 0.62) {
+      if (tags.survival) score += 1.35 + destroyed * 0.35 + (0.65 - hpRatio);
+      if (tags.offense && hpRatio < 0.38) score -= 0.25;
+    }
+
+    if (snapshot.combo >= 7 && tags.combo) score += 0.45;
+    if (tags.fireRate && pressure > 0.35) score += 0.25;
+    if (tags.ammo && enemies < 18 && hpRatio > 0.72) score += 0.14;
+
+    if (strategy === "combo" && tags.combo) score += 2.4;
+    if (strategy === "survival" && (hpRatio < 0.72 || tags.survival)) score += 2.1;
+    if (strategy === "firepower" && tags.offense) score += 1.8;
     if (strategy === "tower-focus" && choice.targetType) score += 1.35;
     if (strategy === "experimental" && choice.perkLevel === 0) score += 1.1;
     if (strategy === "balanced" && !choice.targetType) score += 0.8;
-    if (snapshot.enemies > 35 && actionTypes.some((type) => /Blast|ProjectileCount|SpecialProjectile/i.test(type))) score += 0.6;
+    if (profile.scenarioKey === "comboFocus" && tags.combo) score += 0.9;
+    if (profile.scenarioKey === "pressureAttack" && tags.offense) score += 0.55;
+    if (profile.scenarioKey === "repairFirst" && tags.survival) score += 0.55;
+    if (profile.scenarioKey === "highRoll") score += tags.offense || tags.combo || tags.survival ? profile.perkQuality : 0;
+    if (profile.scenarioKey === "lowRoll" || profile.scenarioKey === "weakStart") {
+      score += profile.perkQuality * (rarity >= 0.75 || tags.combo || tags.area ? 1 : 0.35);
+    }
+    if (enemies > 35 && actionTypes.some((type) => /Blast|ProjectileCount|SpecialProjectile/i.test(type))) score += 0.6;
     score += normal() * profile.perkNoise;
     return score;
   }
 
   function weightedPerkIndex(choices, scores, profile) {
-    const temperature = profile === PROFILES.beginner ? 1.45 : profile === PROFILES.intermediate ? 0.9 : 0.52;
+    const temperature = profile.profileKey === "beginner" ? 1.45 : profile.profileKey === "intermediate" ? 0.9 : 0.52;
     const max = Math.max(...scores);
     const weights = scores.map((score) => Math.exp((score - max) / temperature));
     let roll = random() * weights.reduce((sum, value) => sum + value, 0);
@@ -202,9 +408,9 @@
     return { average, stddev: Math.sqrt(variance) };
   }
 
-  function runSession(api, profileKey, strategy, sessionIndex, status) {
-    const profile = PROFILES[profileKey];
-    const sessionSeed = hashSeed(`${baseSeed}:${sessionIndex}:${profileKey}:${strategy}`);
+  function runSession(api, profileKey, strategy, scenarioKey, sessionIndex, status) {
+    const profile = buildSessionProfile(profileKey, scenarioKey);
+    const sessionSeed = hashSeed(`${baseSeed}:${sessionIndex}:${profile.profileKey}:${strategy}:${profile.scenarioKey}`);
     const decisionDelays = [];
     const perkDelays = [];
     let attempts = 0;
@@ -212,6 +418,7 @@
     let invalidSortAttempts = 0;
     let rerolls = 0;
     let perkPicks = 0;
+    let pressureMode = false;
     let clock = 0;
     let nextSortAt = logNormalWithMean(profile.delayMean, profile.delayCv);
     let perkDecision = null;
@@ -220,8 +427,11 @@
     const eventStart = api.getEvents().length;
 
     api.startSession({
-      botProfile: profileKey,
+      botProfile: profile.profileKey,
       botStrategy: strategy,
+      botScenario: profile.scenarioKey,
+      stageKey: experimentStage,
+      pieceKeys: experimentPieces,
       simulationSeed: sessionSeed,
     });
 
@@ -245,8 +455,9 @@
         resolve({
           sessionIndex,
           sessionId: endEvent?.sessionId || snapshot.sessionId,
-          profile: profileKey,
+          profile: profile.profileKey,
           strategy,
+          scenario: profile.scenarioKey,
           seed: sessionSeed,
           actualAttempts: endEvent?.sortAttempts ?? snapshot.telemetry?.sortAttempts ?? attempts,
           result: endEvent?.payload?.result || (snapshot.wavePhase === "clear" ? "clear" : timedOut ? "timeout" : "fail"),
@@ -266,7 +477,8 @@
         previousFrame = now;
         clock += realDt * speed;
         let snapshot = api.getSnapshot();
-        status.textContent = `${profile.label} ${sessionIndex + 1}/${sessionCount} · W${snapshot.waveOrdinal}/${snapshot.waveTotal} · 소팅 ${snapshot.telemetry?.sortAttempts || 0}회`;
+        pressureMode = updatePressureMode(pressureMode, snapshot, profile.profileKey);
+        status.textContent = `${profile.label}/${profile.scenarioLabel} ${sessionIndex + 1}/${sessionCount} · W${snapshot.waveOrdinal}/${snapshot.waveTotal} · 소팅 ${snapshot.telemetry?.sortAttempts || 0}회 · 압박 ${Math.round(Number(snapshot.threat?.pressureScore || 0) * 100)}`;
 
         if (snapshot.ended) return finish(snapshot);
         if (now - wallStarted > 180000) return finish(snapshot, true);
@@ -284,7 +496,7 @@
           } else if (clock >= perkDecision.at) {
             const scores = snapshot.choices.map((choice) => perkScore(choice, snapshot, profile, strategy));
             const best = Math.max(...scores);
-            const shouldReroll = !snapshot.perkRerollUsed && random() < profile.rerollRate && best < (profileKey === "advanced" ? 2.6 : 2.1);
+            const shouldReroll = !snapshot.perkRerollUsed && random() < profile.rerollRate && best < (profile.profileKey === "advanced" ? 2.6 : 2.1);
             perkDelays.push(perkDecision.delay);
             if (shouldReroll && api.rerollPerks()) rerolls += 1;
             else {
@@ -295,14 +507,15 @@
             updateMeta();
           }
         } else if (!snapshot.paused && ["combat", "boss"].includes(snapshot.wavePhase) && clock >= nextSortAt) {
-          const delay = Math.max(0.45, logNormalWithMean(profile.delayMean, profile.delayCv));
+          const pressureMultiplier = getPressureDelayMultiplier(snapshot, profile.profileKey, pressureMode);
+          const delay = Math.max(0.45, logNormalWithMean(profile.delayMean * pressureMultiplier, profile.delayCv));
           decisionDelays.push(delay);
-          const selected = chooseMove(snapshot, profile);
+          const selected = chooseMove(snapshot, profile, profile.profileKey, pressureMode);
           if (selected) {
             const move = selected.move;
             const result = api.movePiece(move.slot, move.cell, move.toSlot, move.toCell);
             attempts += 1;
-            if (!selected.intendedSuccess) mistakes += 1;
+            if (selected.mistake) mistakes += 1;
             if (!result.ok) invalidSortAttempts += 1;
           }
           nextSortAt = clock + delay;
@@ -317,7 +530,9 @@
   function buildSummary(sessions) {
     const groups = {};
     const strategies = {};
+    const scenarios = {};
     for (const session of sessions) strategies[session.strategy] = (strategies[session.strategy] || 0) + 1;
+    for (const session of sessions) scenarios[session.scenario] = (scenarios[session.scenario] || 0) + 1;
     for (const key of Object.keys(PROFILES)) {
       const rows = sessions.filter((session) => session.profile === key);
       groups[key] = {
@@ -329,7 +544,7 @@
         averageReachedWave: rows.length ? rows.reduce((sum, row) => sum + Number(row.reachedWave || 0), 0) / rows.length : 0,
       };
     }
-    return { totalSessions: sessions.length, groups, strategies };
+    return { totalSessions: sessions.length, groups, strategies, scenarios };
   }
 
   async function postResult(payload) {
@@ -350,16 +565,17 @@
     for (let index = 0; index < sessionCount; index += 1) {
       const assignment = coverageMode
         ? coverageAssignment(index)
-        : { profile: sampleProfile(mix), strategy: pick(STRATEGIES) };
+        : { profile: sampleProfile(mix), strategy: pick(STRATEGIES), scenario: resolveScenario(params.get("scenario")) || pick(SCENARIO_KEYS) };
       const profile = assignment.profile;
       const strategy = assignment.strategy;
-      sessions.push(await runSession(api, profile, strategy, index, status));
+      const scenario = assignment.scenario;
+      sessions.push(await runSession(api, profile, strategy, scenario, index, status));
     }
     const payload = {
       schemaVersion: "3sort-balance-simulation-v1",
       generatedAt: new Date().toISOString(),
       runId,
-      config: { sessionCount, speed, baseSeed, coverageMode, mix: Object.fromEntries(mix) },
+      config: { sessionCount, speed, baseSeed, coverageMode, mix: Object.fromEntries(mix), stage: experimentStage, pieces: experimentPieces, scenarios: SCENARIOS },
       summary: buildSummary(sessions),
       sessions,
       events: api.getEvents(),

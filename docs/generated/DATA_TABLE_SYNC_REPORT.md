@@ -7,7 +7,7 @@
 - 런타임 연결: **기본 실행 모드** (유효한 생성 스냅샷을 항상 적용)
 - 외부 적용: **13개**, 내장 fallback: **3개**
 - 검사 결과: ERROR 0 / WARN 0 / INFO 9
-- 현재 데이터 대비 변경: 523개 행 / 1060개 필드
+- 현재 데이터 대비 변경: 523개 행 / 1062개 필드
 
 ## 테이블 공급 현황
 
@@ -80,7 +80,8 @@
 
 - `StageData.1001.StageName`: `"StageName_1"` -> ``
 - `StageData.1001.BossID`: `9001` -> ``
-- `StageData.1001.StageReward`: `1220` -> `5`
+- `StageData.1001.WaveReward`: `5` -> `100`
+- `StageData.1001.StageReward`: `1220` -> `10`
 - `StageData.1001.BGID`: `"assets/images/ui/Main/Image_Stage_1 5.png"` -> ``
 - `StageData.1001.WaveDuration`: `40` -> `""`
 - `StageData.1001.Desc`: `"1 스테이지 관계자의 출입금지"` -> ``
@@ -88,7 +89,8 @@
 - `StageData.1002.StageName`: `"StageName_2"` -> ``
 - `StageData.1002.WaveDataID`: `2002` -> `2001`
 - `StageData.1002.BossID`: `9001` -> ``
-- `StageData.1002.StageReward`: `1600` -> `5`
+- `StageData.1002.WaveReward`: `5` -> `100`
+- `StageData.1002.StageReward`: `1600` -> `20`
 - `StageData.1002.BGID`: `"assets/images/ui/Main/Image_Stage_1 5.png"` -> ``
 - `StageData.1002.Desc`: `"2 스테이지 임시 데이터"` -> ``
 - `StageData.1002.*`: `""` -> ``
@@ -249,10 +251,10 @@
 - `MonsterGroupData.11023.*`: `""` -> ``
 - `MonsterData.4111.MonsterName`: `"Monster_Normal_01"` -> ``
 - `MonsterData.4111.MonsterHp`: `150` -> `60`
-- `MonsterData.4111.MonsterAtk`: `1` -> `31`
+- `MonsterData.4111.MonsterAtk`: `1` -> `63`
 - `MonsterData.4111.MonsterAtkSpeed`: `1.35` -> `1.2`
 - `MonsterData.4111.MonsterAtkRange`: `0` -> `1`
-- `MonsterData.4111.MonsterMoveSpeed`: `34` -> `2`
+- `MonsterData.4111.MonsterMoveSpeed`: `34` -> `15`
 - `MonsterData.4111.MonsterSprite`: `"assets/images/monsters/기본형.png"` -> ``
 - `MonsterData.4111.Desc`: `"기본형 · 전시 체력 상향"` -> ``
 - `MonsterData.4111.*`: `""` -> ``
@@ -260,10 +262,10 @@
 - `MonsterData.4121.MonsterType`: `2` -> `1`
 - `MonsterData.4121.ExpTypeID`: `82` -> `81`
 - `MonsterData.4121.MonsterHp`: `135` -> `65`
-- `MonsterData.4121.MonsterAtk`: `1` -> `34`
+- `MonsterData.4121.MonsterAtk`: `1` -> `69`
 - `MonsterData.4121.MonsterAtkSpeed`: `1.1` -> `1.2`
 - `MonsterData.4121.MonsterAtkRange`: `0` -> `1`
-- `MonsterData.4121.MonsterMoveSpeed`: `61` -> `2`
+- `MonsterData.4121.MonsterMoveSpeed`: `61` -> `15`
 - `MonsterData.4121.MonsterSprite`: `"assets/images/monsters/속도형.png"` -> ``
 - `MonsterData.4121.Desc`: `"속도형 · 전시 체력 상향"` -> ``
 - `MonsterData.4121.*`: `""` -> ``
@@ -271,13 +273,11 @@
 - `MonsterData.4131.MonsterType`: `3` -> `1`
 - `MonsterData.4131.ExpTypeID`: `82` -> `81`
 - `MonsterData.4131.MonsterHp`: `720` -> `70`
-- `MonsterData.4131.MonsterAtk`: `1` -> `37`
+- `MonsterData.4131.MonsterAtk`: `1` -> `75`
 - `MonsterData.4131.MonsterAtkSpeed`: `1.55` -> `1.2`
 - `MonsterData.4131.MonsterAtkRange`: `0` -> `1`
-- `MonsterData.4131.MonsterMoveSpeed`: `19` -> `2`
+- `MonsterData.4131.MonsterMoveSpeed`: `19` -> `15`
 - `MonsterData.4131.MonsterSprite`: `"assets/images/monsters/탱커형.png"` -> ``
-- `MonsterData.4131.Desc`: `"탱커형 · 전시 체력 상향"` -> ``
-- `MonsterData.4131.*`: `""` -> ``
 - 변경 상세는 200건까지만 표시했습니다.
 
 ## 계약 메모
