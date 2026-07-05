@@ -8,6 +8,47 @@
 run-balance-simulation.cmd
 ```
 
+## 클릭 한 번 일반 실행 설정
+
+검증용 `--speed-check`가 아니라 실제 시뮬레이션 로그를 시트에 쌓으려면 `run-balance-simulation.cmd` 안의 기본 실행 줄만 바꾸면 된다.
+
+파일에서 이 줄을 찾는다.
+
+```bat
+if "%ARGS%"=="" set "ARGS=--sessions 9 --speed 50 --mix beginner:2,intermediate:5,advanced:2 --show --stage stage-1 --pieces basic_1,scatter_1,sniper_1,breaker_1,blast_1,support_1"
+```
+
+이 줄의 `set "ARGS=...` 안쪽만 원하는 실행 조건으로 수정하고 저장하면 된다. 그 다음부터는 `.cmd`를 더블클릭하면 해당 조건으로 바로 실행된다.
+
+일반 추천값은 아래다.
+
+```bat
+if "%ARGS%"=="" set "ARGS=--sessions 9 --speed 50 --mix beginner:2,intermediate:5,advanced:2 --stage stage-1 --pieces basic_1,scatter_1,sniper_1,breaker_1,blast_1,support_1"
+```
+
+화면을 보면서 실행하고 싶으면 `--show`를 붙인다.
+
+```bat
+if "%ARGS%"=="" set "ARGS=--sessions 9 --speed 50 --mix beginner:2,intermediate:5,advanced:2 --show --stage stage-1 --pieces basic_1,scatter_1,sniper_1,breaker_1,blast_1,support_1"
+```
+
+표본을 더 많이 쌓는 일반 실행 예시는 아래다.
+
+```bat
+if "%ARGS%"=="" set "ARGS=--sessions 30 --speed 50 --mix beginner:2,intermediate:5,advanced:2 --stage stage-1 --pieces basic_1,scatter_1,sniper_1,breaker_1,blast_1,support_1"
+```
+
+중급자만 30세션 돌리고 싶으면 아래처럼 바꾼다.
+
+```bat
+if "%ARGS%"=="" set "ARGS=--sessions 30 --speed 50 --profile intermediate --stage stage-1 --pieces basic_1,scatter_1,sniper_1,breaker_1,blast_1,support_1"
+```
+
+중요한 차이:
+
+- 일반 실행: `--speed-check`를 넣지 않는다. 실행 결과가 Google Sheet에 저장된다.
+- 속도 검증: `--speed-check`를 넣는다. 로컬에서 배속 차이만 비교하고 시트에는 저장하지 않는다.
+
 특정 숙련도만 실행할 수 있다.
 
 ```powershell
@@ -20,8 +61,8 @@ run-balance-simulation.cmd --profile advanced --sessions 30
 
 ```powershell
 run-balance-simulation.cmd --scenario pressureAttack --sessions 9
-run-balance-simulation.cmd --scenario repairFirst --sessions 9
-run-balance-simulation.cmd --profile beginner --scenario mistakeHeavy --sessions 9
+run-balance-simulation.cmd --scenario comboFocus --sessions 9
+run-balance-simulation.cmd --profile intermediate --scenario highRoll --sessions 9
 ```
 
 스테이지와 출전 기물 6개를 직접 지정해서 실험할 수 있다.
@@ -40,16 +81,18 @@ run-balance-simulation.cmd --stage stage-2 --pieces basic_3,scatter_2,sniper_1,b
 - 로그 숫자를 직접 만들지 않고 실제 게임을 자동 플레이한다.
 - 소팅 시간은 숙련도별 로그정규분포에서 매번 새로 추출하고 게임 종료까지 계속 소팅한다.
 - 소팅 횟수는 제한하지 않으며 생존 시간과 평균 소팅 간격에 따른 결과값으로만 기록한다.
-- 당장 완성되는 3-Sort가 없으면 같은 기물 두 개를 모아 다음 소팅을 준비한다.
+- 당장 완성되는 3-Sort가 없으면 같은 기물 두 개를 모아 다음 소팅을 준비하고, 후속 완성 이동을 `planQueue`에 기억한다.
+- 의미 없는 랜덤 이동은 하지 않는다. 직접 3-Sort, 수리/공격 준비 이동, 또는 다음 매칭을 만드는 의미 있는 이동만 수행한다.
 - 초보자와 중급자는 몬스터가 슬롯에 근접하거나 적이 누적되면 생존 슬롯의 공격 소팅을 우선한다. 압박이 낮아지면 파괴 슬롯 수리를 다시 시도한다.
 - 상급자는 전장 압력, 파괴 슬롯 수, 남은 생존 슬롯 수를 함께 계산해 공격과 수리를 분배한다.
 - 모든 숙련도는 슬롯이 공격받거나 전장 압력이 높아지면 평상시보다 소팅 간격이 짧아진다.
 - 특전은 화면에 제시된 후보만 현재 전투 상황과 세션 빌드 성향으로 평가한다.
-- 특전 선택은 적 누적, 슬롯 체력, 파괴 슬롯 수, 현재 콤보, 보유 기물 타입, 세션 전략을 함께 점수화한다.
+- 특전 선택은 적 누적, 슬롯 체력, 파괴 슬롯 수, 현재 콤보, 보유 기물 타입, 세션 전략을 함께 점수화하고 가장 높은 점수를 선택한다. 특전 오판 랜덤성은 사용하지 않는다.
 - `--stage`와 `--pieces`가 있으면 매 세션 시작 전에 선택 스테이지와 편성을 강제로 적용한다.
 - 자동 플레이 결과는 웹앱을 통해 Google Sheet에만 저장하며 `data_source=simulation`으로 구분한다.
 - 대시보드에서는 `표본` 필터로 `real`과 `simulation`을 분리한다.
 - 실제 플레이 로그는 소팅 완성 수, 평균 소팅 간격, 도달 웨이브, 클리어 여부로 초보자/중급자/상급자를 가볍게 추정한다.
+- 신규 시뮬 로그의 `payload_json.simulation`에는 `plannedSortRatio`, `planFollowupCount`, `planSetupCount`, `planBreakCount`, `reactiveSortRatio`, `averagePlanDepth`가 기록된다.
 
 ## 숙련도 기준
 
@@ -74,7 +117,10 @@ run-balance-simulation.cmd --stage stage-2 --pieces basic_3,scatter_2,sniper_1,b
 | `--sessions 100` | 자동 플레이 세션 수 |
 | `--speed 50` | 게임 시간 배속, 최대 50 |
 | `--seed 20260702` | 재현용 난수 시드 |
-| `--mix beginner:34,intermediate:33,advanced:33` | 숙련도 혼합 비율 |
+| `--speed-check` | 같은 seed를 여러 배속으로 돌려 핵심 결과 일치 여부 검증 |
+| `--check-speeds 1,10,50` | 속도 검증 배속 목록 |
+| `--check-sessions 1` | 속도 검증에 사용할 세션 수. 기본 1 |
+| `--mix beginner:2,intermediate:5,advanced:2` | 숙련도 혼합 비율 |
 | `--profile advanced` | 특정 숙련도만 실행 |
 | `--scenario pressureAttack` | 특정 상황 프리셋만 실행 |
 | `--stage stage-1` | 실행할 StageData key 지정 |
@@ -83,20 +129,32 @@ run-balance-simulation.cmd --stage stage-2 --pieces basic_3,scatter_2,sniper_1,b
 | `--no-dashboard` | 시트 기록만 하고 대시보드 갱신 생략 |
 | `--dry-run` | 브라우저와 필수 파일만 확인 |
 
+## 속도 검증
+
+50배속 결과를 믿기 전에 같은 seed를 1배속, 10배속, 50배속으로 돌려 핵심 결과가 같은지 확인할 수 있다. 이 검증은 로컬에서만 비교하고 Google Sheet에는 업로드하지 않는다.
+
+```powershell
+run-balance-simulation.cmd --speed-check --check-sessions 1 --check-speeds 1,10,50 --seed 20260706 --stage stage-1 --pieces basic_1,scatter_1,sniper_1,breaker_1,blast_1,support_1
+```
+
+검증 기준:
+
+- 실패 처리: 결과, 도달 웨이브, 소팅 시도 수가 달라짐
+- 경고 처리: 이벤트 체크섬, 특전 선택 수, 계획형 소팅 비중이 달라짐
+
+체크섬 경고가 있어도 핵심 결과가 같으면 50배속은 밸런스 탐색용으로 사용할 수 있다. 핵심 결과가 달라지면 해당 seed는 50배속 신뢰 불가로 보고 1배속/10배속 로그와 비교한다.
+
 시나리오 프리셋:
 
 | 키 | 의미 |
 |---|---|
 | `standard` | 기본 랜덤 |
-| `weakStart` | 초반 실수와 약한 시작 |
-| `highRoll` | 특전 선택 운이 좋은 표본 |
-| `lowRoll` | 특전 선택 운이 나쁜 표본 |
-| `mistakeHeavy` | 이동 실수가 많은 표본 |
+| `highRoll` | 좋은 특전 후보가 제시됐을 때 리롤 판단이 유리한 표본 |
+| `lowRoll` | 좋은 특전 후보가 적게 제시됐을 때 리롤 판단이 보수적인 표본 |
 | `pressureAttack` | 압박 시 공격 소팅을 더 우선 |
-| `repairFirst` | 수리 성향이 강한 표본 |
 | `comboFocus` | 콤보/전체정렬 특전 선호 |
 
-기본 커버리지 모드는 초보·중급·상급을 각각 3세션씩 배정하고, 6개 특전 전략과 8개 시나리오를 섞어 최소 커버리지를 만든다. `--random-mix`를 지정한 경우에만 기존 무작위 혼합으로 전환한다.
+기본 커버리지 모드는 9세션 기준 초보자 2세션, 중급자 5세션, 상급자 2세션을 배정한다. 기본 랜덤, 좋은 후보 제시, 나쁜 후보 제시, 압박 공격 우선, 콤보 중심 시나리오를 섞어 최소 커버리지를 만든다. `--random-mix`를 지정한 경우에만 혼합 비율 기반 무작위 배정으로 전환한다.
 
 대시보드에서 `표본=simulation`을 선택하면 최신 시뮬레이터 버전이 자동 선택된다. 이전 자동 플레이 결과는 삭제하지 않고 버전 필터로 분리한다.
 
@@ -107,7 +165,7 @@ run-balance-simulation.cmd --stage stage-2 --pieces basic_3,scatter_2,sniper_1,b
 - `실제 표본`: 플레이 로그를 초보자/중급자/상급자로 추정해 묶은 값이다.
 - `시뮬 표본`: 자동 플레이가 기록한 `bot_profile`, `bot_strategy`, `bot_scenario`를 그대로 사용한다.
 - `보정 필요도`: 클리어율, 평균 도달 웨이브, 3-Sort 완성 수, 평균 소팅 간격 차이를 합친 참고 점수다.
-- `시뮬 시나리오 프리셋 결과`: 같은 숙련도 안에서도 압박 공격, 수리 우선, 콤보 중심 같은 행동 차이가 결과에 얼마나 영향을 주는지 확인한다.
+- `시뮬 시나리오 프리셋 결과`: 같은 숙련도 안에서도 압박 공격, 특전 운, 콤보 중심 같은 행동 차이가 결과에 얼마나 영향을 주는지 확인한다.
 
 `bot_scenario` 컬럼은 Apps Script에도 추가되어 있어야 한다. 웹앱 스크립트를 갱신 배포하지 않으면 기존 로그는 저장되지만 시나리오 컬럼은 비어 있을 수 있다.
 

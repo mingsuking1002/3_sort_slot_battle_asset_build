@@ -82,10 +82,12 @@
     pieceTypes: "all",
     result: "all",
     device: "all",
+    activePreset: "overview",
     previewType: "basic",
     previewLevel: 1,
     previewSlot: 4,
   };
+  const FILTER_KEYS = ["source", "simVersion", "build", "snapshot", "stage", "skillProfile", "loadout", "pieceTypes", "result", "device"];
 
   const number = (value, fallback = 0) => {
     if (value === null || value === undefined || value === "") return fallback;
@@ -94,6 +96,16 @@
   };
   const sum = (items, getter) => items.reduce((total, item) => total + number(getter(item)), 0);
   const average = (items, getter) => items.length ? sum(items, getter) / items.length : 0;
+  const stddev = (items, getter) => {
+    if (items.length < 2) return 0;
+    const mean = average(items, getter);
+    const variance = average(items, (item) => {
+      const delta = number(getter(item)) - mean;
+      return delta * delta;
+    });
+    return Math.sqrt(variance);
+  };
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, number(value)));
   const percent = (value, digits = 1) => `${(number(value) * 100).toFixed(digits)}%`;
   const format = (value, digits = 0) => number(value).toLocaleString("ko-KR", { maximumFractionDigits: digits });
   const intervalValue = (value, samples) => samples ? `${format(value, 2)}초` : "-";
@@ -231,6 +243,11 @@
     return row.bot_scenario || payload.simulation?.botScenario || "";
   }
 
+  function sessionSimulationMeta(row) {
+    const payload = safeJson(row.payload_json, {});
+    return payload.simulation || {};
+  }
+
   function sessionSortInterval(row) {
     const payload = safeJson(row.payload_json, {});
     const value = row.sort_interval_avg
@@ -238,6 +255,13 @@
       || payload.sortIntervalAvg
       || payload.simulation?.decisionDelayAvg;
     return value === "" || value === null || value === undefined ? NaN : number(value, NaN);
+  }
+
+  function sessionPlannedSortRatio(row) {
+    const meta = sessionSimulationMeta(row);
+    const value = row.planned_sort_ratio ?? meta.plannedSortRatio;
+    const numeric = number(value, NaN);
+    return Number.isFinite(numeric) ? normalizePercentValue(numeric) : NaN;
   }
 
   function unique(items) {
@@ -329,6 +353,277 @@
   function sessionTotalDamage(row) {
     const payload = safeJson(row.payload_json, {});
     return number(row.damage_done) || sessionSystemDamage(row) + sumPieceDamage(payload.damageByPiece);
+  }
+
+  function sessionTowerCreated(row) {
+    const payload = safeJson(row.payload_json, {});
+    if (row.tower_created !== undefined && row.tower_created !== "") return number(row.tower_created);
+    if (payload.towerCreated !== undefined) return number(payload.towerCreated);
+    if (Array.isArray(payload.pieceStats)) return sum(payload.pieceStats, (piece) => piece.towerCreated);
+    return 0;
+  }
+
+  function getSortFunnelRows(rows = filteredSessions()) {
+    const attempts = sum(rows, (row) => row.sort_attempts);
+    const successes = sum(rows, (row) => row.sort_successes);
+    const towers = sum(rows, sessionTowerCreated);
+    return [
+      { label: "소팅 시도", value: attempts, detail: "이동 입력", color: "#276dcc" },
+      { label: "3-Sort 완성", value: successes, color: successes / Math.max(1, attempts) < .35 ? "#c33d3d" : "#15946f" },
+      { label: "포탑 생성", value: towers || successes, color: "#7b67d6" },
+    ];
+  }
+
+  function getSurvivalFunnelRows(rows = filteredSessions()) {
+    const total = rows.length;
+    return [
+      { label: "세션 시작", value: total, detail: `${format(total)}건`, color: "#276dcc" },
+      { label: "W3 도달", value: rows.filter((row) => number(row.reached_wave) >= 3).length, color: "#15946f" },
+      { label: "W6 도달", value: rows.filter((row) => number(row.reached_wave) >= 6).length, color: "#e3a51b" },
+      { label: "W9 도달", value: rows.filter((row) => number(row.reached_wave) >= 9).length, color: "#d96532" },
+      { label: "클리어", value: rows.filter((row) => row.result === "clear").length, color: "#c33d3d" },
+    ];
+  }
+
+  function sampleReliability(rows = filteredSessions()) {
+    const count = rows.length;
+    if (count >= 100) return { tone: "good", label: "판단 가능", body: `${count}건 표본. 큰 방향성 판단 가능` };
+    if (count >= 40) return { tone: "warn", label: "부분 판단", body: `${count}건 표본. 큰 편차는 보되 확정은 보류` };
+    return { tone: "bad", label: "표본 부족", body: `${count}건 표본. 가설 탐색용으로만 사용` };
+  }
+
+  function reliabilityGrade(count) {
+    if (count >= 100) return { grade: "A", tone: "good", label: "판단 가능", score: 100 };
+    if (count >= 60) return { grade: "B", tone: "good", label: "대략 판단", score: 76 };
+    if (count >= 30) return { grade: "C", tone: "warn", label: "방향성", score: 54 };
+    if (count >= 10) return { grade: "D", tone: "warn", label: "참고용", score: 32 };
+    return { grade: "E", tone: "bad", label: "부족", score: 14 };
+  }
+
+  function clearRateMargin(rows) {
+    if (!rows.length) return 0;
+    const rate = rows.filter((row) => row.result === "clear").length / rows.length;
+    return clamp(1.96 * Math.sqrt((rate * (1 - rate)) / Math.max(1, rows.length)), 0, 1);
+  }
+
+  function metricDelta(after, before, field) {
+    return number(after?.[field]) - number(before?.[field]);
+  }
+
+  function deltaText(value, formatter = (item) => format(item, 2)) {
+    const numeric = number(value);
+    return `${numeric >= 0 ? "+" : ""}${formatter(numeric)}`;
+  }
+
+  function versionKeyOf(row) {
+    return `${sessionBuild(row)}\n${sessionSnapshot(row)}`;
+  }
+
+  function sessionsForVersion(versionRow) {
+    if (!versionRow) return [];
+    return sessions.filter((row) => versionKeyOf(row) === versionRow.key);
+  }
+
+  function latestVersionPair() {
+    const rows = getVersionRows();
+    return {
+      before: rows.length >= 2 ? rows[rows.length - 2] : null,
+      after: rows[rows.length - 1] || null,
+    };
+  }
+
+  function getReliabilityRows(rows = filteredSessions()) {
+    const sourceGroups = unique(rows.map(sessionSource)).map((source) => ({
+      key: `source:${source}`,
+      label: source === "simulation" ? "시뮬 표본" : source === "real" ? "REAL 표본" : source,
+      rows: rows.filter((row) => sessionSource(row) === source),
+    }));
+    const skillGroups = SKILL_KEYS.map((key) => ({
+      key: `skill:${key}`,
+      label: SKILL_META[key].label,
+      rows: rows.filter((row) => sessionSkillProfile(row) === key),
+    }));
+    return [
+      { key: "current", label: "현재 필터", rows },
+      ...sourceGroups,
+      ...skillGroups,
+    ].filter((item) => item.rows.length).map((item) => {
+      const metrics = sessionMetrics(item.rows);
+      const reliability = reliabilityGrade(item.rows.length);
+      return {
+        key: item.key,
+        label: item.label,
+        rows: item.rows,
+        ...metrics,
+        grade: reliability.grade,
+        tone: reliability.tone,
+        reliabilityLabel: reliability.label,
+        score: reliability.score,
+        clearMargin: clearRateMargin(item.rows),
+        reachedStddev: stddev(item.rows, (row) => row.reached_wave),
+      };
+    });
+  }
+
+  function getVersionCohortRows() {
+    const { before, after } = latestVersionPair();
+    if (!before || !after) return [];
+    const beforeRows = sessionsForVersion(before);
+    const afterRows = sessionsForVersion(after);
+    const cohorts = [
+      { key: "all", label: "전체", filter: () => true },
+      ...SKILL_KEYS.map((key) => ({ key, label: SKILL_META[key].label, filter: (row) => sessionSkillProfile(row) === key })),
+      { key: "real", label: "REAL", filter: (row) => sessionSource(row) === "real" },
+      { key: "simulation", label: "SIM", filter: (row) => sessionSource(row) === "simulation" },
+    ];
+    return cohorts.map((cohort) => {
+      const beforeGroup = beforeRows.filter(cohort.filter);
+      const afterGroup = afterRows.filter(cohort.filter);
+      const beforeMetrics = sessionMetrics(beforeGroup);
+      const afterMetrics = sessionMetrics(afterGroup);
+      return {
+        key: cohort.key,
+        label: cohort.label,
+        before: beforeMetrics,
+        after: afterMetrics,
+        beforeSamples: beforeGroup.length,
+        afterSamples: afterGroup.length,
+        clearDelta: metricDelta(afterMetrics, beforeMetrics, "clearRate"),
+        reachedDelta: metricDelta(afterMetrics, beforeMetrics, "reached"),
+        sortDelta: metricDelta(afterMetrics, beforeMetrics, "successes"),
+        slotHpDelta: metricDelta(afterMetrics, beforeMetrics, "slotHp"),
+        systemDelta: getDamageSourceShareForRows(afterGroup).systemShare - getDamageSourceShareForRows(beforeGroup).systemShare,
+      };
+    }).filter((row) => row.beforeSamples || row.afterSamples);
+  }
+
+  function getCohortPerformanceRows() {
+    const rows = filteredSessions();
+    const cohorts = [];
+    for (const skill of SKILL_KEYS) {
+      for (const source of unique(rows.map(sessionSource))) {
+        const group = rows.filter((row) => sessionSkillProfile(row) === skill && sessionSource(row) === source);
+        if (!group.length) continue;
+        const metrics = sessionMetrics(group);
+        const reliability = reliabilityGrade(group.length);
+        cohorts.push({
+          key: `${source}:${skill}`,
+          label: `${source === "simulation" ? "SIM" : "REAL"} · ${SKILL_META[skill].label}`,
+          source,
+          skill,
+          color: SKILL_META[skill].color,
+          ...metrics,
+          grade: reliability.grade,
+          tone: reliability.tone,
+          reliabilityLabel: reliability.label,
+          score: reliability.score,
+          clearMargin: clearRateMargin(group),
+        });
+      }
+    }
+    return cohorts.sort((a, b) => b.sessions - a.sessions || b.reached - a.reached);
+  }
+
+  function getDecisionCards() {
+    const current = filteredSessions();
+    const metrics = sessionMetrics(current);
+    const source = getDamageSourceShare();
+    const waveRows = getWaveDashboardRows();
+    const dangerWave = waveRows.slice().sort((a, b) => (b.remaining + b.slotDanger / 12 + b.systemShare * 8) - (a.remaining + a.slotDanger / 12 + a.systemShare * 8))[0];
+    const reliability = sampleReliability(current);
+    const conversion = metrics.conversion;
+    return [
+      {
+        tone: reliability.tone,
+        title: reliability.label,
+        value: `${format(current.length)}건`,
+        body: reliability.body,
+        action: "표본 필터 확인",
+        view: "sessions",
+      },
+      {
+        tone: metrics.clearRate < .25 ? "bad" : metrics.clearRate < .55 ? "warn" : "good",
+        title: "클리어 상태",
+        value: percent(metrics.clearRate),
+        body: metrics.clearRate < .25 ? "현재 조건은 실패가 지배적입니다." : "현재 조건은 관측 가능한 클리어가 있습니다.",
+        action: "웨이브 원인 보기",
+        view: "waves",
+      },
+      {
+        tone: conversion < .3 ? "bad" : conversion < .5 ? "warn" : "good",
+        title: "소팅 전환",
+        value: percent(conversion),
+        body: "시도 대비 3-Sort 완성률입니다.",
+        action: "세션 보기",
+        view: "sessions",
+      },
+      {
+        tone: source.systemShare > .5 ? "bad" : source.systemShare > .35 ? "warn" : "good",
+        title: "시스템 의존",
+        value: percent(source.systemShare),
+        body: "콤보/전체정렬/기타 시스템 피해 비중입니다.",
+        action: "진단 보기",
+        view: "diagnostics",
+      },
+      {
+        tone: dangerWave?.samples && (dangerWave.remaining > 5 || dangerWave.slotHp < .45) ? "bad" : "warn",
+        title: "최우선 웨이브",
+        value: dangerWave?.wave ? `W${dangerWave.wave}` : "-",
+        body: dangerWave?.samples ? `잔존 ${format(dangerWave.remaining, 1)} / 슬롯 ${percent(dangerWave.slotHp)}` : "웨이브 표본 대기",
+        action: "웨이브 보기",
+        view: "waves",
+      },
+    ];
+  }
+
+  function getAutoReportCards() {
+    const current = filteredSessions();
+    const metrics = sessionMetrics(current);
+    const reliability = reliabilityGrade(current.length);
+    const versionRows = getVersionCohortRows();
+    const overallDelta = versionRows.find((row) => row.key === "all");
+    const calibrationRows = getSkillCalibrationRows().filter((row) => row.real.sessions && row.sim.sessions);
+    const biggestCalibrationGap = calibrationRows.slice().sort((a, b) => b.gapScore - a.gapScore)[0];
+    const weakCohort = getCohortPerformanceRows().slice().sort((a, b) => a.clearRate - b.clearRate || a.reached - b.reached)[0];
+    const perkImpact = getPerkImpactRows().filter((row) => row.picked.length >= 3 && row.skipped.length >= 3);
+    const highImpactPerk = perkImpact.slice().sort((a, b) => Math.abs(b.progressDelta) - Math.abs(a.progressDelta))[0];
+    return [
+      {
+        tone: reliability.tone,
+        title: "표본 신뢰도",
+        value: `${reliability.grade}등급`,
+        detail: `${format(current.length)}건 · 클리어 오차 ${percent(clearRateMargin(current), 0)}`,
+        body: reliability.label,
+      },
+      {
+        tone: !overallDelta ? "warn" : overallDelta.reachedDelta >= .4 && overallDelta.clearDelta >= 0 ? "good" : overallDelta.reachedDelta < -.25 || overallDelta.clearDelta < -.08 ? "bad" : "warn",
+        title: "최신 변경 영향",
+        value: overallDelta ? `${deltaText(overallDelta.reachedDelta, (value) => `${format(value, 2)}W`)}` : "-",
+        detail: overallDelta ? `클리어 ${deltaText(overallDelta.clearDelta, (value) => percent(value))}` : "스냅샷 2개부터",
+        body: overallDelta ? `이전 ${overallDelta.beforeSamples}건 / 최신 ${overallDelta.afterSamples}건` : "다음 데이터 갱신 후 비교",
+      },
+      {
+        tone: biggestCalibrationGap?.gapScore > 1.1 ? "bad" : biggestCalibrationGap?.gapScore > .55 ? "warn" : "good",
+        title: "REAL/SIM 괴리",
+        value: biggestCalibrationGap ? biggestCalibrationGap.label : "-",
+        detail: biggestCalibrationGap ? `${format(biggestCalibrationGap.gapScore, 2)}점` : "비교 표본 부족",
+        body: biggestCalibrationGap ? `도달 ${deltaText(biggestCalibrationGap.reachedDelta, (value) => `${format(value, 1)}W`)}` : "실제/시뮬 로그 필요",
+      },
+      {
+        tone: weakCohort?.clearRate < .2 ? "bad" : weakCohort?.clearRate < .45 ? "warn" : "good",
+        title: "취약 코호트",
+        value: weakCohort ? weakCohort.label : "-",
+        detail: weakCohort ? `클리어 ${percent(weakCohort.clearRate)} / W${format(weakCohort.reached, 1)}` : "표본 대기",
+        body: weakCohort ? `${weakCohort.sessions}건 · ${weakCohort.grade}등급` : "코호트 로그 필요",
+      },
+      {
+        tone: highImpactPerk && Math.abs(highImpactPerk.progressDelta) > 1.2 ? "warn" : "good",
+        title: "특전 영향",
+        value: highImpactPerk ? clip(highImpactPerk.title, 12) : "-",
+        detail: highImpactPerk ? `${deltaText(highImpactPerk.progressDelta, (value) => `${format(value, 2)}W`)}` : "표본 부족",
+        body: highImpactPerk ? `선택 ${highImpactPerk.picked.length} / 미선택 ${highImpactPerk.skipped.length}` : "특전 제시/선택 로그 필요",
+      },
+    ];
   }
 
   function getSessionGroupSummary(keyGetter, labelGetter, rows = filteredSessions()) {
@@ -428,8 +723,78 @@
     select.addEventListener("change", () => {
       const stateKey = id.replace("#filter-", "").replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
       state[stateKey] = select.value;
+      state.activePreset = "custom";
+      syncPresetButtons();
       render();
     });
+  }
+
+  function filterIdForKey(key) {
+    return key === "simVersion" ? "sim-version" : key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+  }
+
+  function latestOption(selector, sourceValues = null) {
+    const values = sourceValues || [...document.querySelector(selector)?.querySelectorAll("option") || []]
+      .map((option) => option.value)
+      .filter((value) => value && value !== "all");
+    return values[values.length - 1] || "all";
+  }
+
+  function resetFilterState() {
+    for (const key of FILTER_KEYS) state[key] = "all";
+  }
+
+  function syncFilterControls() {
+    for (const key of FILTER_KEYS) {
+      const select = document.querySelector(`#filter-${filterIdForKey(key)}`);
+      if (select) select.value = [...select.options].some((option) => option.value === state[key]) ? state[key] : "all";
+    }
+  }
+
+  function setActiveTab(view) {
+    state.view = view || "overview";
+    document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === state.view));
+  }
+
+  function syncPresetButtons() {
+    document.querySelectorAll(".preset").forEach((button) => {
+      button.classList.toggle("active", button.dataset.preset === state.activePreset);
+    });
+  }
+
+  function applyAnalysisPreset(preset) {
+    state.activePreset = preset;
+    resetFilterState();
+    setActiveTab("overview");
+    if (preset === "real") state.source = "real";
+    else if (preset === "simulation") {
+      state.source = "simulation";
+      state.simVersion = latestOption("#filter-sim-version", unique(sessions.filter((row) => sessionSource(row) === "simulation").map(sessionSimulationVersion)));
+    } else if (["beginner", "intermediate", "advanced"].includes(preset)) {
+      state.skillProfile = preset;
+    } else if (preset === "failures") {
+      state.result = "fail";
+    } else if (preset === "danger") {
+      setActiveTab("waves");
+    } else if (preset === "system") {
+      setActiveTab("diagnostics");
+    } else if (preset === "calibration") {
+      setActiveTab("calibration");
+    } else if (preset === "latest") {
+      state.snapshot = latestOption("#filter-snapshot");
+    }
+    syncFilterControls();
+    syncPresetButtons();
+    render();
+  }
+
+  function resetFilters() {
+    state.activePreset = "overview";
+    resetFilterState();
+    setActiveTab("overview");
+    syncFilterControls();
+    syncPresetButtons();
+    render();
   }
 
   function initControls() {
@@ -454,16 +819,20 @@
     });
     document.querySelectorAll(".tab").forEach((button) => button.addEventListener("click", () => {
       state.view = button.dataset.view;
+      state.activePreset = "custom";
       document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab === button));
+      syncPresetButtons();
       render();
     }));
-    document.querySelector("#reset-filters").addEventListener("click", () => {
-      for (const key of ["source", "simVersion", "build", "snapshot", "stage", "skillProfile", "loadout", "pieceTypes", "result", "device"]) {
-        state[key] = "all";
-        const filterId = key === "simVersion" ? "sim-version" : key.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
-        document.querySelector(`#filter-${filterId}`).value = "all";
-      }
-      render();
+    document.querySelectorAll(".preset").forEach((button) => button.addEventListener("click", () => {
+      applyAnalysisPreset(button.dataset.preset || "overview");
+    }));
+    document.querySelector("#reset-filters").addEventListener("click", resetFilters);
+    document.querySelector("#toggle-filters").addEventListener("click", (event) => {
+      const filters = document.querySelector(".filters");
+      const collapsed = filters.classList.toggle("collapsed");
+      event.currentTarget.textContent = collapsed ? "필터 열기" : "필터 닫기";
+      event.currentTarget.setAttribute("aria-expanded", String(!collapsed));
     });
   }
 
@@ -683,6 +1052,103 @@
       <text x="${pad.left}" y="${height - 12}" class="axis-label">이론 1회 소환 기대딜</text>
       <text x="${pad.left - 42}" y="${pad.top + 8}" class="axis-label">실전 피해</text>
       ${dots}
+    </svg>`;
+  }
+
+  function funnelChart(items, options = {}) {
+    const rows = (items || []).filter((item) => number(item.value, NaN) >= 0);
+    if (!rows.length) return emptyChart();
+    const width = options.width || 760;
+    const rowH = options.rowHeight || 44;
+    const height = Math.max(124, 24 + rows.length * rowH);
+    const left = 142;
+    const right = 118;
+    const plotW = width - left - right;
+    const max = Math.max(1, rows[0]?.value || 0, ...rows.map((row) => number(row.value)));
+    const body = rows.map((row, index) => {
+      const y = 14 + index * rowH;
+      const value = number(row.value);
+      const rate = index === 0 ? 1 : value / Math.max(1, number(rows[index - 1]?.value));
+      const totalRate = value / Math.max(1, number(rows[0]?.value));
+      const barW = Math.max(2, value / max * plotW);
+      const color = row.color || (rate < .35 ? "#c33d3d" : rate < .65 ? "#e3a51b" : "#15946f");
+      return `<text x="8" y="${y + 18}" class="bar-label">${escape(row.label)}</text>
+        <rect x="${left}" y="${y + 5}" width="${plotW}" height="18" rx="3" class="bar-bg"></rect>
+        <rect x="${left}" y="${y + 5}" width="${barW}" height="18" rx="3" fill="${escape(color)}"></rect>
+        <text x="${left + barW + 8}" y="${y + 18}" class="bar-number">${escape(format(value, 1))}</text>
+        <text x="${width - 8}" y="${y + 18}" text-anchor="end" class="axis-label">${index ? `${percent(rate, 0)} / 누적 ${percent(totalRate, 0)}` : escape(row.detail || "기준")}</text>`;
+    }).join("");
+    return `<svg class="chart-svg funnel-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="${escape(options.label || "funnel chart")}">${body}</svg>`;
+  }
+
+  function waveDamageStackChart(rows) {
+    const source = (rows || []).filter((row) => row.samples);
+    if (!source.length) return emptyChart("웨이브 로그가 쌓이면 피해 비중을 표시합니다");
+    const width = 760;
+    const rowH = 32;
+    const height = Math.max(120, 28 + source.length * rowH);
+    const left = 58;
+    const right = 86;
+    const plotW = width - left - right;
+    const body = source.map((row, index) => {
+      const y = 14 + index * rowH;
+      const piece = number(row.observed?.pieceDamage);
+      const system = number(row.observed?.systemDamage);
+      const total = Math.max(1, piece + system);
+      const pieceW = piece / total * plotW;
+      const systemW = system / total * plotW;
+      return `<text x="8" y="${y + 17}" class="bar-label">W${escape(row.wave)}</text>
+        <rect x="${left}" y="${y + 5}" width="${plotW}" height="16" rx="2" class="bar-bg"></rect>
+        <rect x="${left}" y="${y + 5}" width="${pieceW}" height="16" fill="#276dcc"><title>기물 피해 ${format(piece)}</title></rect>
+        <rect x="${left + pieceW}" y="${y + 5}" width="${systemW}" height="16" fill="${row.systemShare > .5 ? "#c33d3d" : "#7b67d6"}"><title>시스템 피해 ${format(system)}</title></rect>
+        <text x="${width - 8}" y="${y + 17}" text-anchor="end" class="bar-number">시스템 ${percent(row.systemShare, 0)}</text>`;
+    }).join("");
+    return `<svg class="chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="wave damage stack">${body}</svg>${legend([
+      { label: "기물 피해", color: "#276dcc" },
+      { label: "시스템 피해", color: "#7b67d6" },
+    ])}`;
+  }
+
+  function heatColor(value) {
+    const v = clamp(value, 0, 100);
+    if (v >= 72) return "#b83131";
+    if (v >= 48) return "#df8e1d";
+    if (v >= 26) return "#e4bf36";
+    return "#2a9b6f";
+  }
+
+  function waveSkillHeatmapChart(rows) {
+    if (!rows.length) return emptyChart("숙련도별 웨이브 표본이 부족합니다");
+    const waves = [...new Set(rows.map((row) => row.wave))].sort((a, b) => a - b);
+    const cellW = 58;
+    const cellH = 42;
+    const left = 96;
+    const top = 34;
+    const width = left + waves.length * cellW + 18;
+    const height = top + SKILL_KEYS.length * cellH + 34;
+    const map = new Map(rows.map((row) => [`${row.skill}:${row.wave}`, row]));
+    const xLabels = waves.map((wave, index) => `<text x="${left + index * cellW + cellW / 2}" y="20" text-anchor="middle" class="axis-label">W${wave}</text>`).join("");
+    const body = SKILL_KEYS.map((skill, rowIndex) => {
+      const meta = SKILL_META[skill];
+      const y = top + rowIndex * cellH;
+      const label = `<text x="8" y="${y + 25}" class="bar-label" fill="${meta.color}">${escape(meta.label)}</text>`;
+      const cells = waves.map((wave, index) => {
+        const cell = map.get(`${skill}:${wave}`);
+        const x = left + index * cellW;
+        if (!cell?.samples) {
+          return `<rect x="${x}" y="${y}" width="${cellW - 4}" height="${cellH - 5}" rx="4" class="heat-empty"></rect>
+            <text x="${x + cellW / 2 - 2}" y="${y + 24}" text-anchor="middle" class="axis-label">-</text>`;
+        }
+        const color = heatColor(cell.danger);
+        return `<rect x="${x}" y="${y}" width="${cellW - 4}" height="${cellH - 5}" rx="4" fill="${color}"><title>${escape(meta.label)} W${wave}: 위험 ${format(cell.danger, 1)} / n=${cell.samples}</title></rect>
+          <text x="${x + cellW / 2 - 2}" y="${y + 17}" text-anchor="middle" class="heat-number">${format(cell.danger, 0)}</text>
+          <text x="${x + cellW / 2 - 2}" y="${y + 31}" text-anchor="middle" class="heat-sample">n=${cell.samples}</text>`;
+      }).join("");
+      return `${label}${cells}`;
+    }).join("");
+    return `<svg class="chart-svg heatmap-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="skill wave heatmap">
+      ${xLabels}${body}
+      <text x="${left}" y="${height - 7}" class="axis-label">초록 안정 · 노랑 주의 · 주황/빨강 위험</text>
     </svg>`;
   }
 
@@ -966,6 +1432,44 @@
     });
   }
 
+  function getWaveSkillHeatmapRows() {
+    const selected = filteredSessions();
+    const sessionMap = new Map(selected.map((row) => [row.session_id, row]));
+    const sourceRows = filteredRows(getWaveRows()).map((row) => {
+      const session = sessionMap.get(row.session_id);
+      const totalDamage = number(row.piece_damage) + number(row.system_damage);
+      return {
+        skill: session ? sessionSkillProfile(session) : "unknown",
+        wave: number(row.wave_ordinal || row.wave),
+        remaining: number(row.remaining_enemy_count),
+        slotHp: normalizePercentValue(row.slot_hp_ratio_avg),
+        systemShare: totalDamage ? number(row.system_damage) / totalDamage : 0,
+      };
+    }).filter((row) => SKILL_KEYS.includes(row.skill) && row.wave);
+    const maxRemaining = Math.max(1, ...sourceRows.map((row) => row.remaining));
+    const groups = new Map();
+    for (const row of sourceRows) {
+      const key = `${row.skill}:${row.wave}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(row);
+    }
+    return [...groups.entries()].map(([key, rows]) => {
+      const [skill, waveText] = key.split(":");
+      const remainingRatio = average(rows, (row) => row.remaining) / maxRemaining;
+      const slotDanger = 1 - average(rows, (row) => row.slotHp);
+      const systemShare = average(rows, (row) => row.systemShare);
+      return {
+        skill,
+        wave: number(waveText),
+        samples: rows.length,
+        remaining: average(rows, (row) => row.remaining),
+        slotHp: average(rows, (row) => row.slotHp),
+        systemShare,
+        danger: clamp(slotDanger * 55 + remainingRatio * 35 + systemShare * 25, 0, 100),
+      };
+    }).sort((a, b) => SKILL_KEYS.indexOf(a.skill) - SKILL_KEYS.indexOf(b.skill) || a.wave - b.wave);
+  }
+
   function theoryRows() {
     const refHp = referenceMonsterHp();
     return tableRows("TowerData").map((tower) => {
@@ -1197,6 +1701,17 @@
     };
   }
 
+  function getDamageSourceShareForRows(rows) {
+    const systemDamage = sum(rows, sessionSystemDamage);
+    const total = sum(rows, sessionTotalDamage);
+    return {
+      pieceDamage: Math.max(0, total - systemDamage),
+      systemDamage,
+      total,
+      systemShare: total ? systemDamage / total : 0,
+    };
+  }
+
   function getAlerts() {
     const alerts = [];
     const current = filteredSessions();
@@ -1257,6 +1772,93 @@
     return `<section class="section">${sectionTitle("자동 경고판", `${alerts.length}건`)}
       <div class="alert-grid">${alerts.map((item) => `<article class="alert-card ${escape(item.tone)}"><h3>${escape(item.title)}</h3><p>${escape(item.body)}</p></article>`).join("")}</div>
     </section>`;
+  }
+
+  function renderDecisionBoard() {
+    const cards = getDecisionCards();
+    return `<section class="decision-grid">
+      ${cards.map((card) => `<article class="decision-card ${escape(card.tone)}">
+        <div><span>${escape(card.title)}</span><strong>${escape(card.value)}</strong></div>
+        <p>${escape(card.body)}</p>
+        <button type="button" data-drill-view="${escape(card.view)}">${escape(card.action)}</button>
+      </article>`).join("")}
+    </section>`;
+  }
+
+  function renderOperationsCharts(waves) {
+    const current = filteredSessions();
+    return `<section class="chart-grid ops-grid">
+      ${chartPanel("소팅 품질 퍼널", "이동 입력이 실제 3-Sort와 포탑 생성으로 이어지는 비율", funnelChart(getSortFunnelRows(current), { label: "sort funnel" }), "priority-chart")}
+      ${chartPanel("세션 생존 퍼널", "웨이브 도달 기준으로 이탈 구간을 빠르게 확인", funnelChart(getSurvivalFunnelRows(current), { label: "survival funnel" }), "priority-chart")}
+      ${chartPanel("웨이브 x 숙련도 위험 히트맵", "표본이 적은 칸은 n 값을 함께 보고 해석", waveSkillHeatmapChart(getWaveSkillHeatmapRows()), "wide-chart")}
+      ${chartPanel("웨이브별 피해 비중", "시스템 피해가 빨갛게 커질수록 필살기 의존도가 높음", waveDamageStackChart(waves), "wide-chart")}
+    </section>`;
+  }
+
+  function renderAutoReport() {
+    const reportCards = getAutoReportCards();
+    const reliabilityRows = getReliabilityRows();
+    const versionRows = getVersionCohortRows();
+    const cohortRows = getCohortPerformanceRows();
+    const deltaClass = (value, reverse = false) => {
+      const signed = reverse ? -number(value) : number(value);
+      return signed > 0.001 ? "positive" : signed < -0.001 ? "negative" : "";
+    };
+    return `<section class="section">${sectionTitle("자동 운영 리포트", "표본 신뢰도 · 변경 영향 · 코호트 위험을 한 번에 확인")}
+        <div class="report-grid">
+          ${reportCards.map((card) => `<article class="report-card ${escape(card.tone)}">
+            <span>${escape(card.title)}</span>
+            <strong>${escape(card.value)}</strong>
+            <em>${escape(card.detail)}</em>
+            <p>${escape(card.body)}</p>
+          </article>`).join("")}
+        </div>
+      </section>
+      <section class="chart-grid">
+        ${chartPanel("표본 신뢰도 등급", "100건 이상 A, 30건 미만은 참고용. 클리어율 오차폭과 함께 해석", horizontalBarChart(reliabilityRows, {
+          value: (item) => item.score,
+          label: (item) => `${item.label} · ${item.grade}`,
+          color: (item) => item.tone === "good" ? "#14845f" : item.tone === "warn" ? "#e7a91b" : "#c73b3b",
+          formatter: (value, item) => `${format(item.sessions)}건 · ±${percent(item.clearMargin, 0)}`,
+          max: 100,
+          limit: 10,
+          labelLength: 24,
+        }), "priority-chart")}
+        ${chartPanel("최신 전후 도달 변화", "최신 스냅샷/빌드가 직전 대비 어떤 코호트에 영향을 줬는지 확인", deltaBarChart(versionRows, {
+          value: (item) => item.reachedDelta,
+          label: (item) => item.label,
+          formatter: (value, item) => `${deltaText(value, (v) => `${format(v, 2)}W`)} · 클리어 ${deltaText(item.clearDelta, (v) => percent(v))}`,
+          limit: 10,
+          labelLength: 18,
+        }), "priority-chart")}
+        ${chartPanel("코호트별 클리어율", "REAL/SIM과 숙련도를 분리해서 평균에 가려지는 실패군 확인", horizontalBarChart(cohortRows, {
+          value: (item) => item.clearRate,
+          label: (item) => item.label,
+          color: (item) => item.clearRate < .25 ? "#c33d3d" : item.clearRate < .55 ? "#e7a91b" : item.color,
+          formatter: (value, item) => `${percent(value)} / ${item.sessions}건`,
+          max: 1,
+          limit: 12,
+          labelLength: 24,
+        }))}
+        ${chartPanel("코호트별 평균 도달", "클리어율이 낮아도 어디에서 무너지는지 빠르게 확인", horizontalBarChart(cohortRows, {
+          value: (item) => item.reached,
+          label: (item) => item.label,
+          color: (item) => item.grade === "E" || item.grade === "D" ? "#8b98a2" : item.color,
+          formatter: (value, item) => `W${format(value, 1)} · ${item.grade}등급`,
+          limit: 12,
+          labelLength: 24,
+        }))}
+      </section>
+      <section class="section">${sectionTitle("표본 신뢰도 상세", "오차폭이 큰 구간은 밸런스 확정 대신 추가 로그 수집 대상으로 본다")}
+        <div class="table-wrap"><table><thead><tr><th>구간</th><th>등급</th><th>표본</th><th>클리어율</th><th>오차폭</th><th>평균 도달</th><th>도달 변동</th><th>소팅 전환율</th><th>평균 간격</th><th>판정</th></tr></thead><tbody>
+          ${reliabilityRows.map((row) => `<tr><td>${escape(row.label)}</td><td class="${row.tone === "good" ? "positive" : row.tone === "bad" ? "negative" : "warning"}">${escape(row.grade)}</td><td>${format(row.sessions)}</td><td>${percent(row.clearRate)}</td><td>±${percent(row.clearMargin, 0)}</td><td>W${format(row.reached, 1)}</td><td>${format(row.reachedStddev, 2)}</td><td>${percent(row.conversion)}</td><td>${intervalValue(row.interval, row.intervalSamples)}</td><td>${escape(row.reliabilityLabel)}</td></tr>`).join("")}
+        </tbody></table></div>
+      </section>
+      <section class="section">${sectionTitle("최신 변경 전후 코호트 비교", versionRows.length ? "직전 버전 대비 최신 버전 영향" : "스냅샷/빌드 2개부터 활성화")}
+        ${versionRows.length ? `<div class="table-wrap"><table><thead><tr><th>코호트</th><th>이전 표본</th><th>최신 표본</th><th>클리어율 Δ</th><th>평균 도달 Δ</th><th>소팅 완성 Δ</th><th>슬롯 체력 Δ</th><th>시스템 의존 Δ</th></tr></thead><tbody>
+          ${versionRows.map((row) => `<tr><td>${escape(row.label)}</td><td>${format(row.beforeSamples)}</td><td>${format(row.afterSamples)}</td><td class="${deltaClass(row.clearDelta)}">${deltaText(row.clearDelta, (value) => percent(value))}</td><td class="${deltaClass(row.reachedDelta)}">${deltaText(row.reachedDelta, (value) => `${format(value, 2)}W`)}</td><td class="${deltaClass(row.sortDelta)}">${deltaText(row.sortDelta, (value) => format(value, 1))}</td><td class="${deltaClass(row.slotHpDelta)}">${deltaText(row.slotHpDelta, (value) => percent(value))}</td><td class="${deltaClass(row.systemDelta, true)}">${deltaText(row.systemDelta, (value) => percent(value))}</td></tr>`).join("")}
+        </tbody></table></div>` : `<div class="notice">현재 로그에서는 직전/최신 스냅샷을 나눌 수 없습니다. 데이터 테이블 갱신 후 로그가 쌓이면 이 표가 자동으로 켜집니다.</div>`}
+      </section>`;
   }
 
   function renderExperimentSummary() {
@@ -1344,10 +1946,13 @@
     const totalSortAttempts = sum(current, (row) => row.sort_attempts);
     const totalSortSuccesses = sum(current, (row) => row.sort_successes);
     const intervalSessions = current.filter((row) => Number.isFinite(sessionSortInterval(row)) && sessionSortInterval(row) > 0);
+    const plannedSessions = current.filter((row) => Number.isFinite(sessionPlannedSortRatio(row)));
     const averageSortInterval = average(intervalSessions, sessionSortInterval);
     const dangerWave = waves.slice().sort((a, b) => (b.remaining + b.slotDanger / 12 + b.systemShare * 8) - (a.remaining + a.slotDanger / 12 + a.systemShare * 8))[0];
 
     return `${notice()}
+      ${renderDecisionBoard()}
+      ${renderAutoReport()}
       <section class="kpis">
         ${kpi("세션", format(current.length), `전체 ${sessions.length}건`)}
         ${kpi("클리어율", percent(current.length ? clears / current.length : 0), `${clears}회 클리어`, current.length && clears / current.length < .35 ? "red" : "green")}
@@ -1356,11 +1961,14 @@
         ${kpi("평균 3-Sort 완성", format(average(current, (row) => row.sort_successes), 1), "세션당")}
         ${kpi("소팅 전환율", percent(totalSortAttempts ? totalSortSuccesses / totalSortAttempts : 0), "완성 ÷ 이동", totalSortAttempts && totalSortSuccesses / totalSortAttempts < .3 ? "red" : "green")}
         ${kpi("평균 소팅 간격", intervalSessions.length ? `${format(averageSortInterval, 2)}초` : "-", intervalSessions.length ? `${intervalSessions.length}세션 기준` : "간격 로그 없음")}
+        ${kpi("계획형 소팅", plannedSessions.length ? percent(average(plannedSessions, sessionPlannedSortRatio)) : "-", plannedSessions.length ? `${plannedSessions.length}세션 기준` : "신규 시뮬 로그 필요", plannedSessions.length ? "green" : "")}
         ${kpi("평균 최대 콤보", format(average(current, (row) => row.max_combo), 1), "세션당")}
         ${kpi("종료 슬롯 체력", percent(average(current, (row) => row.slot_hp_ratio_avg)), "평균 잔존율", "green")}
         ${kpi("시스템 피해 비중", percent(source.systemShare), "콤보/전체정렬/기타", source.systemShare > .45 ? "red" : "yellow")}
         ${kpi("위험 웨이브", dangerWave?.wave ? `W${dangerWave.wave}` : "-", dangerWave?.samples ? `잔존 ${format(dangerWave.remaining, 1)} / 슬롯 ${percent(dangerWave.slotHp)}` : "관측 대기", "red")}
       </section>
+
+      ${renderOperationsCharts(waves)}
 
       <section class="chart-grid">
         ${chartPanel("웨이브 압력과 실제 여유", "체력 예산/잔존/슬롯 위험을 0~100 지수로 비교", lineChart([
@@ -1605,6 +2213,7 @@
   function renderVersions() {
     const rows = getVersionRows();
     const changes = getBalanceChangeRows();
+    const cohortRows = getVersionCohortRows();
     if (!rows.length) return empty();
     const displayRows = rows.slice().reverse();
     return `<section class="chart-grid">
@@ -1638,6 +2247,13 @@
         formatter: (value, item) => `${value >= 0 ? "+" : ""}${format(value, 2)}W / 클리어 ${percent(item.clearDelta)}`,
         limit: 10,
       }))}
+      ${chartPanel("최신 전후 코호트 영향", "전체 평균에 가려지는 숙련도/출처별 변화를 따로 표시", deltaBarChart(cohortRows, {
+        value: (item) => item.reachedDelta,
+        label: (item) => item.label,
+        formatter: (value, item) => `${deltaText(value, (v) => `${format(v, 2)}W`)} · 클리어 ${deltaText(item.clearDelta, (v) => percent(v))}`,
+        limit: 10,
+        labelLength: 18,
+      }), "wide-chart")}
     </section>
     <section class="section">${sectionTitle("빌드·밸런스 스냅샷 비교", "필터와 무관한 전체 버전")}
       <div class="table-wrap"><table><thead><tr><th>빌드</th><th>스냅샷</th><th>세션</th><th>클리어율</th><th>Δ 클리어율</th><th>평균 도달</th><th>Δ 도달</th><th>평균 소팅</th><th>Δ 소팅</th><th>종료 슬롯 체력</th><th>Δ 슬롯 체력</th><th>플레이 시간</th></tr></thead><tbody>
@@ -1982,6 +2598,12 @@
   }
 
   function bindViewInteractions() {
+    document.querySelectorAll("[data-drill-view]").forEach((button) => button.addEventListener("click", () => {
+      state.activePreset = "custom";
+      setActiveTab(button.dataset.drillView || "overview");
+      syncPresetButtons();
+      render();
+    }));
     if (state.view !== "preview") return;
     const typeSelect = document.querySelector("[data-preview-type]");
     const levelSelect = document.querySelector("[data-preview-level]");

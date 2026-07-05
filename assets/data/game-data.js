@@ -2771,6 +2771,11 @@
     const expAmountByExpType = Object.fromEntries(
       (designTables.ExpData || []).map((row) => [String(row.ExpTypeID), Math.max(0, Math.floor(Number(row.ExpAmount) || 0))])
     );
+    const expBlockValueForType = (expTypeId) => {
+      const key = String(expTypeId || "").trim();
+      if (!key || key === "0") return 0;
+      return Math.max(0, Math.floor(Number(expAmountByExpType[key] ?? 0)));
+    };
     const baseMonsterHp = 22;
     const bossFillDefaults = {
       kind: "final",
@@ -2795,7 +2800,9 @@
       const bossKind = String(bossRow.BossName || bossRow.Desc || "").toLowerCase().includes("mid") ? "mid" : bossFillDefaults.kind;
       const monsterKey = getDesignRuntimeMonsterKey(bossRow.MonsterID) || "finalBoss";
       const bossExpTypeId = String(baseMonsterRow?.ExpTypeID || "");
-      const bossXp = Math.max(0, Math.floor(Number(expAmountByExpType[bossExpTypeId] ?? 1)));
+      const bossExpBlockValue = expBlockValueForType(bossExpTypeId);
+      const bossExpBlockCount = bossExpBlockValue > 0 ? 1 : 0;
+      const bossXp = bossExpBlockValue * bossExpBlockCount;
       const label = localizeDesignKey(bossRow.BossName, bossRow.Desc || bossKey);
       const summonCount = Math.max(0, Math.floor(numberOr(bossRow.SummonCount, 0)));
       const summonGroupId = Number(bossRow.SummonMonsterGroupID) || 0;
@@ -2846,6 +2853,10 @@
         radius: bossFillDefaults.radius,
         taunt: bossFillDefaults.taunt,
         xp: bossXp,
+        expBlockValue: bossExpBlockValue,
+        expBlockCount: bossExpBlockCount,
+        expDataType: bossExpTypeId,
+        expSource: "designTables",
         summon,
         warning: {
           rangedDelay: bossFillDefaults.warningRangedDelay,
@@ -3236,7 +3247,7 @@
         goalLevel,
         requiredXp: Math.max(0, Math.floor(Number(row.RequiredXP) || 0)),
         isMaxLevel: Number(row.IsMaxLevel) === 1,
-        perkEventType: row.PerkEventType || "Normal",
+        perkEventType: row.PerkEventType ?? "",
         description: row.Description || "",
         source: "designTables",
       });
@@ -3261,7 +3272,7 @@
     }
 
     const maxLevelRows = levelRows.filter((row) => row.isMaxLevel);
-    const maxLevelRow = maxLevelRows[maxLevelRows.length - 1] || levelRows[levelRows.length - 1] || null;
+    const maxLevelRow = maxLevelRows[0] || levelRows[levelRows.length - 1] || null;
     const stageMaxLevel = Math.max(1, Math.floor(Number(maxLevelRow?.goalLevel) || Number(levelData.stageMaxLevel) || 20));
     const firstPlayableRow = levelRows.find((row) => row.goalLevel > 1);
     const xpBase = Math.max(1, Number(xpCostByLevel[1] || firstPlayableRow?.requiredXp || levelData.xpBase || 20));
@@ -3271,6 +3282,11 @@
     const expAmountByExpType = Object.fromEntries(
       (designTables.ExpData || []).map((row) => [String(row.ExpTypeID), Math.max(0, Math.floor(Number(row.ExpAmount) || 0))])
     );
+    const expBlockValueForType = (expTypeId) => {
+      const key = String(expTypeId || "").trim();
+      if (!key || key === "0") return 0;
+      return Math.max(0, Math.floor(Number(expAmountByExpType[key] ?? 0)));
+    };
     const expTypeToRuntimeKeys = {
       81: ["basic"],
       82: ["speed", "tank", "ranged"],
@@ -3303,6 +3319,8 @@
       const monsterAtkRange = Number(monsterRow.MonsterAtkRange);
       const isDummy = monsterType === "dummy";
       const expTypeId = String(monsterRow.ExpTypeID || "");
+      const expBlockValue = expBlockValueForType(expTypeId);
+      const expBlockCount = expBlockValue > 0 ? 1 : 0;
       runtimeMonsters[monsterKey] = {
         key: monsterKey,
         monsterId: monsterRow.MonsterSprite || monsterKey,
@@ -3320,7 +3338,9 @@
         taunt: Number(typeDefaults.taunt),
         pack: Math.max(1, Math.floor(Number(typeDefaults.pack))),
         weight: Number(typeDefaults.weight || 0),
-        xp: Math.max(0, Math.floor(Number(expAmountByExpType[expTypeId] ?? 1))),
+        xp: expBlockValue * expBlockCount,
+        expBlockValue,
+        expBlockCount,
         canMove: isDummy ? false : monsterMoveSpeed > 0,
         canAttack: isDummy ? false : monsterAtk > 0,
         testDummy: isDummy,
@@ -3343,9 +3363,13 @@
     for (const [expTypeId, xpAmount] of Object.entries(expAmountByExpType)) {
       for (const monsterKey of expTypeToRuntimeKeys[expTypeId] || []) {
         if (!runtimeMonsters[monsterKey]) continue;
+        const expBlockValue = expBlockValueForType(expTypeId);
+        const expBlockCount = expBlockValue > 0 ? 1 : 0;
         runtimeMonsters[monsterKey] = {
           ...runtimeMonsters[monsterKey],
-          xp: xpAmount,
+          xp: expBlockValue * expBlockCount,
+          expBlockValue,
+          expBlockCount,
           expDataType: expTypeId,
           expSource: "designTables",
         };

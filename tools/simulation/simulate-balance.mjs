@@ -15,7 +15,7 @@ function parseArgs(argv) {
     sessions: 9,
     speed: 50,
     seed: null,
-    mix: "beginner:34,intermediate:33,advanced:33",
+    mix: "beginner:2,intermediate:5,advanced:2",
     profile: "",
     scenario: "",
     stage: "",
@@ -24,6 +24,9 @@ function parseArgs(argv) {
     show: false,
     dashboard: true,
     dryRun: false,
+    speedCheck: false,
+    checkSpeeds: [1, 10, 50],
+    checkSessions: 1,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -40,16 +43,22 @@ function parseArgs(argv) {
     else if (arg === "--show") options.show = true;
     else if (arg === "--no-dashboard") options.dashboard = false;
     else if (arg === "--dry-run") options.dryRun = true;
+    else if (arg === "--speed-check") options.speedCheck = true;
+    else if (arg === "--check-speeds") options.checkSpeeds = String(argv[++index] || "1,10,50").split(",").map((value) => Number(value.trim())).filter((value) => Number.isFinite(value) && value > 0);
+    else if (arg === "--check-sessions") options.checkSessions = Number(argv[++index]);
     else if (arg === "--help" || arg === "-h") options.help = true;
     else throw new Error(`알 수 없는 인자입니다: ${arg}`);
   }
   options.sessions = Math.max(1, Math.min(2000, Math.floor(options.sessions || 9)));
   options.speed = Math.max(1, Math.min(50, Number(options.speed) || 50));
+  options.checkSpeeds = [...new Set(options.checkSpeeds.map((value) => Math.max(1, Math.min(50, Math.floor(value)))))]
+    .sort((a, b) => a - b);
+  options.checkSessions = Math.max(1, Math.min(12, Math.floor(Number(options.checkSessions) || 1)));
   options.seed = Math.max(1, Math.floor(options.seed || (Date.now() % 2147483647)));
   if (options.profile && !["beginner", "intermediate", "advanced"].includes(options.profile)) {
     throw new Error(`지원하지 않는 프로필입니다: ${options.profile}`);
   }
-  const scenarios = ["standard", "weakStart", "highRoll", "lowRoll", "mistakeHeavy", "pressureAttack", "repairFirst", "comboFocus"];
+  const scenarios = ["standard", "highRoll", "lowRoll", "pressureAttack", "comboFocus"];
   if (options.scenario && !scenarios.includes(options.scenario)) {
     throw new Error(`지원하지 않는 시나리오입니다: ${options.scenario}`);
   }
@@ -186,14 +195,197 @@ async function uploadTelemetryEvents(events) {
   }
 }
 
+async function collectSimulationPayload(options, browser, overrides = {}) {
+  let resolveResult;
+  let rejectResult;
+  const resultPromise = new Promise((resolve, reject) => {
+    resolveResult = resolve;
+    rejectResult = reject;
+  });
+  let resultReceived = false;
+  const server = createServer((payload) => {
+    resultReceived = true;
+    resolveResult(payload);
+    return { destination: overrides.destination || "local speed check" };
+  });
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+
+  const port = server.address().port;
+  const runId = overrides.runId || `sim-${Date.now()}-${process.pid}`;
+  const query = new URLSearchParams({
+    simulation: "1",
+    sessions: String(overrides.sessions ?? options.sessions),
+    speed: String(overrides.speed ?? options.speed),
+    seed: String(overrides.seed ?? options.seed),
+    mix: options.mix,
+    runId,
+  });
+  if (options.profile) query.set("profile", options.profile);
+  if (options.scenario) query.set("scenario", options.scenario);
+  if (options.stage) query.set("stage", options.stage);
+  if (options.pieces.length) query.set("pieces", options.pieces.join(","));
+  if (options.coverage) query.set("coverage", "1");
+  const url = `http://127.0.0.1:${port}/index.html?${query}`;
+  const profileDir = path.join(os.tmpdir(), `3sort-balance-sim-${process.pid}-${Date.now()}-${Math.floor(Math.random() * 100000)}`);
+  const browserArgs = [
+    `--user-data-dir=${profileDir}`,
+    "--no-first-run",
+    "--disable-default-apps",
+    "--disable-extensions",
+    "--disable-background-timer-throttling",
+    "--disable-backgrounding-occluded-windows",
+    "--disable-renderer-backgrounding",
+    "--autoplay-policy=no-user-gesture-required",
+    "--window-size=430,900",
+  ];
+  if (!options.show && !overrides.show) browserArgs.push("--headless=new", "--disable-gpu");
+  browserArgs.push(url);
+
+  const speed = overrides.speed ?? options.speed;
+  const sessions = overrides.sessions ?? options.sessions;
+  const child = spawn(browser, browserArgs, { stdio: "ignore", windowsHide: !options.show && !overrides.show });
+  child.once("error", rejectResult);
+  child.once("exit", (code) => {
+    if (!resultReceived) console.warn(`[SIM] browser launcher exited before completion (code=${code}); waiting for browser worker`);
+  });
+
+  const estimatedMs = Math.max(300000, Math.ceil(sessions * (500 / speed + 12) * 1000));
+  const timeout = setTimeout(() => rejectResult(new Error(`시뮬레이션 제한시간 초과 (${Math.round(estimatedMs / 60000)}분)`)), estimatedMs);
+  try {
+    const payload = await resultPromise;
+    clearTimeout(timeout);
+    if (payload.error) throw new Error(payload.error);
+    return payload;
+  } finally {
+    clearTimeout(timeout);
+    if (process.platform === "win32" && child.pid) {
+      spawnSync("taskkill.exe", ["/PID", String(child.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
+    } else if (!child.killed) child.kill();
+    server.closeIdleConnections?.();
+    server.closeAllConnections?.();
+    await new Promise((resolve) => server.close(resolve));
+    const tempRoot = path.resolve(os.tmpdir());
+    const resolvedProfile = path.resolve(profileDir);
+    if (resolvedProfile.startsWith(`${tempRoot}${path.sep}`) && path.basename(resolvedProfile).startsWith("3sort-balance-sim-")) {
+      try {
+        fs.rmSync(resolvedProfile, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 });
+      } catch (error) {
+        console.warn(`[SIM] temporary browser profile cleanup skipped: ${error.code || error.message}`);
+      }
+    }
+  }
+}
+
+function stableNumber(value, digits = 2) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? Number(numeric.toFixed(digits)) : 0;
+}
+
+function eventFingerprint(event) {
+  const payload = event.payload || {};
+  return [
+    event.eventType,
+    event.waveOrdinal,
+    event.sortAttempts,
+    event.sortSuccesses,
+    event.enemyCount,
+    stableNumber(event.damageDone, 1),
+    stableNumber(event.slotHpRatioAvg, 3),
+    payload.result || "",
+    payload.reason || "",
+    Array.isArray(payload.pickedPerks) ? payload.pickedPerks.map((perk) => perk.id || perk.title).join("|") : "",
+  ].join(":");
+}
+
+function checksumText(text) {
+  let hash = 2166136261;
+  for (const char of String(text)) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+function payloadSpeedSignature(payload) {
+  const sessions = Array.isArray(payload.sessions) ? payload.sessions : [];
+  const events = Array.isArray(payload.events) ? payload.events : [];
+  return {
+    sessions: sessions.map((session) => ({
+      profile: session.profile,
+      strategy: session.strategy,
+      scenario: session.scenario,
+      result: session.result,
+      reachedWave: Number(session.reachedWave || 0),
+      attempts: Number(session.actualAttempts || 0),
+      perkPicks: Number(session.perkPicks || 0),
+      plannedSortRatio: stableNumber(session.plannedSortRatio, 3),
+    })),
+    checksum: checksumText(events.map(eventFingerprint).join("\n")),
+    eventCount: events.length,
+  };
+}
+
+function compareSpeedSignatures(base, candidate) {
+  const issues = [];
+  const warnings = [];
+  const length = Math.max(base.sessions.length, candidate.sessions.length);
+  if (base.sessions.length !== candidate.sessions.length) issues.push(`세션 수 불일치 ${base.sessions.length} != ${candidate.sessions.length}`);
+  for (let index = 0; index < length; index += 1) {
+    const a = base.sessions[index] || {};
+    const b = candidate.sessions[index] || {};
+    if (a.result !== b.result) issues.push(`S${index + 1} result ${a.result} != ${b.result}`);
+    if (a.reachedWave !== b.reachedWave) issues.push(`S${index + 1} wave ${a.reachedWave} != ${b.reachedWave}`);
+    if (a.attempts !== b.attempts) issues.push(`S${index + 1} attempts ${a.attempts} != ${b.attempts}`);
+    if (a.perkPicks !== b.perkPicks) warnings.push(`S${index + 1} perk picks ${a.perkPicks} != ${b.perkPicks}`);
+    if (Math.abs(Number(a.plannedSortRatio || 0) - Number(b.plannedSortRatio || 0)) > 0.03) {
+      warnings.push(`S${index + 1} planned ratio ${a.plannedSortRatio} != ${b.plannedSortRatio}`);
+    }
+  }
+  if (base.eventCount !== candidate.eventCount) warnings.push(`event count ${base.eventCount} != ${candidate.eventCount}`);
+  if (base.checksum !== candidate.checksum) warnings.push(`checksum ${base.checksum} != ${candidate.checksum}`);
+  return { issues, warnings };
+}
+
+async function runSpeedCheck(options, browser) {
+  const speeds = options.checkSpeeds.length ? options.checkSpeeds : [1, 10, 50];
+  console.log(`[SIM] speed check ${speeds.join("x / ")}x / sessions ${options.checkSessions} / seed ${options.seed}`);
+  const results = [];
+  for (const speed of speeds) {
+    console.log(`[SIM] speed check run x${speed}`);
+    const payload = await collectSimulationPayload(options, browser, {
+      speed,
+      sessions: options.checkSessions,
+      runId: `speed-check-${options.seed}-${speed}`,
+      destination: "local speed check",
+    });
+    const signature = payloadSpeedSignature(payload);
+    results.push({ speed, payload, signature });
+    console.log(`[SIM] x${speed}: ${signature.sessions.map((session, index) => `S${index + 1}:${session.result}/W${session.reachedWave}/A${session.attempts}/P${session.plannedSortRatio}`).join(" | ")} / checksum ${signature.checksum}`);
+  }
+  const base = results[0];
+  let failures = 0;
+  for (const result of results.slice(1)) {
+    const diff = compareSpeedSignatures(base.signature, result.signature);
+    for (const warning of diff.warnings) console.warn(`[SIM] speed check warning x${base.speed}->x${result.speed}: ${warning}`);
+    for (const issue of diff.issues) console.error(`[SIM] speed check mismatch x${base.speed}->x${result.speed}: ${issue}`);
+    if (diff.issues.length) failures += diff.issues.length;
+  }
+  if (failures) throw new Error(`속도 검증 실패: ${failures}개 핵심 불일치`);
+  console.log("[SIM] speed check passed: core session results match");
+}
+
 async function main() {
   const options = parseArgs(process.argv.slice(2));
   if (options.help) {
     console.log("node tools/simulation/simulate-balance.mjs [--sessions 9] [--speed 50] [--seed <number>]");
-    console.log("  [--mix beginner:34,intermediate:33,advanced:33] [--profile beginner|intermediate|advanced]");
-    console.log("  [--scenario standard|weakStart|highRoll|lowRoll|mistakeHeavy|pressureAttack|repairFirst|comboFocus]");
+    console.log("  [--mix beginner:2,intermediate:5,advanced:2] [--profile beginner|intermediate|advanced]");
+    console.log("  [--scenario standard|highRoll|lowRoll|pressureAttack|comboFocus]");
     console.log("  [--stage stage-1] [--pieces basic_1,scatter_1,sniper_1,breaker_1,blast_1,support_1]");
     console.log("  [--coverage|--random-mix] [--show] [--no-dashboard] [--dry-run]");
+    console.log("  [--speed-check] [--check-speeds 1,10,50] [--check-sessions 1]");
     return;
   }
 
@@ -208,6 +400,10 @@ async function main() {
     if (options.stage) console.log(`OK stage option: ${options.stage}`);
     if (options.pieces.length) console.log(`OK pieces option: ${options.pieces.join(",")}`);
     console.log("OK storage: Google Sheet only");
+    return;
+  }
+  if (options.speedCheck) {
+    await runSpeedCheck(options, browser);
     return;
   }
 
@@ -281,7 +477,7 @@ async function main() {
     console.log("[SIM] Google Sheet session confirmation complete");
     for (const [profile, summary] of Object.entries(payload.summary?.groups || {})) {
       if (!summary.sessions) continue;
-      console.log(`[SIM] ${profile}: ${summary.sessions} sessions / attempts ${summary.averageAttempts.toFixed(2)} / delay ${summary.averageDecisionSec.toFixed(2)}s / clear ${(summary.clearRate * 100).toFixed(1)}%`);
+      console.log(`[SIM] ${profile}: ${summary.sessions} sessions / attempts ${summary.averageAttempts.toFixed(2)} / delay ${summary.averageDecisionSec.toFixed(2)}s / planned ${((summary.averagePlannedSortRatio || 0) * 100).toFixed(1)}% / clear ${(summary.clearRate * 100).toFixed(1)}%`);
     }
     console.log(`[SIM] strategies ${Object.entries(payload.summary?.strategies || {}).map(([key, count]) => `${key}:${count}`).join(" / ")}`);
     console.log(`[SIM] scenarios ${Object.entries(payload.summary?.scenarios || {}).map(([key, count]) => `${key}:${count}`).join(" / ")}`);

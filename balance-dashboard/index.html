@@ -12,10 +12,28 @@
       <h1>3-Sort 밸런스 대시보드</h1>
       <p id="data-status">데이터 확인 중</p>
     </div>
-    <button id="reset-filters" type="button">필터 초기화</button>
+    <div class="topbar-actions">
+      <button id="toggle-filters" type="button" aria-expanded="false">필터 열기</button>
+      <button id="reset-filters" type="button">필터 초기화</button>
+    </div>
   </header>
 
-  <section class="filters" aria-label="로그 필터">
+  <section class="analysis-presets" aria-label="분석 프리셋">
+    <strong>분석 프리셋</strong>
+    <button class="preset active" data-preset="overview" type="button">전체 현황</button>
+    <button class="preset" data-preset="real" type="button">REAL 유저</button>
+    <button class="preset" data-preset="simulation" type="button">시뮬만</button>
+    <button class="preset" data-preset="beginner" type="button">초급자</button>
+    <button class="preset" data-preset="intermediate" type="button">중급자</button>
+    <button class="preset" data-preset="advanced" type="button">상급자</button>
+    <button class="preset" data-preset="failures" type="button">실패 세션</button>
+    <button class="preset" data-preset="danger" type="button">위험 웨이브</button>
+    <button class="preset" data-preset="system" type="button">시스템 의존</button>
+    <button class="preset" data-preset="calibration" type="button">REAL vs SIM</button>
+    <button class="preset" data-preset="latest" type="button">최신 스냅샷</button>
+  </section>
+
+  <section class="filters collapsed" aria-label="로그 필터">
     <label>표본<select id="filter-source"></select></label>
     <label>시뮬레이터<select id="filter-sim-version"></select></label>
     <label>빌드<select id="filter-build"></select></label>

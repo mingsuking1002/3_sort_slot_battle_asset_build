@@ -4460,13 +4460,24 @@
           botPieceTypes: "",
           botPieceLevels: "",
           botLoadoutHash: "",
-          simulationVersion: "1.4.0-stage-loadout-experiments",
+          simulationVersion: "1.5.0-human-planning-speed-check",
           simulationSeed: SIMULATION_QUERY.seed,
           simulationSpeed: SIMULATION_QUERY.speed,
           decisionDelayAvg: 0,
           decisionDelayStddev: 0,
           mistakeCount: 0,
           invalidSortAttempts: 0,
+          plannedSortCount: 0,
+          plannedSortRatio: 0,
+          planFollowupCount: 0,
+          planSetupCount: 0,
+          planBreakCount: 0,
+          reactiveSortCount: 0,
+          reactiveSortRatio: 0,
+          immediateMatchCount: 0,
+          usefulFallbackCount: 0,
+          averagePlanDepth: 0,
+          maxPlanDepth: 0,
         },
       };
       let simulationRandomState = SIMULATION_QUERY.seed >>> 0;
@@ -5394,6 +5405,17 @@
                 simulationSpeed: SIMULATION_RUNTIME.meta.simulationSpeed,
                 decisionDelayAvg: SIMULATION_RUNTIME.meta.decisionDelayAvg,
                 decisionDelayStddev: SIMULATION_RUNTIME.meta.decisionDelayStddev,
+                plannedSortCount: SIMULATION_RUNTIME.meta.plannedSortCount,
+                plannedSortRatio: SIMULATION_RUNTIME.meta.plannedSortRatio,
+                planFollowupCount: SIMULATION_RUNTIME.meta.planFollowupCount,
+                planSetupCount: SIMULATION_RUNTIME.meta.planSetupCount,
+                planBreakCount: SIMULATION_RUNTIME.meta.planBreakCount,
+                reactiveSortCount: SIMULATION_RUNTIME.meta.reactiveSortCount,
+                reactiveSortRatio: SIMULATION_RUNTIME.meta.reactiveSortRatio,
+                immediateMatchCount: SIMULATION_RUNTIME.meta.immediateMatchCount,
+                usefulFallbackCount: SIMULATION_RUNTIME.meta.usefulFallbackCount,
+                averagePlanDepth: SIMULATION_RUNTIME.meta.averagePlanDepth,
+                maxPlanDepth: SIMULATION_RUNTIME.meta.maxPlanDepth,
               },
             }
           : payload;
@@ -7284,6 +7306,8 @@
         const speedMult = monsterConfigValue(type.key, "SpeedMult", numberOr(type.speedMult, 1));
         const attackRateMult = monsterConfigValue(type.key, "AttackRateMult", numberOr(type.attackRateMult, 1));
         const baseRadius = getMonsterRadius(elite) + numberOr(type.radiusAdd, 0);
+        const expBlockValue = Math.max(0, Math.floor(numberOr(type.expBlockValue, numberOr(type.xp, 0))));
+        const expBlockCount = Math.max(0, Math.floor(numberOr(type.expBlockCount, expBlockValue > 0 ? 1 : 0)));
         return {
           type,
           maxHp: Math.max(1, numberOr(config.monsterHp, 22) * hpMult * (elite ? numberOr(config.eliteHpMult, 1) : 1)),
@@ -7294,7 +7318,10 @@
           attackRange: numberOr(type.attackRange, 0) ? monsterConfigValue(type.key, "AttackRange", numberOr(type.attackRange, 0)) : 0,
           taunt: monsterConfigValue(type.key, "Taunt", numberOr(type.taunt, 1)),
           pack: Math.max(1, Math.floor(monsterConfigValue(type.key, "Pack", numberOr(type.pack, 1)))),
-          xp: numberOr(type.xp, 1),
+          xp: Math.max(0, Math.floor(numberOr(type.xp, expBlockValue * expBlockCount))),
+          expBlockValue,
+          expBlockCount,
+          expDataType: type.expDataType || "",
           canMove: type.canMove !== false,
           canAttack: type.canAttack !== false,
           testDummy: type.testDummy === true,
@@ -7439,7 +7466,9 @@
           meleeRange: numberOr(data.meleeRange, 38),
           radius: numberOr(data.radius, 27),
           taunt: numberOr(data.taunt, 18),
-          xp: numberOr(data.xp, 1),
+          xp: Math.max(0, Math.floor(numberOr(data.xp, 0))),
+          expBlockValue: Math.max(0, Math.floor(numberOr(data.expBlockValue, numberOr(data.xp, 0)))),
+          expBlockCount: Math.max(0, Math.floor(numberOr(data.expBlockCount, numberOr(data.xp, 0) > 0 ? 1 : 0))),
           summon,
           warning: {
             rangedDelay: bossConfigValue(data, "rangedWarning", numberOr(data.warning?.rangedDelay, 0.75)),
@@ -8418,6 +8447,9 @@
             enemy.meleeRange = bossStats.meleeRange;
             enemy.radius = bossStats.radius;
             enemy.taunt = bossStats.taunt;
+            enemy.xpValue = bossStats.xp;
+            enemy.expBlockValue = bossStats.expBlockValue;
+            enemy.expBlockCount = bossStats.expBlockCount;
             enemy.bossSummon = bossStats.summon;
             enemy.bossWarning = bossStats.warning;
             continue;
@@ -8436,6 +8468,8 @@
           enemy.attackRange = stats.attackRange;
           enemy.taunt = stats.taunt;
           enemy.xpValue = stats.xp;
+          enemy.expBlockValue = stats.expBlockValue;
+          enemy.expBlockCount = stats.expBlockCount;
         }
         for (const tower of [...state.towers, ...state.towerQueue]) {
           setupTowerAmmo(tower, true);
@@ -10002,6 +10036,7 @@
       }
 
       function spawnXpOrb(x, y, value) {
+        if (value <= 0) return;
         state.xpOrbs.push({
           x,
           y,
@@ -10633,6 +10668,8 @@
           color: options.color || stats.type.color,
           taunt: options.taunt ?? stats.taunt,
           xpValue: options.xpValue ?? stats.xp,
+          expBlockValue: options.expBlockValue ?? stats.expBlockValue,
+          expBlockCount: options.expBlockCount ?? stats.expBlockCount,
           canMove: options.canMove ?? stats.canMove,
           canAttack: options.canAttack ?? stats.canAttack,
           testDummy: options.testDummy ?? stats.testDummy,
@@ -10716,6 +10753,8 @@
           bossKind: bossStats.kind,
           taunt: bossStats.taunt,
           xpValue: bossStats.xp,
+          expBlockValue: bossStats.expBlockValue,
+          expBlockCount: bossStats.expBlockCount,
           spreadX: 0,
           spreadY: 0,
         });
@@ -11184,6 +11223,15 @@
         }
       }
 
+      function getEnemyXpDrop(enemy) {
+        const fallbackValue = Math.max(0, Math.floor(numberOr(enemy.xpValue, 0)));
+        const blockValue = Math.max(0, Math.floor(numberOr(enemy.expBlockValue, fallbackValue)));
+        const blockCount = Math.max(0, Math.floor(numberOr(enemy.expBlockCount, blockValue > 0 ? 1 : 0)));
+        const total = blockValue * blockCount;
+        if (total > 0 || fallbackValue <= 0) return { blockValue, blockCount, total };
+        return { blockValue: fallbackValue, blockCount: 1, total: fallbackValue };
+      }
+
       function cleanupEnemies() {
         const dead = state.enemies.filter((enemy) => enemy.hp <= 0);
         if (state.telemetryStats) {
@@ -11191,16 +11239,20 @@
         }
         let defeatedBoss = null;
         for (const enemy of dead) {
-          const xpValue = Math.max(1, Math.floor(enemy.xpValue || 1));
-          state.kills += (enemy.elite ? 2 : 1) * xpValue;
-          spawnXpOrb(enemy.x, enemy.y, xpValue);
-          state.particles.push({
-            x: enemy.x,
-            y: enemy.y,
-            text: `XP${xpValue}`,
-            life: 0.8,
-            color: enemy.elite ? varColor("--gold") : enemy.color || varColor("--green"),
-          });
+          const xpDrop = getEnemyXpDrop(enemy);
+          state.kills += (enemy.elite ? 2 : 1) * Math.max(1, xpDrop.total);
+          for (let index = 0; index < xpDrop.blockCount; index += 1) {
+            spawnXpOrb(enemy.x + rand(-8, 8), enemy.y + rand(-8, 8), xpDrop.blockValue);
+          }
+          if (xpDrop.total > 0) {
+            state.particles.push({
+              x: enemy.x,
+              y: enemy.y,
+              text: `XP${xpDrop.total}`,
+              life: 0.8,
+              color: enemy.elite ? varColor("--gold") : enemy.color || varColor("--green"),
+            });
+          }
           if (enemy.bossKind && enemy.id === state.bossId) defeatedBoss = enemy;
         }
         state.enemies = state.enemies.filter((enemy) => enemy.hp > 0);
@@ -12627,6 +12679,17 @@
               mistakeCount: 0,
               invalidSortAttempts: 0,
               perkDecisionDelayTotal: 0,
+              plannedSortCount: 0,
+              plannedSortRatio: 0,
+              planFollowupCount: 0,
+              planSetupCount: 0,
+              planBreakCount: 0,
+              reactiveSortCount: 0,
+              reactiveSortRatio: 0,
+              immediateMatchCount: 0,
+              usefulFallbackCount: 0,
+              averagePlanDepth: 0,
+              maxPlanDepth: 0,
               ...cloneGameData(meta),
             };
             applySimulationExperimentConfig(meta);

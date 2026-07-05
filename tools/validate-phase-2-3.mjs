@@ -1125,15 +1125,25 @@ function validateDesignTables(data) {
     84: ["dummy"],
   };
   for (const monster of tables.MonsterData || []) {
-    if (expTypeIds.has(String(monster.ExpTypeID))) pass("DESIGN_TABLE", `MonsterData ${monster.MonsterID} has ExpData ${monster.ExpTypeID}`);
+    const monsterExpTypeId = String(monster.ExpTypeID || "").trim();
+    if (!monsterExpTypeId || monsterExpTypeId === "0") pass("DESIGN_TABLE", `MonsterData ${monster.MonsterID} has no XP block`);
+    else if (expTypeIds.has(monsterExpTypeId)) pass("DESIGN_TABLE", `MonsterData ${monster.MonsterID} has ExpData ${monster.ExpTypeID}`);
     else warn("DESIGN_TABLE", `MonsterData ${monster.MonsterID} missing ExpData`, String(monster.ExpTypeID));
     const key = monsterRuntimeKey(monster.MonsterID);
     const runtimeMonster = data.monsters?.[key];
     if (runtimeMonster?.source === "designTables") pass("DESIGN_TABLE", `MonsterData ${monster.MonsterID} feeds runtime ${key}`);
     else fail("DESIGN_TABLE", `MonsterData ${monster.MonsterID} runtime monster missing`, `${key} / ${runtimeMonster?.source}`);
-    const expectedXp = Number((tables.ExpData || []).find((row) => String(row.ExpTypeID) === String(monster.ExpTypeID))?.ExpAmount ?? runtimeMonster?.xp);
-    if (Number(runtimeMonster?.xp) === expectedXp) pass("DESIGN_TABLE", `MonsterData ${monster.MonsterID} ExpData XP applied`);
-    else fail("DESIGN_TABLE", `MonsterData ${monster.MonsterID} XP mismatch`, `${runtimeMonster?.xp} / ${expectedXp}`);
+    const expectedBlockValue = monsterExpTypeId && monsterExpTypeId !== "0"
+      ? Number((tables.ExpData || []).find((row) => String(row.ExpTypeID) === monsterExpTypeId)?.ExpAmount || 0)
+      : 0;
+    const expectedBlockCount = expectedBlockValue > 0 ? 1 : 0;
+    const expectedXp = expectedBlockValue * expectedBlockCount;
+    if (
+      Number(runtimeMonster?.xp) === expectedXp
+      && Number(runtimeMonster?.expBlockValue || 0) === expectedBlockValue
+      && Number(runtimeMonster?.expBlockCount || 0) === expectedBlockCount
+    ) pass("DESIGN_TABLE", `MonsterData ${monster.MonsterID} ExpData XP block applied`);
+    else fail("DESIGN_TABLE", `MonsterData ${monster.MonsterID} XP block mismatch`, `${runtimeMonster?.xp}/${runtimeMonster?.expBlockValue}/${runtimeMonster?.expBlockCount} / ${expectedXp}/${expectedBlockValue}/${expectedBlockCount}`);
     const expectedHpMult = Number(monster.MonsterHp) > 0 ? Number(monster.MonsterHp) / 22 : 1;
     const expectedDamageMult = Number(monster.MonsterAtk) > 0 ? Number(monster.MonsterAtk) : Number(monster.MonsterType) === 99 ? 0.01 : 1;
     const expectedSpeedMult = Number(monster.MonsterMoveSpeed) > 0 ? Number(monster.MonsterMoveSpeed) / 34 : Number(monster.MonsterType) === 99 ? 0.01 : 1;
@@ -1163,10 +1173,16 @@ function validateDesignTables(data) {
     else fail("DESIGN_TABLE", `BossData ${boss.BossID} monster runtime mismatch`, `${runtimeBoss?.monsterKey} / ${expectedMonsterKey}`);
     const bossMonsterRow = monsterRowsById.get(String(boss.MonsterID));
     const bossExpRow = expRowsById.get(String(bossMonsterRow?.ExpTypeID));
-    if (bossExpRow && Number(runtimeBoss?.xp) === Number(bossExpRow.ExpAmount)) {
-      pass("DESIGN_TABLE", `BossData ${boss.BossID} XP comes from MonsterData.ExpTypeID ${bossMonsterRow.ExpTypeID}`);
+    const bossExpectedBlockValue = bossExpRow ? Number(bossExpRow.ExpAmount || 0) : 0;
+    const bossExpectedBlockCount = bossExpectedBlockValue > 0 ? 1 : 0;
+    if (
+      Number(runtimeBoss?.xp) === bossExpectedBlockValue * bossExpectedBlockCount
+      && Number(runtimeBoss?.expBlockValue || 0) === bossExpectedBlockValue
+      && Number(runtimeBoss?.expBlockCount || 0) === bossExpectedBlockCount
+    ) {
+      pass("DESIGN_TABLE", `BossData ${boss.BossID} XP block comes from MonsterData.ExpTypeID ${bossMonsterRow?.ExpTypeID || 0}`);
     } else {
-      fail("DESIGN_TABLE", `BossData ${boss.BossID} XP does not follow ExpData`, `${runtimeBoss?.xp} / ${bossMonsterRow?.ExpTypeID} / ${bossExpRow?.ExpAmount}`);
+      fail("DESIGN_TABLE", `BossData ${boss.BossID} XP block does not follow ExpData`, `${runtimeBoss?.xp}/${runtimeBoss?.expBlockValue}/${runtimeBoss?.expBlockCount} / ${bossMonsterRow?.ExpTypeID} / ${bossExpRow?.ExpAmount}`);
     }
     if (Number(boss.SummonMonsterGroupID) && Number(boss.SummonCount) > 0) {
       if (runtimeBoss?.summon?.monsters && Object.keys(runtimeBoss.summon.monsters).length > 0) {
@@ -1195,13 +1211,13 @@ function validateDesignTables(data) {
   }
   const sortedLevelRows = [...(tables.LevelData || [])].sort((a, b) => Number(a.GoalLevel) - Number(b.GoalLevel));
   const maxLevelRows = sortedLevelRows.filter((row) => Number(row.IsMaxLevel) === 1);
-  const expectedStageMaxLevel = Number((maxLevelRows[maxLevelRows.length - 1] || sortedLevelRows[sortedLevelRows.length - 1] || {}).GoalLevel || 0);
+  const expectedStageMaxLevel = Number((maxLevelRows[0] || sortedLevelRows[sortedLevelRows.length - 1] || {}).GoalLevel || 0);
   if (Number(data.levelData?.stageMaxLevel) === expectedStageMaxLevel) pass("DESIGN_TABLE", "LevelData IsMaxLevel feeds runtime stageMaxLevel", String(expectedStageMaxLevel));
   else fail("DESIGN_TABLE", "LevelData stageMaxLevel mismatch", `${data.levelData?.stageMaxLevel} / ${expectedStageMaxLevel}`);
   const levelEventMismatches = sortedLevelRows
     .filter((row) => {
       const runtimeRow = (data.levelData?.levels || []).find((item) => Number(item.goalLevel) === Number(row.GoalLevel));
-      return String(runtimeRow?.perkEventType || "") !== String(row.PerkEventType || "Normal");
+      return String(runtimeRow?.perkEventType ?? "") !== String(row.PerkEventType ?? "");
     })
     .map((row) => row.GoalLevel);
   if (levelEventMismatches.length === 0) pass("DESIGN_TABLE", "LevelData PerkEventType is exposed at runtime");
@@ -2199,10 +2215,15 @@ function validatePhase5GrowthPerkComboRules(data, html) {
   if (levelData.comboFeverEnabled === false) pass("PHASE5", "Legacy fever damage is disabled by data");
   else warn("PHASE5", "Legacy fever damage is enabled", "Design plan moves combo to piercing attacks.");
 
-  const monsterXpValues = Object.entries(data.monsters || {}).map(([key, monster]) => [key, Number(monster.xp)]);
-  const invalidXp = monsterXpValues.filter(([, xp]) => xp !== 1);
-  if (!invalidXp.length) pass("PHASE5", "All monster XP drops are 1");
-  else fail("PHASE5", "Monster XP should be 1", JSON.stringify(invalidXp));
+  const monsterXpBlocks = Object.entries(data.monsters || {}).map(([key, monster]) => ({
+    key,
+    xp: Number(monster.xp || 0),
+    blockValue: Number(monster.expBlockValue || 0),
+    blockCount: Number(monster.expBlockCount || 0),
+  }));
+  const invalidXpBlocks = monsterXpBlocks.filter((row) => row.xp !== row.blockValue * row.blockCount);
+  if (!invalidXpBlocks.length) pass("PHASE5", "Monster XP uses ExpData block value times block count");
+  else fail("PHASE5", "Monster XP block total mismatch", JSON.stringify(invalidXpBlocks));
 
   const perks = data.perks || {};
   for (const rarity of ["common", "rare", "unique"]) {
