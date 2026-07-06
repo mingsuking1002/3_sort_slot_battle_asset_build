@@ -267,7 +267,7 @@ export const GAME_DATA_SCHEMA = {
       foreignKeys: [
         { column: "TowerProjectile", table: "ProjectileData", target: "ProjectileID" },
       ],
-      notes: "TowerType은 1 Basic, 2 Shotgun, 3 SR, 4 Mortar, 5 Boomer, 6 Buffer입니다. TowerMaxRange는 런타임 TowerMaxLange로 정규화합니다. TowerLv가 없으면 TowerID 마지막 두 자리에서 파생합니다.",
+      notes: "TowerType은 1 Basic, 2 Shotgun, 3 SR, 4 Mortar, 5 Boomer, 6 Buffer입니다. TowerMaxRange는 런타임 TowerMaxLange로 이름만 정규화하며 값은 Unity unit 원본 그대로 파싱합니다. TowerMaxLange, ProjectileSize, SplashRadius는 px로 변환하거나 나누지 않습니다. TowerLv가 없으면 TowerID 마지막 두 자리에서 파생합니다.",
     }),
 
     ProjectileData: table("ProjectileID", "projectiles", [

@@ -586,6 +586,48 @@ function valueMatchesType(value, type) {
 }
 
 function validateBalanceSemantics(candidate, sourceInfo, issues) {
+  if (isImportedSource(sourceInfo.TowerData)) {
+    const towerRows = candidate.TowerData || [];
+    const suspiciousRanges = towerRows
+      .filter((row) => Number(row.TowerMaxLange) > 0 && Number(row.TowerMaxLange) < 0.5)
+      .slice(0, 8)
+      .map((row) => `${row.TowerID}:${row.TowerMaxLange}`);
+    if (suspiciousRanges.length) {
+      issues.push({
+        severity: "WARN",
+        table: "TowerData",
+        message: `TowerMaxLange는 Unity unit 원본값으로 파싱합니다. 0.5u 미만 사거리 ${suspiciousRanges.join(", ")}는 px/128로 이미 줄인 값일 수 있습니다.`,
+      });
+    }
+
+    const suspiciousSplash = towerRows
+      .filter((row) => Number(row.SplashRadius) > 20)
+      .slice(0, 8)
+      .map((row) => `${row.TowerID}:${row.SplashRadius}`);
+    if (suspiciousSplash.length) {
+      issues.push({
+        severity: "WARN",
+        table: "TowerData",
+        message: `SplashRadius는 Unity unit 원본값으로 파싱합니다. 20u 초과 폭발 반지름 ${suspiciousSplash.join(", ")}는 px 값이 그대로 들어온 것일 수 있습니다.`,
+      });
+    }
+  }
+
+  if (isImportedSource(sourceInfo.MonsterData)) {
+    const monsterRows = candidate.MonsterData || [];
+    const tinyAttackRanges = monsterRows
+      .filter((row) => Number(row.MonsterAtkRange) > 0 && Number(row.MonsterAtkRange) < 0.2)
+      .slice(0, 8)
+      .map((row) => `${row.MonsterID}:${row.MonsterAtkRange}`);
+    if (tinyAttackRanges.length) {
+      issues.push({
+        severity: "WARN",
+        table: "MonsterData",
+        message: `MonsterAtkRange는 Unity unit 원본값으로 파싱합니다. 0.2u 미만 양수 사거리 ${tinyAttackRanges.join(", ")}는 근접 0 또는 px/128 변환값인지 확인하세요.`,
+      });
+    }
+  }
+
   if (!isImportedSource(sourceInfo.PerkData) || !isImportedSource(sourceInfo.EffectData)) return;
   const effectById = new Map((candidate.EffectData || []).map((row) => [String(row.EffectID), row]));
   const effectValueColumns = [
@@ -814,6 +856,7 @@ function renderReport({ options, candidate, sourceInfo, issues, tableSummaries, 
     `- 데이터 버전: \`${candidate.schemaVersion}\``,
     `- 실행 모드: \`${modeLabel}\``,
     "- 런타임 연결: **기본 실행 모드** (유효한 생성 스냅샷을 항상 적용)",
+    "- 거리/반지름 단위: **데이터 테이블은 Unity unit 원본값으로 파싱**하고, 런타임/대시보드에서만 `u * 128px`로 환산합니다.",
     `- 외부 적용: **${importedCount}개**, 내장 fallback: **${fallbackCount}개**`,
     `- 검사 결과: ERROR ${counts.ERROR || 0} / WARN ${counts.WARN || 0} / INFO ${counts.INFO || 0}`,
     `- 현재 데이터 대비 변경: ${diff.changedRowCount}개 행 / ${diff.changedFieldCount}개 필드`,

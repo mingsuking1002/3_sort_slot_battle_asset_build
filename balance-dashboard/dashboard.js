@@ -87,6 +87,7 @@
     previewType: "basic",
     previewLevel: 1,
     previewSlot: 4,
+    previewOverrides: {},
   };
   const FILTER_KEYS = ["source", "simVersion", "build", "snapshot", "stage", "skillProfile", "loadout", "pieceTypes", "result", "device"];
 
@@ -1498,6 +1499,7 @@
       const range = normalizeDesignUnityRadius(rawRange, rawRange);
       const rawProjectileSize = number(tower.ProjectileSize);
       const projectileSize = normalizeDesignProjectileSize(rawProjectileSize, rawProjectileSize);
+      const rawSplash = number(tower.SplashRadius);
       const projectileId = valueOf(tower, "TowerProjectile");
       const projectile = tableRows("ProjectileData").find((row) => String(row.ProjectileID) === String(projectileId)) || {};
       const currentHpRate = normalizePercentValue(valueOf(tower, ["current_hp", "CurrentHp"]));
@@ -1519,11 +1521,13 @@
         ammo,
         rawRange,
         range,
+        rawProjectileSize,
         projectileId,
         projectileType: valueOf(projectile, "ProjectileType", valueOf(tower, "ProjectileType", "normal")),
         projectilePrefab: valueOf(projectile, "ProjectilePrefab"),
         projectileSize,
-        splash: normalizeDesignUnityRadius(tower.SplashRadius, 0),
+        rawSplash,
+        splash: normalizeDesignUnityRadius(rawSplash, 0),
         piercing: number(tower.PiercingCount),
         bulletSpeed: number(tower.BulletSpeed),
         currentHpRate,
@@ -2388,6 +2392,75 @@
     ), candidates[0]);
   }
 
+  function previewOverrideId(tower) {
+    return tower ? `${tower.typeKey}:${tower.level}:${tower.towerId}` : "";
+  }
+
+  function getPreviewOverrides(tower) {
+    const id = previewOverrideId(tower);
+    return id ? state.previewOverrides[id] || {} : {};
+  }
+
+  function hasPreviewOverride(overrides, key) {
+    return overrides && overrides[key] !== "" && Number.isFinite(Number(overrides[key]));
+  }
+
+  function previewOverrideNumber(overrides, key, fallback) {
+    return hasPreviewOverride(overrides, key) ? Number(overrides[key]) : fallback;
+  }
+
+  function designUnitToPreviewPx(value, fallback = 0) {
+    const raw = Number(value);
+    if (!Number.isFinite(raw) || raw < 0) return fallback;
+    return raw * DESIGN_UNITY_RADIUS_UNIT_PX;
+  }
+
+  function formatInputValue(value, digits = 3) {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) return "";
+    return String(Number(numeric.toFixed(digits)));
+  }
+
+  function applyPreviewOverrides(tower) {
+    if (!tower) return null;
+    const overrides = getPreviewOverrides(tower);
+    const rawRange = previewOverrideNumber(overrides, "rawRange", tower.rawRange);
+    const range = hasPreviewOverride(overrides, "rawRange")
+      ? designUnitToPreviewPx(rawRange, tower.range)
+      : tower.range;
+    const rawSplash = previewOverrideNumber(overrides, "rawSplash", tower.rawSplash);
+    const splash = hasPreviewOverride(overrides, "rawSplash")
+      ? designUnitToPreviewPx(rawSplash, tower.splash)
+      : tower.splash;
+    const rawProjectileSize = previewOverrideNumber(overrides, "rawProjectileSize", tower.rawProjectileSize);
+    const projectileSize = hasPreviewOverride(overrides, "rawProjectileSize")
+      ? designUnitToPreviewPx(rawProjectileSize, tower.projectileSize)
+      : tower.projectileSize;
+    const count = Math.max(1, Math.floor(previewOverrideNumber(overrides, "count", tower.count)));
+    const interval = Math.max(0.05, previewOverrideNumber(overrides, "interval", tower.interval));
+    const bulletSpeed = Math.max(0, previewOverrideNumber(overrides, "bulletSpeed", tower.bulletSpeed));
+    const refHp = referenceMonsterHp();
+    const perVolleyDamage = (tower.atk + tower.currentHpRate * refHp) * count;
+    return {
+      ...tower,
+      rawRange,
+      range,
+      rawSplash,
+      splash,
+      rawProjectileSize,
+      projectileSize,
+      count,
+      interval,
+      rawInterval: interval,
+      bulletSpeed,
+      dpsBase: tower.atk * count / interval,
+      dps: perVolleyDamage / interval,
+      magazineDamageBase: tower.atk * count * tower.ammo,
+      magazineDamage: perVolleyDamage * tower.ammo,
+      previewOverrideActive: Object.keys(overrides).length > 0,
+    };
+  }
+
   function getPreviewPiece(tower) {
     if (!tower) return { name: "?", sprite: "", fallback: "?" };
     const piece = tableRows("PieceData").find((row) => String(row.ConnectTower) === String(tower.towerId))
@@ -2462,13 +2535,15 @@
           <div><dt>공격력</dt><dd>${format(tower.atk, 2)}</dd></div>
           <div><dt>공격 간격</dt><dd>${format(tower.interval, 2)}초</dd></div>
           <div><dt>초당 공격</dt><dd>${format(1 / tower.interval, 2)}회</dd></div>
-          <div><dt>실제 사거리</dt><dd>${format(tower.range)}px</dd></div>
+          <div><dt>사거리 u</dt><dd>${format(tower.rawRange, 3)}u</dd></div>
+          <div><dt>PPU128 반지름</dt><dd>${format(tower.range)}px</dd></div>
           <div><dt>발사체</dt><dd>${tower.count}개</dd></div>
           <div><dt>탄속 배율</dt><dd>${format(tower.bulletSpeed, 2)}</dd></div>
           <div><dt>탄창</dt><dd>${tower.ammo}</dd></div>
           <div><dt>기대 DPS</dt><dd>${format(tower.dps, 1)}</dd></div>
           <div><dt>관통</dt><dd>${tower.piercing || "-"}</dd></div>
-          <div><dt>폭발 범위</dt><dd>${tower.splash || "-"}</dd></div>
+          <div><dt>투사체 크기</dt><dd>${format(tower.rawProjectileSize, 3)}u</dd></div>
+          <div><dt>폭발 범위</dt><dd>${tower.splash ? `${format(tower.rawSplash, 3)}u` : "-"}</dd></div>
           <div><dt>체력 비례</dt><dd>${escape(tower.currentHpDisplay)}</dd></div>
           <div><dt>투사체 타입</dt><dd>${escape(projectileType)}</dd></div>
         </dl>
@@ -2476,12 +2551,54 @@
     </section>`;
   }
 
-  function renderPreviewControls(typeKeys) {
+  function renderPreviewInput(label, key, value, step, hint = "", min = "0") {
+    return `<label class="preview-tune-input">${escape(label)}
+      <input type="number" data-preview-override="${escape(key)}" value="${escape(formatInputValue(value))}" step="${escape(step)}" min="${escape(min)}">
+      ${hint ? `<small>${escape(hint)}</small>` : ""}
+    </label>`;
+  }
+
+  function renderPreviewReadout(label, value, hint = "") {
+    return `<div class="preview-tune-readout">
+      <span>${escape(label)}</span>
+      <strong>${escape(value)}</strong>
+      ${hint ? `<small>${escape(hint)}</small>` : ""}
+    </div>`;
+  }
+
+  function renderPreviewTuneControls(baseTower, tower) {
+    if (!baseTower || !tower) return "";
+    const overrides = getPreviewOverrides(baseTower);
+    const rangeUnit = previewOverrideNumber(overrides, "rawRange", baseTower.rawRange);
+    const splashUnit = previewOverrideNumber(overrides, "rawSplash", baseTower.rawSplash);
+    const projectileUnit = previewOverrideNumber(overrides, "rawProjectileSize", baseTower.rawProjectileSize);
+    const active = Object.keys(overrides).length > 0;
+    return `<section class="preview-tune" aria-label="측정용 수치 입력">
+      <header>
+        <div><strong>측정용 수치</strong><span>${active ? "u 입력값 적용 중" : "시트 u값 기준"}</span></div>
+        <button type="button" data-preview-reset ${active ? "" : "disabled"}>시트값 복구</button>
+      </header>
+      <div class="preview-tune-grid">
+        ${renderPreviewInput("사거리 u", "rawRange", rangeUnit, "0.001", `시트 ${format(baseTower.rawRange, 3)}u`)}
+        ${renderPreviewInput("폭발 u", "rawSplash", splashUnit, "0.001", `시트 ${format(baseTower.rawSplash, 3)}u`)}
+        ${renderPreviewInput("투사체 u", "rawProjectileSize", projectileUnit, "0.001", `시트 ${format(baseTower.rawProjectileSize, 3)}u`)}
+        ${renderPreviewInput("공격 간격", "interval", tower.interval, "0.01", `시트 ${format(baseTower.interval, 2)}초`, "0.05")}
+        ${renderPreviewInput("탄속 배율", "bulletSpeed", tower.bulletSpeed, "0.01", `시트 ${format(baseTower.bulletSpeed, 2)}`)}
+        ${renderPreviewInput("발사체 수", "count", tower.count, "1", `시트 ${format(baseTower.count)}`, "1")}
+        ${renderPreviewReadout("사거리 환산", `${format(tower.range, 1)}px`, "u * PPU128")}
+        ${renderPreviewReadout("폭발 환산", `${format(tower.splash, 1)}px`, "u * PPU128")}
+        ${renderPreviewReadout("투사체 환산", `${format(tower.projectileSize, 1)}px`, "u * PPU128")}
+      </div>
+    </section>`;
+  }
+
+  function renderPreviewControls(typeKeys, baseTower, tower) {
     const typeOptions = typeKeys.map((key) => `<option value="${escape(key)}">${escape(typeMeta(key).label)}</option>`).join("");
     const levelOptions = Array.from({ length: PIECE_MAX_LEVEL }, (_, index) => `<option value="${index + 1}">Lv${index + 1}</option>`).join("");
     return `<section class="preview-controls" aria-label="사격 비교 설정">
       <label>포탑<select data-preview-type>${typeOptions}</select></label>
       <label>레벨<select data-preview-level>${levelOptions}</select></label>
+      ${renderPreviewTuneControls(baseTower, tower)}
     </section>`;
   }
 
@@ -2490,8 +2607,9 @@
     if (!typeKeys.length) return empty();
     if (!typeKeys.includes(state.previewType)) state.previewType = typeKeys[0];
     state.previewSlot = Math.max(0, Math.min(8, number(state.previewSlot, 4)));
-    const tower = getPreviewTower(state.previewType, state.previewLevel);
-    return `${renderPreviewControls(typeKeys)}
+    const baseTower = getPreviewTower(state.previewType, state.previewLevel);
+    const tower = applyPreviewOverrides(baseTower);
+    return `${renderPreviewControls(typeKeys, baseTower, tower)}
       <section class="preview-intro">${sectionTitle("인게임형 사격·사거리 시뮬레이터", `${escape(tower?.label || "포탑")} Lv${tower?.level || 1}`)}</section>
       ${renderPreviewArena(tower)}`;
   }
@@ -2632,11 +2750,38 @@
       levelSelect.value = String(state.previewLevel);
       levelSelect.addEventListener("change", () => { state.previewLevel = number(levelSelect.value, 1); render(); });
     }
+    document.querySelectorAll("[data-preview-override]").forEach((input) => {
+      input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") input.blur();
+      });
+      input.addEventListener("change", () => {
+        const baseTower = getPreviewTower(state.previewType, state.previewLevel);
+        const id = previewOverrideId(baseTower);
+        const key = input.dataset.previewOverride;
+        if (!id || !key) return;
+        const overrides = { ...(state.previewOverrides[id] || {}) };
+        const value = input.value.trim();
+        if (!value) delete overrides[key];
+        else overrides[key] = Number(value);
+        if (Object.keys(overrides).length) state.previewOverrides[id] = overrides;
+        else delete state.previewOverrides[id];
+        render();
+      });
+    });
+    const resetButton = document.querySelector("[data-preview-reset]");
+    if (resetButton) {
+      resetButton.addEventListener("click", () => {
+        const baseTower = getPreviewTower(state.previewType, state.previewLevel);
+        const id = previewOverrideId(baseTower);
+        if (id) delete state.previewOverrides[id];
+        render();
+      });
+    }
     document.querySelectorAll("[data-sim-slot]").forEach((slot) => slot.addEventListener("click", () => {
       state.previewSlot = number(slot.dataset.simSlot, 4);
       render();
     }));
-    startPreviewSimulation(tower);
+    startPreviewSimulation(applyPreviewOverrides(tower));
   }
 
   function renderDiagnostics() {
