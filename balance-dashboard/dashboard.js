@@ -102,7 +102,9 @@
     return raw * DESIGN_UNITY_RADIUS_UNIT_PX;
   };
   const normalizeDesignProjectileSize = (value, fallback = 0) => {
-    return normalizeDesignUnityRadius(value, fallback);
+    const raw = number(value);
+    if (!Number.isFinite(raw) || raw <= 0) return fallback;
+    return (raw * DESIGN_UNITY_RADIUS_UNIT_PX) / 2;
   };
   const sum = (items, getter) => items.reduce((total, item) => total + number(getter(item)), 0);
   const average = (items, getter) => items.length ? sum(items, getter) / items.length : 0;
@@ -2415,6 +2417,12 @@
     return raw * DESIGN_UNITY_RADIUS_UNIT_PX;
   }
 
+  function designProjectileSizeToPreviewRadius(value, fallback = 0) {
+    const raw = Number(value);
+    if (!Number.isFinite(raw) || raw < 0) return fallback;
+    return (raw * DESIGN_UNITY_RADIUS_UNIT_PX) / 2;
+  }
+
   function formatInputValue(value, digits = 3) {
     const numeric = Number(value);
     if (!Number.isFinite(numeric)) return "";
@@ -2434,7 +2442,7 @@
       : tower.splash;
     const rawProjectileSize = previewOverrideNumber(overrides, "rawProjectileSize", tower.rawProjectileSize);
     const projectileSize = hasPreviewOverride(overrides, "rawProjectileSize")
-      ? designUnitToPreviewPx(rawProjectileSize, tower.projectileSize)
+      ? designProjectileSizeToPreviewRadius(rawProjectileSize, tower.projectileSize)
       : tower.projectileSize;
     const count = Math.max(1, Math.floor(previewOverrideNumber(overrides, "count", tower.count)));
     const interval = Math.max(0.05, previewOverrideNumber(overrides, "interval", tower.interval));
@@ -2587,7 +2595,7 @@
         ${renderPreviewInput("발사체 수", "count", tower.count, "1", `시트 ${format(baseTower.count)}`, "1")}
         ${renderPreviewReadout("사거리 환산", `${format(tower.range, 1)}px`, "u * PPU128")}
         ${renderPreviewReadout("폭발 환산", `${format(tower.splash, 1)}px`, "u * PPU128")}
-        ${renderPreviewReadout("투사체 환산", `${format(tower.projectileSize, 1)}px`, "u * PPU128")}
+        ${renderPreviewReadout("투사체 반지름", `${format(tower.projectileSize, 1)}px`, "지름 u * PPU128 / 2")}
       </div>
     </section>`;
   }

@@ -153,7 +153,7 @@
 | `SkillID` | 스킬 참조 ID. 현재 보조형 식별 메모 성격이 강하다. |
 | `TowerProjectile` | 사용할 `ProjectileData.ProjectileID`. |
 | `ProjectileCount` | 한 번의 공격에서 발사할 탄 수. 샷건은 동시에 퍼지고, 샷건이 아닌 다중 탄은 순차 연사된다. |
-| `ProjectileSize` | 탄 충돌 반지름. Unity 기본 단위의 Collider Radius 값으로 입력하고, 런타임에서 `1 Unity unit = 128px`로 변환한다. |
+| `ProjectileSize` | 탄의 전체 크기/지름. Unity unit 기준으로 입력하고, 런타임 충돌 반지름은 `ProjectileSize * 128px / 2`로 변환한다. |
 | `PiercingCount` | 관통 가능 횟수. |
 | `SplashRadius` | 폭발/범위 피해 반지름. Unity 기본 단위의 Collider Radius 값으로 입력하고, 런타임에서 `1 Unity unit = 128px`로 변환한다. |
 | `current_hp` / `CurrentHp` | 체력비례 피해 퍼센트. `3`은 3%, `0.03`은 3%, `3%`도 3%로 해석된다. 탱커 대항형처럼 체력비례 추가 피해를 주는 투사체에 사용한다. |

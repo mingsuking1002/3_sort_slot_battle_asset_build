@@ -5,8 +5,9 @@
 - 데이터 버전: `2026-07-02-combat-balance-profile-v12`
 - 실행 모드: `Google Sheets 링크 동기화`
 - 런타임 연결: **기본 실행 모드** (유효한 생성 스냅샷을 항상 적용)
+- 거리/반지름 단위: **데이터 테이블은 Unity unit 원본값으로 파싱**하고, 런타임/대시보드에서만 `u * 128px`로 환산합니다.
 - 외부 적용: **13개**, 내장 fallback: **3개**
-- 검사 결과: ERROR 0 / WARN 0 / INFO 9
+- 검사 결과: ERROR 0 / WARN 1 / INFO 9
 - 현재 데이터 대비 변경: 523개 행 / 1058개 필드
 
 ## 테이블 공급 현황
@@ -46,6 +47,7 @@
 | INFO | BossPatternGroupData | 테이블 데이터가 아직 제공되지 않았습니다. |
 | INFO | BossPatternData | 테이블 데이터가 아직 제공되지 않았습니다. |
 | INFO | BossData | 테이블 데이터가 아직 제공되지 않았습니다. |
+| WARN | PieceData | 계약에 없는 CSV 헤더: Pieceportrait |
 | INFO | UpgradeCostData | 테이블 데이터가 아직 제공되지 않았습니다. |
 | INFO | TriggerData | 테이블 데이터가 아직 제공되지 않았습니다. |
 | INFO | Resource | 테이블 데이터가 아직 제공되지 않았습니다. |
@@ -251,9 +253,9 @@
 - `MonsterGroupData.11023.*`: `""` -> ``
 - `MonsterData.4111.MonsterName`: `"Monster_Normal_01"` -> ``
 - `MonsterData.4111.MonsterHp`: `150` -> `60`
-- `MonsterData.4111.MonsterAtkSpeed`: `1.35` -> `2`
-- `MonsterData.4111.MonsterAtkRange`: `0` -> `0.1`
-- `MonsterData.4111.MonsterMoveSpeed`: `34` -> `12`
+- `MonsterData.4111.MonsterAtkSpeed`: `1.35` -> `3`
+- `MonsterData.4111.MonsterAtkRange`: `0` -> `0.4`
+- `MonsterData.4111.MonsterMoveSpeed`: `34` -> `15`
 - `MonsterData.4111.MonsterSprite`: `"assets/images/monsters/기본형.png"` -> ``
 - `MonsterData.4111.Desc`: `"기본형 · 전시 체력 상향"` -> ``
 - `MonsterData.4111.*`: `""` -> ``
@@ -261,9 +263,9 @@
 - `MonsterData.4121.MonsterType`: `2` -> `1`
 - `MonsterData.4121.ExpTypeID`: `82` -> `81`
 - `MonsterData.4121.MonsterHp`: `135` -> `65`
-- `MonsterData.4121.MonsterAtkSpeed`: `1.1` -> `2`
-- `MonsterData.4121.MonsterAtkRange`: `0` -> `0.1`
-- `MonsterData.4121.MonsterMoveSpeed`: `61` -> `12`
+- `MonsterData.4121.MonsterAtkSpeed`: `1.1` -> `3`
+- `MonsterData.4121.MonsterAtkRange`: `0` -> `0.4`
+- `MonsterData.4121.MonsterMoveSpeed`: `61` -> `15`
 - `MonsterData.4121.MonsterSprite`: `"assets/images/monsters/속도형.png"` -> ``
 - `MonsterData.4121.Desc`: `"속도형 · 전시 체력 상향"` -> ``
 - `MonsterData.4121.*`: `""` -> ``
@@ -271,9 +273,9 @@
 - `MonsterData.4131.MonsterType`: `3` -> `1`
 - `MonsterData.4131.ExpTypeID`: `82` -> `81`
 - `MonsterData.4131.MonsterHp`: `720` -> `70`
-- `MonsterData.4131.MonsterAtkSpeed`: `1.55` -> `2`
-- `MonsterData.4131.MonsterAtkRange`: `0` -> `0.1`
-- `MonsterData.4131.MonsterMoveSpeed`: `19` -> `12`
+- `MonsterData.4131.MonsterAtkSpeed`: `1.55` -> `3`
+- `MonsterData.4131.MonsterAtkRange`: `0` -> `0.4`
+- `MonsterData.4131.MonsterMoveSpeed`: `19` -> `15`
 - `MonsterData.4131.MonsterSprite`: `"assets/images/monsters/탱커형.png"` -> ``
 - `MonsterData.4131.Desc`: `"탱커형 · 전시 체력 상향"` -> ``
 - `MonsterData.4131.*`: `""` -> ``
@@ -288,7 +290,7 @@
 - **BossData**: 현재 공식 데이터에 보스가 없으므로 파싱하지 않습니다.
 - **PieceData**: PieceType이 없으면 ConnectTower가 참조하는 TowerData.TowerType에서 파생합니다. PieceSprite의 단순 파일명은 assets/images/towers/<파일명>.png로 연결합니다. 구형 ConnectTower ID는 PieceType + PieceLv 기준으로 현재 TowerData ID에 연결합니다.
 - **UpgradeCostData**: 아웃게임 기물 강화 비용이므로 전투 balance 프로필에서 제외합니다.
-- **TowerData**: TowerType은 1 Basic, 2 Shotgun, 3 SR, 4 Mortar, 5 Boomer, 6 Buffer입니다. TowerMaxRange는 런타임 TowerMaxLange로 정규화합니다. TowerLv가 없으면 TowerID 마지막 두 자리에서 파생합니다.
+- **TowerData**: TowerType은 1 Basic, 2 Shotgun, 3 SR, 4 Mortar, 5 Boomer, 6 Buffer입니다. TowerMaxRange는 런타임 TowerMaxLange로 이름만 정규화하며 값은 Unity unit 원본 그대로 파싱합니다. TowerMaxLange, ProjectileSize, SplashRadius는 px로 변환하거나 나누지 않습니다. TowerLv가 없으면 TowerID 마지막 두 자리에서 파생합니다.
 - **ProjectileData**: ProjectilePrefab과 피격 이펙트 키는 ProjectileData에서 읽고, 크기·속도·관통·범위 등 전투 수치는 TowerData에서 읽습니다.
 - **TriggerData**: 조건부 특전을 사용하지 않으므로 balance 프로필에서 제외합니다.
 - **EffectData**: CurrentHp는 대상 포탑 타입의 체력비례 피해 퍼센트 증가량으로 적용합니다.

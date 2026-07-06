@@ -611,6 +611,18 @@ function validateBalanceSemantics(candidate, sourceInfo, issues) {
         message: `SplashRadius는 Unity unit 원본값으로 파싱합니다. 20u 초과 폭발 반지름 ${suspiciousSplash.join(", ")}는 px 값이 그대로 들어온 것일 수 있습니다.`,
       });
     }
+
+    const tinySplash = towerRows
+      .filter((row) => Number(row.SplashRadius) > 0 && Number(row.SplashRadius) < 0.2)
+      .slice(0, 8)
+      .map((row) => `${row.TowerID}:${row.SplashRadius}`);
+    if (tinySplash.length) {
+      issues.push({
+        severity: "WARN",
+        table: "TowerData",
+        message: `SplashRadius는 Unity unit 원본값으로 파싱합니다. 0.2u 미만 폭발 반지름 ${tinySplash.join(", ")}는 px/128로 이미 줄인 값일 수 있습니다.`,
+      });
+    }
   }
 
   if (isImportedSource(sourceInfo.MonsterData)) {

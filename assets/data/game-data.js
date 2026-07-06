@@ -1502,11 +1502,11 @@
       [27, 0.12, 10, 11, 1, 0.25, 0],
     ] },
     { start: 7021, name: "유은", towerType: 5, projectileId: 6004, skillId: 0, splash: [60, 70, 80, 100, 120], stats: [
-      [24, 2.6, 10, 6, 1, 0.3, 0],
-      [36, 2.6, 10, 6, 1, 0.34, 0],
-      [66, 2.6, 10, 6, 1, 0.38, 0],
-      [128, 2.6, 10, 6, 1, 0.44, 0],
-      [250, 2.6, 10, 6, 1, 0.5, 0],
+      [24, 2.6, 10, 6, 1, 0.05, 0],
+      [36, 2.6, 10, 6, 1, 0.05, 0],
+      [66, 2.6, 10, 6, 1, 0.05, 0],
+      [128, 2.6, 10, 6, 1, 0.05, 0],
+      [250, 2.6, 10, 6, 1, 0.05, 0],
     ] },
     { start: 7026, name: "리리", towerType: 6, projectileId: 6005, skillId: 1, splash: [0, 0, 0, 0, 0], stats: [
       [6, 0.7, 10, 10, 1, 0.25, 0],
@@ -2271,19 +2271,24 @@
   function designProjectileTypeToRuntime(projectileType) {
     const type = String(projectileType || "").toLowerCase().replace(/[\s_-]/g, "");
     const map = {
+      1: "normal",
       normal: "normal",
       basic: "normal",
       basicnonhoming: "normal",
       shotgun: "normal",
       scatter: "normal",
+      2: "pierce",
       pierce: "pierce",
       piercing: "pierce",
       snipe: "pierce",
       sniper: "pierce",
+      3: "tank",
       tank: "tank",
       breaker: "tank",
+      4: "explode",
       explode: "explode",
       blast: "explode",
+      5: "heal",
       heal: "heal",
       support: "heal",
     };
@@ -2463,7 +2468,23 @@
   }
 
   function normalizeDesignProjectileSize(value, fallback = 0) {
-    return normalizeDesignUnityRadius(value, fallback);
+    const raw = Number(value);
+    if (!Number.isFinite(raw) || raw <= 0) return fallback;
+    return (raw * DESIGN_UNITY_RADIUS_UNIT_PX) / 2;
+  }
+
+  function resolveDesignSplashRadius(value, projectileDefaults = {}) {
+    const raw = Math.max(0, Number(value) || 0);
+    const radius = normalizeDesignSplashRadius(raw, 0);
+    if (radius > 0) {
+      return { raw, radius, source: "TowerData" };
+    }
+    const fallbackRadius = Math.max(0, Number(projectileDefaults.splashRadius) || 0);
+    return {
+      raw,
+      radius: fallbackRadius,
+      source: fallbackRadius > 0 ? "ProjectileTypeDefaults" : "None",
+    };
   }
 
   function normalizeDesignPercentDamage(value, fallback = 0) {
@@ -2581,8 +2602,9 @@
       const projectileDefaults = getProjectileFillDefaults(projectileType, aiType);
       const projectileSize = normalizeDesignProjectileSize(towerRow.ProjectileSize, Number(runtime.projectiles[projectileKey]?.radius || projectileDefaults.radius || 0));
       const pierceHits = Math.max(0, Math.floor(Number(towerRow.PiercingCount) || 0));
-      const splashRadiusRaw = Math.max(0, Number(towerRow.SplashRadius) || 0);
-      const splashRadius = normalizeDesignSplashRadius(splashRadiusRaw, 0);
+      const splashInfo = resolveDesignSplashRadius(towerRow.SplashRadius, projectileDefaults);
+      const splashRadiusRaw = splashInfo.raw;
+      const splashRadius = splashInfo.radius;
       const towerRange = normalizeDesignTowerRange(towerRow.TowerMaxLange);
       const bulletSpeed = Number(towerRow.BulletSpeed);
       const percentHpDamage = normalizeDesignPercentDamage(towerRow.current_hp, 0);
@@ -2641,6 +2663,7 @@
           pierceHits,
           splashRadius: splashRadiusRaw,
           splashRadiusPx: splashRadius,
+          splashRadiusSource: splashInfo.source,
           towerAiType: towerRow.TowerAiType,
           aiType,
           targetPriority,

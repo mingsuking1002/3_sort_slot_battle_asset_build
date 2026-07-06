@@ -604,6 +604,7 @@ function validateDesignTables(data) {
   const runtimeMonsterGroups = data.monsterGroups || {};
   const closeTo = (a, b, epsilon = 0.001) => Math.abs(Number(a) - Number(b)) <= epsilon;
   const designUnityRadiusUnitPx = 128;
+  const defaultExplodeSplashRadius = 52;
   const normalizeDesignUnityRadius = (value, fallback = 0) => {
     const raw = Number(value);
     if (!Number.isFinite(raw) || raw <= 0) return fallback;
@@ -613,7 +614,9 @@ function validateDesignTables(data) {
     return normalizeDesignUnityRadius(value, 360);
   };
   const normalizeDesignProjectileSize = (value, fallback = 0) => {
-    return normalizeDesignUnityRadius(value, fallback);
+    const raw = Number(value);
+    if (!Number.isFinite(raw) || raw <= 0) return fallback;
+    return (raw * designUnityRadiusUnitPx) / 2;
   };
   const normalizeDesignPercentDamage = (value, fallback = 0) => {
     const raw = Number(value);
@@ -681,22 +684,27 @@ function validateDesignTables(data) {
     Support: "heal",
   };
   const projectileTypeMap = {
+    1: "normal",
     normal: "normal",
     Normal: "normal",
     Basic: "normal",
     BasicNonHoming: "normal",
     Shotgun: "normal",
     Scatter: "normal",
+    2: "pierce",
     pierce: "pierce",
     Pierce: "pierce",
     Snipe: "pierce",
     Sniper: "pierce",
+    3: "tank",
     Tank: "tank",
     tank: "tank",
     Breaker: "tank",
+    4: "explode",
     Explode: "explode",
     explode: "explode",
     Blast: "explode",
+    5: "heal",
     Heal: "heal",
     heal: "heal",
     Support: "heal",
@@ -986,7 +994,12 @@ function validateDesignTables(data) {
     const expectedPierceHits = Math.max(0, Math.floor(Number(tower.PiercingCount) || 0));
     if (Number(runtimeTower?.pierceHits) === expectedPierceHits) pass("DESIGN_TABLE", `TowerData ${tower.TowerID} PiercingCount feeds pierceHits`);
     else fail("DESIGN_TABLE", `TowerData ${tower.TowerID} pierceHits mismatch`, `${runtimeTower?.pierceHits} / ${expectedPierceHits}`);
-    const expectedSplashRadius = normalizeDesignUnityRadius(tower.SplashRadius, 0);
+    const explicitSplashRadius = normalizeDesignUnityRadius(tower.SplashRadius, 0);
+    const expectedSplashRadius = explicitSplashRadius > 0
+      ? explicitSplashRadius
+      : expectedProjectileType === "explode"
+        ? defaultExplodeSplashRadius
+        : 0;
     if (closeTo(runtimeTower?.splashRadius, expectedSplashRadius, 0.001)) pass("DESIGN_TABLE", `TowerData ${tower.TowerID} SplashRadius feeds splashRadius`);
     else fail("DESIGN_TABLE", `TowerData ${tower.TowerID} splashRadius mismatch`, `${runtimeTower?.splashRadius} / ${expectedSplashRadius}`);
     const expectedBulletSpeed = Number(tower.BulletSpeed);
@@ -1675,6 +1688,7 @@ function validateInternalStatsTableRules(data) {
   const closeTo = (a, b, epsilon = 0.001) => Math.abs(Number(a) - Number(b)) <= epsilon;
   const baseBulletDamage = 24;
   const designUnityRadiusUnitPx = 128;
+  const defaultExplodeSplashRadius = 52;
   const normalizeDesignUnityRadius = (value, fallback = 0) => {
     const raw = Number(value);
     if (!Number.isFinite(raw) || raw <= 0) return fallback;
@@ -1684,7 +1698,9 @@ function validateInternalStatsTableRules(data) {
     return normalizeDesignUnityRadius(value, 360);
   };
   const normalizeDesignProjectileSize = (value, fallback = 0) => {
-    return normalizeDesignUnityRadius(value, fallback);
+    const raw = Number(value);
+    if (!Number.isFinite(raw) || raw <= 0) return fallback;
+    return (raw * designUnityRadiusUnitPx) / 2;
   };
   const baseMonsterHp = 22;
   const baseMonsterDamage = 1;
@@ -1716,6 +1732,15 @@ function validateInternalStatsTableRules(data) {
     const runtimeTower = data.towers?.[towerKey];
     const expectedDamageMod = Math.max(0.01, Number(towerRow.TowerAtk || 0) / baseBulletDamage);
     const expectedCount = Math.max(0, Math.floor(Number(towerRow.ProjectileCount) || 0));
+    const projectileRow = (tables.ProjectileData || []).find((row) => String(row.ProjectileID) === String(towerRow.TowerProjectile));
+    const projectileTypeMap = { 1: "normal", 2: "pierce", 3: "tank", 4: "explode", 5: "heal", Basic: "normal", Snipe: "pierce", Tank: "tank", Explode: "explode", Heal: "heal" };
+    const expectedProjectileType = projectileTypeMap[towerRow.ProjectileType] || projectileTypeMap[projectileRow?.ProjectileType] || "normal";
+    const explicitSplashRadius = normalizeDesignUnityRadius(towerRow.SplashRadius, 0);
+    const expectedSplashRadius = explicitSplashRadius > 0
+      ? explicitSplashRadius
+      : expectedProjectileType === "explode"
+        ? defaultExplodeSplashRadius
+        : 0;
 
     if (runtimeTower?.design?.fillSource === "TowerTypeDefaults") pass("INTERNAL_STATS", `TowerData ${towerRow.TowerID} uses type fill defaults`);
     else fail("INTERNAL_STATS", `TowerData ${towerRow.TowerID} missing type fill defaults`, String(runtimeTower?.design?.fillSource));
@@ -1730,6 +1755,8 @@ function validateInternalStatsTableRules(data) {
     else fail("INTERNAL_STATS", `TowerData ${towerRow.TowerID} ammo mismatch`, `${runtimeTower?.maxAmmo} / ${towerRow.TowerMaxAmmo}`);
     if (Number(runtimeTower?.projectileCount) === expectedCount) pass("INTERNAL_STATS", `TowerData ${towerRow.TowerID} projectile count follows ProjectileCount`);
     else fail("INTERNAL_STATS", `TowerData ${towerRow.TowerID} projectile count mismatch`, `${runtimeTower?.projectileCount} / ${expectedCount}`);
+    if (closeTo(runtimeTower?.splashRadius, expectedSplashRadius)) pass("INTERNAL_STATS", `TowerData ${towerRow.TowerID} splash follows SplashRadius/default`);
+    else fail("INTERNAL_STATS", `TowerData ${towerRow.TowerID} splash mismatch`, `${runtimeTower?.splashRadius} / ${expectedSplashRadius}`);
     if (runtimeTower?.design?.towerAiType === towerRow.TowerAiType) pass("INTERNAL_STATS", `TowerData ${towerRow.TowerID} preserves TowerAiType`);
     else fail("INTERNAL_STATS", `TowerData ${towerRow.TowerID} TowerAiType metadata mismatch`, `${runtimeTower?.design?.towerAiType} / ${towerRow.TowerAiType}`);
     if (runtimeTower?.design?.targetPriority === towerRow.TargetPriority) pass("INTERNAL_STATS", `TowerData ${towerRow.TowerID} preserves TargetPriority`);
