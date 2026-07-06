@@ -45,6 +45,7 @@ const checks = [
   [files.runner.includes("--stage") && files.runner.includes("--pieces") && files.bot.includes("experimentPieces"), "스테이지/기물 조합 실행 옵션"],
   [files.game.includes("applySimulationExperimentConfig") && files.game.includes("botLoadoutHash"), "시뮬레이션 스테이지/편성 강제 적용"],
   [files.runner.includes("/__simulation/result"), "로컬 결과 수집기"],
+  [files.bot.includes("checkpointUpload") && files.runner.includes('checkpoint: "1"') && files.runner.includes("enqueueTelemetryUpload") && files.runner.includes("checkpoint upload complete"), "세션 단위 체크포인트 업로드"],
   [files.runner.includes("async function uploadTelemetryEvents") && files.runner.includes("TELEMETRY_ENDPOINT"), "실행기 순차 시트 업로드"],
   [files.runner.includes("--speed-check") && files.runner.includes("runSpeedCheck") && files.runner.includes("compareSpeedSignatures"), "1x/10x/50x 동일 seed 속도 검증"],
   [files.runner.includes('spawnSync("taskkill.exe"') && files.runner.includes("closeAllConnections"), "Windows 브라우저 프로세스 및 서버 연결 정리"],

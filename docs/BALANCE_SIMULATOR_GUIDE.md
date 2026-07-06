@@ -46,7 +46,7 @@ if "%ARGS%"=="" set "ARGS=--sessions 30 --speed 50 --profile intermediate --stag
 
 중요한 차이:
 
-- 일반 실행: `--speed-check`를 넣지 않는다. 실행 결과가 Google Sheet에 저장된다.
+- 일반 실행: `--speed-check`를 넣지 않는다. 각 세션이 끝날 때마다 Google Sheet 체크포인트 업로드 큐에 저장되고, CMD가 뒤에서 순차 업로드한다.
 - 속도 검증: `--speed-check`를 넣는다. 로컬에서 배속 차이만 비교하고 시트에는 저장하지 않는다.
 
 특정 숙련도만 실행할 수 있다.
@@ -91,7 +91,7 @@ run-balance-simulation.cmd --stage stage-2 --pieces basic_3,scatter_2,sniper_1,b
 - 특전은 화면에 제시된 후보만 현재 전투 상황과 세션 빌드 성향으로 평가한다.
 - 특전 선택은 적 누적, 슬롯 체력, 파괴 슬롯 수, 현재 콤보, 보유 기물 타입, 세션 전략을 함께 점수화하고 가장 높은 점수를 선택한다. 특전 오판 랜덤성은 사용하지 않는다.
 - `--stage`와 `--pieces`가 있으면 매 세션 시작 전에 선택 스테이지와 편성을 강제로 적용한다.
-- 자동 플레이 결과는 웹앱을 통해 Google Sheet에만 저장하며 `data_source=simulation`으로 구분한다.
+- 자동 플레이 결과는 웹앱을 통해 Google Sheet에만 저장하며 `data_source=simulation`으로 구분한다. 일반 실행은 세션 1판 종료마다 체크포인트를 큐에 넣고 바로 다음 세션을 진행하므로 중간에 멈춰도 마지막 완료 세션까지 남는다.
 - 대시보드에서는 `표본` 필터로 `real`과 `simulation`을 분리한다.
 - 실제 플레이 로그는 소팅 완성 수, 평균 소팅 간격, 도달 웨이브, 클리어 여부로 초보자/중급자/상급자를 가볍게 추정한다.
 - 신규 시뮬 로그의 `payload_json.simulation`에는 `plannedSortRatio`, `planFollowupCount`, `planSetupCount`, `planBreakCount`, `reactiveSortRatio`, `averagePlanDepth`, `boardUnlockCount`, `idleDecisionCount`가 기록된다.

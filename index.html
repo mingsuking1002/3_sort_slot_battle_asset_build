@@ -4460,7 +4460,7 @@
           botPieceTypes: "",
           botPieceLevels: "",
           botLoadoutHash: "",
-          simulationVersion: "1.5.2-mixed-pair-planning",
+          simulationVersion: "1.5.3-session-checkpoint-upload",
           simulationSeed: SIMULATION_QUERY.seed,
           simulationSpeed: SIMULATION_QUERY.speed,
           decisionDelayAvg: 0,
@@ -9848,7 +9848,7 @@
       function renderUpgradeChoices() {
         const pending = Math.max(0, state.pendingLevelUps);
         const nextWaveText = state.pendingNextWave ? `다음 ${getWaveTitle(state.pendingNextWave)} 준비` : "전투 중 정비";
-        upgradeTitle.textContent = state.perkBreak ? "웨이브 정비" : `강화 선택 ${Math.max(1, pending)}개 대기`;
+        upgradeTitle.textContent = state.perkBreak ? "레벨업 특전" : `강화 선택 ${Math.max(1, pending)}개 대기`;
         upgradeContext.textContent = state.perkBreak
           ? `${getWaveTitle()} 종료 · 잔여 몬스터 ${state.enemies.length}마리 · ${nextWaveText}`
           : `현재 몬스터 ${state.enemies.length}마리 · 선택 후 닫으면 그대로 재개`;
@@ -11651,8 +11651,6 @@
       function beginWavePerkBreak() {
         state.wavePhase = "perk";
         state.pendingNextWave = state.pendingNextWave || getNextStageWave(state.wave);
-        state.pendingLevelUps += 1;
-        state.leveling = true;
         state.waveTimer = 0;
         state.waveEndTimer = 0;
         state.restTimer = 0;
@@ -11660,19 +11658,32 @@
         state.bossId = null;
         state.bossSummonTimer = 0;
         const carriedEnemies = state.enemies.length;
+        if (state.pendingLevelUps <= 0) {
+          const nextWave = state.pendingNextWave;
+          state.pendingNextWave = null;
+          state.leveling = false;
+          state.perkBreak = false;
+          state.upgradeChoices = [];
+          syncPauseState();
+          renderLevelUpButton();
+          log(`${getWaveTitle()} 종료: 잔여 몬스터 ${carriedEnemies}, 레벨업 특전 없음`);
+          if (nextWave && !state.ended) startWave(nextWave);
+          return;
+        }
+        state.leveling = true;
         state.perkBreak = true;
         state.upgradeChoices = rollUpgradeChoices();
         if (state.upgradeChoices.length <= 0) {
           log(`${getWaveTitle()} 종료: 잔여 몬스터 ${carriedEnemies}, 선택 가능한 특전 없음`);
-          skipUnavailableUpgradeChoices("wave-break");
+          skipUnavailableUpgradeChoices("level-up");
           return;
         }
         syncPauseState();
         renderUpgradeChoices();
         upgradeOverlay.classList.remove("hidden");
         renderLevelUpButton();
-        showWaveBanner("특전 정비");
-        log(`${getWaveTitle()} 종료: 잔여 몬스터 ${carriedEnemies}, 특전 정비`);
+        showWaveBanner("레벨업 특전");
+        log(`${getWaveTitle()} 종료: 잔여 몬스터 ${carriedEnemies}, 레벨업 특전 ${state.pendingLevelUps}개`);
       }
 
       function beginWaveEndTransition() {

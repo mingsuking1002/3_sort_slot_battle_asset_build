@@ -9,6 +9,7 @@
   const baseSeed = Math.max(1, Math.floor(Number(params.get("seed")) || 20260702));
   const runId = params.get("runId") || `sim-${Date.now()}`;
   const coverageMode = params.get("coverage") === "1";
+  const checkpointUpload = params.get("checkpoint") === "1";
   const experimentStage = String(params.get("stage") || "").trim();
   const experimentPieces = String(params.get("pieces") || "")
     .split(",")
@@ -886,6 +887,31 @@
     return { totalSessions: sessions.length, groups, strategies, scenarios };
   }
 
+  function buildPayload(sessions, events, phase = {}) {
+    return {
+      schemaVersion: "3sort-balance-simulation-v1",
+      generatedAt: new Date().toISOString(),
+      runId,
+      checkpoint: Boolean(phase.checkpoint),
+      final: Boolean(phase.final),
+      checkpointIndex: phase.checkpointIndex || 0,
+      config: {
+        sessionCount,
+        speed,
+        baseSeed,
+        coverageMode,
+        mix: Object.fromEntries(phase.mix || new Map()),
+        stage: experimentStage,
+        pieces: experimentPieces,
+        scenarios: SCENARIOS,
+        checkpointUpload,
+      },
+      summary: buildSummary(sessions),
+      sessions,
+      events,
+    };
+  }
+
   async function postResult(payload) {
     const response = await fetch("/__simulation/result", {
       method: "POST",
@@ -901,6 +927,25 @@
     const api = await waitForApi();
     const mix = parseMix(params.get("mix"));
     const sessions = [];
+    let uploadedEventIndex = 0;
+
+    async function uploadCheckpoint(session) {
+      if (!checkpointUpload) return;
+      api.flushTelemetry();
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      const allEvents = api.getEvents();
+      const events = allEvents.slice(uploadedEventIndex);
+      uploadedEventIndex = allEvents.length;
+      if (!events.length) return;
+      status.textContent = `체크포인트 업로드 · ${sessions.length}/${sessionCount}세션 · ${events.length} events`;
+      const saved = await postResult(buildPayload([session], events, {
+        checkpoint: true,
+        checkpointIndex: sessions.length,
+        mix,
+      }));
+      status.textContent = `${sessions.length}/${sessionCount}세션 저장됨 · ${saved.destination || "Google Sheet checkpoint"}`;
+    }
+
     for (let index = 0; index < sessionCount; index += 1) {
       const assignment = coverageMode
         ? coverageAssignment(index)
@@ -908,21 +953,18 @@
       const profile = assignment.profile;
       const strategy = assignment.strategy;
       const scenario = assignment.scenario;
-      sessions.push(await runSession(api, profile, strategy, scenario, index, status));
+      const session = await runSession(api, profile, strategy, scenario, index, status);
+      sessions.push(session);
+      await uploadCheckpoint(session);
     }
-    const payload = {
-      schemaVersion: "3sort-balance-simulation-v1",
-      generatedAt: new Date().toISOString(),
-      runId,
-      config: { sessionCount, speed, baseSeed, coverageMode, mix: Object.fromEntries(mix), stage: experimentStage, pieces: experimentPieces, scenarios: SCENARIOS },
-      summary: buildSummary(sessions),
-      sessions,
-      events: api.getEvents(),
-    };
     api.flushTelemetry();
     await new Promise((resolve) => setTimeout(resolve, 1200));
+    const allEvents = api.getEvents();
+    const finalEvents = checkpointUpload ? allEvents.slice(uploadedEventIndex) : allEvents;
+    uploadedEventIndex = allEvents.length;
+    const payload = buildPayload(sessions, finalEvents, { final: true, mix });
     window.__BALANCE_SIMULATION_RESULT__ = payload;
-    status.textContent = `완료 · ${sessions.length}세션 · 시트 전송 마무리 중`;
+    status.textContent = `완료 · ${sessions.length}세션 · ${checkpointUpload ? "최종 요약 전송 중" : "시트 전송 마무리 중"}`;
     const saved = await postResult(payload);
     status.textContent = `완료 · ${sessions.length}세션 · ${saved.destination || "Google Sheet"}`;
   }

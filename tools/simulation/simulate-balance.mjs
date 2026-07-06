@@ -107,10 +107,10 @@ function createServer(onResult) {
         body += chunk;
         if (body.length > 100 * 1024 * 1024) request.destroy(new Error("결과 데이터가 100MB를 초과했습니다."));
       });
-      request.on("end", () => {
+      request.on("end", async () => {
         try {
           const payload = JSON.parse(body);
-          const result = onResult(payload);
+          const result = await onResult(payload);
           response.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*" });
           response.end(JSON.stringify({ ok: true, destination: result.destination }));
         } catch (error) {
@@ -414,10 +414,53 @@ async function main() {
     rejectResult = reject;
   });
   let resultReceived = false;
+  let checkpointCount = 0;
+  let checkpointEventCount = 0;
+  let checkpointQueuedCount = 0;
+  let checkpointQueuedEventCount = 0;
+  const checkpointSessionIds = new Set();
+  const uploadFailures = [];
+  let uploadQueue = Promise.resolve();
+  function enqueueTelemetryUpload(label, events, sessions = []) {
+    const source = Array.isArray(events) ? events : [];
+    const sessionRows = Array.isArray(sessions) ? sessions : [];
+    checkpointQueuedCount += 1;
+    checkpointQueuedEventCount += source.length;
+    uploadQueue = uploadQueue
+      .then(async () => {
+        if (!source.length) return;
+        console.log(`[SIM] ${label}: uploading ${source.length} events`);
+        await uploadTelemetryEvents(source);
+        checkpointCount += 1;
+        checkpointEventCount += source.length;
+        for (const session of sessionRows) {
+          if (session.sessionId) checkpointSessionIds.add(session.sessionId);
+        }
+      })
+      .catch((error) => {
+        uploadFailures.push(error);
+        console.error(`[SIM] ${label}: upload failed - ${error.message}`);
+      });
+  }
   const server = createServer((payload) => {
+    if (payload.checkpoint) {
+      const events = Array.isArray(payload.events) ? payload.events : [];
+      const sessions = Array.isArray(payload.sessions) ? payload.sessions : [];
+      const checkpointIndex = payload.checkpointIndex || checkpointQueuedCount + 1;
+      console.log(`[SIM] checkpoint ${checkpointIndex}/${options.sessions}: queued ${events.length} events`);
+      enqueueTelemetryUpload(`checkpoint ${checkpointIndex}/${options.sessions}`, events, sessions);
+      return { destination: `Google Sheet checkpoint queued ${checkpointIndex}` };
+    }
     resultReceived = true;
-    resolveResult(payload);
-    return { destination: "Google Sheet" };
+    resolveResult({
+      ...payload,
+      checkpointCount,
+      checkpointEventCount,
+      checkpointQueuedCount,
+      checkpointQueuedEventCount,
+      checkpointSessionIds: [...checkpointSessionIds],
+    });
+    return { destination: "Google Sheet final" };
   });
   await new Promise((resolve, reject) => {
     server.once("error", reject);
@@ -433,6 +476,7 @@ async function main() {
     seed: String(options.seed),
     mix: options.mix,
     runId,
+    checkpoint: "1",
   });
   if (options.profile) query.set("profile", options.profile);
   if (options.scenario) query.set("scenario", options.scenario);
@@ -470,8 +514,18 @@ async function main() {
     const payload = await resultPromise;
     clearTimeout(timeout);
     if (payload.error) throw new Error(payload.error);
-    console.log(`[SIM] uploading ${payload.events?.length || 0} events to Google Sheet`);
-    await uploadTelemetryEvents(payload.events);
+    if (payload.checkpointQueuedCount) {
+      console.log(`[SIM] waiting for checkpoint uploads (${payload.checkpointQueuedCount} checkpoints / ${payload.checkpointQueuedEventCount || 0} events queued)`);
+      await uploadQueue;
+      if (uploadFailures.length) throw new Error(`체크포인트 업로드 실패: ${uploadFailures.map((error) => error.message).join(" / ")}`);
+      console.log(`[SIM] checkpoint upload complete: ${checkpointCount} checkpoints / ${checkpointEventCount} events`);
+    }
+    if (payload.events?.length) {
+      console.log(`[SIM] uploading ${payload.events.length} final events to Google Sheet`);
+      await uploadTelemetryEvents(payload.events);
+    } else {
+      console.log(`[SIM] checkpoint upload complete: ${payload.checkpointCount || 0} checkpoints / ${payload.checkpointEventCount || 0} events`);
+    }
     console.log("[SIM] waiting for Google Sheet session confirmation");
     await waitForSheetSessions((payload.sessions || []).map((session) => session.sessionId));
     console.log("[SIM] Google Sheet session confirmation complete");
