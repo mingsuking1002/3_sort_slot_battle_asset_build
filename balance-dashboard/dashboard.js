@@ -264,6 +264,11 @@
     return Number.isFinite(numeric) ? normalizePercentValue(numeric) : NaN;
   }
 
+  function sessionBoardUnlockCount(row) {
+    const meta = sessionSimulationMeta(row);
+    return number(row.board_unlock_count ?? meta.boardUnlockCount, NaN);
+  }
+
   function unique(items) {
     return [...new Set(items.filter(Boolean))].sort((a, b) => String(a).localeCompare(String(b), "ko"));
   }
@@ -1947,6 +1952,7 @@
     const totalSortSuccesses = sum(current, (row) => row.sort_successes);
     const intervalSessions = current.filter((row) => Number.isFinite(sessionSortInterval(row)) && sessionSortInterval(row) > 0);
     const plannedSessions = current.filter((row) => Number.isFinite(sessionPlannedSortRatio(row)));
+    const unlockSessions = current.filter((row) => Number.isFinite(sessionBoardUnlockCount(row)));
     const averageSortInterval = average(intervalSessions, sessionSortInterval);
     const dangerWave = waves.slice().sort((a, b) => (b.remaining + b.slotDanger / 12 + b.systemShare * 8) - (a.remaining + a.slotDanger / 12 + a.systemShare * 8))[0];
 
@@ -1962,6 +1968,7 @@
         ${kpi("소팅 전환율", percent(totalSortAttempts ? totalSortSuccesses / totalSortAttempts : 0), "완성 ÷ 이동", totalSortAttempts && totalSortSuccesses / totalSortAttempts < .3 ? "red" : "green")}
         ${kpi("평균 소팅 간격", intervalSessions.length ? `${format(averageSortInterval, 2)}초` : "-", intervalSessions.length ? `${intervalSessions.length}세션 기준` : "간격 로그 없음")}
         ${kpi("계획형 소팅", plannedSessions.length ? percent(average(plannedSessions, sessionPlannedSortRatio)) : "-", plannedSessions.length ? `${plannedSessions.length}세션 기준` : "신규 시뮬 로그 필요", plannedSessions.length ? "green" : "")}
+        ${kpi("보드 해제 이동", unlockSessions.length ? format(average(unlockSessions, sessionBoardUnlockCount), 1) : "-", unlockSessions.length ? "세션당 응급 이동" : "신규 시뮬 로그 필요", unlockSessions.length && average(unlockSessions, sessionBoardUnlockCount) > 8 ? "yellow" : "")}
         ${kpi("평균 최대 콤보", format(average(current, (row) => row.max_combo), 1), "세션당")}
         ${kpi("종료 슬롯 체력", percent(average(current, (row) => row.slot_hp_ratio_avg)), "평균 잔존율", "green")}
         ${kpi("시스템 피해 비중", percent(source.systemShare), "콤보/전체정렬/기타", source.systemShare > .45 ? "red" : "yellow")}

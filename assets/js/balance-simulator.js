@@ -178,6 +178,14 @@
     return { profile: base.profile, strategy: STRATEGIES[strategyIndex], scenario: forcedScenario || SCENARIO_KEYS[scenarioIndex] };
   }
 
+  function isMixedPairSetup(pieces, pieceKey) {
+    return pieces.length === 2 && pieces.includes(pieceKey) && pieces.some((item) => item !== pieceKey);
+  }
+
+  function blockerPieceForMixedPair(pieces, pieceKey) {
+    return pieces.find((item) => item && item !== pieceKey) || null;
+  }
+
   function combinations(snapshot) {
     const sources = [];
     const emptyTargets = [];
@@ -202,25 +210,37 @@
     for (const targetSlot of snapshot.slots) {
       const pieces = targetSlot.cells.filter(Boolean);
       const emptyCells = targetSlot.cells.map((piece, index) => piece ? -1 : index).filter((index) => index >= 0);
-      if (pieces.length !== 1 || emptyCells.length !== 2) continue;
+      if (!((pieces.length === 1 && emptyCells.length === 2) || (pieces.length === 2 && emptyCells.length === 1))) continue;
       for (const source of sources) {
-        if (source.slot === targetSlot.id || source.pieceKey !== pieces[0]) continue;
+        if (source.slot === targetSlot.id) continue;
+        const cleanPairSetup = pieces.length === 1 && source.pieceKey === pieces[0];
+        const mixedPairSetup = pieces.length === 2 && isMixedPairSetup(pieces, source.pieceKey);
+        if (!cleanPairSetup && !mixedPairSetup) continue;
         const kind = targetSlot.destroyed ? "repair" : "attack";
-        pairSetups[kind].push({ ...source, toSlot: targetSlot.id, toCell: emptyCells[0], kind });
+        pairSetups[kind].push({
+          ...source,
+          toSlot: targetSlot.id,
+          toCell: emptyCells[0],
+          kind,
+          mixedPairSetup,
+          blockerPieceKey: mixedPairSetup ? blockerPieceForMixedPair(pieces, source.pieceKey) : null,
+        });
       }
     }
     const general = { attack: [], repair: [] };
+    const unlock = { attack: [], repair: [] };
     for (const source of sources) {
       for (const target of emptyTargets) {
         if (source.slot === target.slot) continue;
         const targetSlot = snapshot.slots[target.slot];
         const targetPieces = (targetSlot?.cells || []).filter(Boolean);
-        if (targetPieces.length >= 2 && targetPieces.some((pieceKey) => pieceKey !== source.pieceKey)) continue;
         const kind = snapshot.slots[target.slot]?.destroyed ? "repair" : "attack";
+        unlock[kind].push({ ...source, toSlot: target.slot, toCell: target.cell, kind });
+        if (targetPieces.length >= 2 && targetPieces.some((pieceKey) => pieceKey !== source.pieceKey) && !isMixedPairSetup(targetPieces, source.pieceKey)) continue;
         general[kind].push({ ...source, toSlot: target.slot, toCell: target.cell, kind });
       }
     }
-    return { successful, pairSetups, general };
+    return { successful, pairSetups, general, unlock };
   }
 
   function getSlot(snapshot, slotId) {
@@ -345,6 +365,8 @@
         reactiveSorts: 0,
         immediateMatches: 0,
         usefulFallbacks: 0,
+        idleDecisions: 0,
+        boardUnlocks: 0,
       },
     };
   }
@@ -362,6 +384,34 @@
     while (planState.queue.length) {
       const plan = planState.queue[0];
       if (pressureMode && plan.kind === "repair" && Number(snapshot.threat?.attackingEnemyCount || 0) > 0) {
+        planState.queue.shift();
+        planState.stats.planBreaks += 1;
+        continue;
+      }
+      if (plan.action === "clear-blocker") {
+        const pool = [
+          ...(options.general.attack || []),
+          ...(options.general.repair || []),
+          ...(options.unlock.attack || []),
+          ...(options.unlock.repair || []),
+        ].filter((move) => move.slot === plan.slot && move.pieceKey === plan.blockerPieceKey);
+        if (pool.length) {
+          const scored = pool.map((move) => ({
+            move,
+            score: scoreMove(snapshot, move, move.kind || plan.kind, false, false) + (isMeaningfulFallbackMove(snapshot, move) ? 1.2 : 0),
+          })).sort((a, b) => b.score - a.score || moveSignature(a.move).localeCompare(moveSignature(b.move)));
+          const picked = scored[0].move;
+          planState.queue.shift();
+          planState.queue.unshift({ action: "complete-pair", pieceKey: plan.pieceKey, toSlot: plan.toSlot, kind: plan.kind });
+          return {
+            move: picked,
+            intendedSuccess: false,
+            setupMove: false,
+            mistake: false,
+            kind: picked.kind || plan.kind,
+            planAction: "plan-clear-blocker",
+          };
+        }
         planState.queue.shift();
         planState.stats.planBreaks += 1;
         continue;
@@ -390,8 +440,23 @@
     if (!planState || !selected?.setupMove || planState.maxDepth <= 0) return;
     if (random() > Number(profile.preplanRate || 0.7)) return;
     const move = selected.move;
-    const plan = { pieceKey: move.pieceKey, toSlot: move.toSlot, kind: selected.kind };
-    if (planState.queue.some((item) => item.pieceKey === plan.pieceKey && item.toSlot === plan.toSlot && item.kind === plan.kind)) return;
+    const plan = move.mixedPairSetup && move.blockerPieceKey
+      ? {
+          action: "clear-blocker",
+          slot: move.toSlot,
+          blockerPieceKey: move.blockerPieceKey,
+          pieceKey: move.pieceKey,
+          toSlot: move.toSlot,
+          kind: selected.kind,
+        }
+      : { action: "complete-pair", pieceKey: move.pieceKey, toSlot: move.toSlot, kind: selected.kind };
+    if (planState.queue.some((item) => (
+      item.action === plan.action
+      && item.pieceKey === plan.pieceKey
+      && item.toSlot === plan.toSlot
+      && item.kind === plan.kind
+      && item.blockerPieceKey === plan.blockerPieceKey
+    ))) return;
     planState.queue.push(plan);
     while (planState.queue.length > planState.maxDepth) planState.queue.shift();
   }
@@ -404,8 +469,14 @@
     } else if (selected.setupMove) {
       planState.stats.plannedSorts += 1;
       planState.stats.planSetups += 1;
+    } else if (selected.planAction === "plan-clear-blocker") {
+      planState.stats.plannedSorts += 1;
+      planState.stats.planFollowups += 1;
     } else if (selected.intendedSuccess) {
       planState.stats.immediateMatches += 1;
+    } else if (selected.planAction === "board-unlock") {
+      planState.stats.usefulFallbacks += 1;
+      planState.stats.boardUnlocks += 1;
     } else {
       planState.stats.usefulFallbacks += 1;
     }
@@ -436,7 +507,37 @@
     return { move: pickScoredMove(pool, snapshot, profile, kind, false, false), intendedSuccess: false, setupMove: false, mistake: false, kind, planAction: "useful-fallback" };
   }
 
-  function chooseMove(snapshot, profile, profileKey, pressureMode, planState) {
+  function chooseBoardUnlockMove(options, snapshot, preferredKinds) {
+    const scored = [];
+    for (const kind of preferredKinds) {
+      const pool = (options.unlock?.[kind] || options.general[kind] || []);
+      for (const move of pool) {
+        const target = getSlot(snapshot, move.toSlot);
+        const targetPieces = (target?.cells || []).filter(Boolean);
+        let recoveryScore = scoreMove(snapshot, move, kind, false, false);
+        if (isMeaningfulFallbackMove(snapshot, move)) recoveryScore += 1.2;
+        if (target?.destroyed) recoveryScore += 1.0;
+        if (targetPieces.includes(move.pieceKey)) recoveryScore += 0.8;
+        if (getSourceStructureScore(snapshot, move) > 0) recoveryScore += 0.6;
+        if (targetPieces.length >= 2 && targetPieces.some((pieceKey) => pieceKey !== move.pieceKey)) recoveryScore -= 0.65;
+        if (!targetPieces.length) recoveryScore -= 0.35;
+        scored.push({ move, kind, recoveryScore });
+      }
+    }
+    if (!scored.length) return null;
+    scored.sort((a, b) => b.recoveryScore - a.recoveryScore || moveSignature(a.move).localeCompare(moveSignature(b.move)));
+    const selected = scored[0];
+    return {
+      move: selected.move,
+      intendedSuccess: false,
+      setupMove: false,
+      mistake: false,
+      kind: selected.kind,
+      planAction: "board-unlock",
+    };
+  }
+
+  function chooseMove(snapshot, profile, profileKey, pressureMode, planState, recoveryMode = false) {
     const options = combinations(snapshot);
     const planned = chooseQueuedPlanMove(planState, options, snapshot, profile, pressureMode);
     if (planned) return planned;
@@ -446,6 +547,7 @@
     if (profileKey !== "advanced") {
       if (pressureMode) {
         selected = chooseMoveForKind(options, "attack", profile, snapshot) || chooseMoveForKind(options, "repair", profile, snapshot);
+        if (!selected && recoveryMode) selected = chooseBoardUnlockMove(options, snapshot, ["attack", "repair"]);
         rememberFollowupPlan(planState, selected, profile);
         return selected;
       }
@@ -453,6 +555,7 @@
       const primary = preferRepair ? "repair" : "attack";
       const secondary = preferRepair ? "attack" : "repair";
       selected = chooseMoveForKind(options, primary, profile, snapshot) || chooseMoveForKind(options, secondary, profile, snapshot);
+      if (!selected && recoveryMode) selected = chooseBoardUnlockMove(options, snapshot, [primary, secondary]);
       rememberFollowupPlan(planState, selected, profile);
       return selected;
     }
@@ -465,6 +568,7 @@
     const primary = preferRepair ? "repair" : "attack";
     const secondary = preferRepair ? "attack" : "repair";
     selected = chooseMoveForKind(options, primary, profile, snapshot) || chooseMoveForKind(options, secondary, profile, snapshot);
+    if (!selected && recoveryMode) selected = chooseBoardUnlockMove(options, snapshot, [primary, secondary]);
     rememberFollowupPlan(planState, selected, profile);
     return selected;
   }
@@ -627,6 +731,7 @@
     let nextSortAt = logNormalWithMean(profile.delayMean, profile.delayCv);
     let perkDecision = null;
     const planState = createPlanState(profile);
+    let idleDecisionStreak = 0;
     let previousFrame = performance.now();
     const wallStarted = performance.now();
     const eventStart = api.getEvents().length;
@@ -662,6 +767,8 @@
           reactiveSortRatio: Number(reactiveSortRatio.toFixed(3)),
           immediateMatchCount: planStats.immediateMatches,
           usefulFallbackCount: planStats.usefulFallbacks,
+          idleDecisionCount: planStats.idleDecisions,
+          boardUnlockCount: planStats.boardUnlocks,
           averagePlanDepth: Number(averagePlanDepth.toFixed(3)),
           maxPlanDepth: planStats.maxQueueDepth,
         });
@@ -692,6 +799,8 @@
           plannedSortRatio: attempts ? planState.stats.plannedSorts / attempts : 0,
           planBreaks: planState.stats.planBreaks,
           reactiveSorts: planState.stats.reactiveSorts,
+          idleDecisions: planState.stats.idleDecisions,
+          boardUnlocks: planState.stats.boardUnlocks,
         });
       }
 
@@ -733,16 +842,21 @@
           const pressureMultiplier = getPressureDelayMultiplier(snapshot, profile.profileKey, pressureMode);
           const delay = Math.max(0.45, logNormalWithMean(profile.delayMean * pressureMultiplier, profile.delayCv));
           decisionDelays.push(delay);
-          const selected = chooseMove(snapshot, profile, profile.profileKey, pressureMode, planState);
+          const recoveryMode = idleDecisionStreak >= 1 || Number(snapshot.threat?.pressureScore || 0) >= 0.55;
+          const selected = chooseMove(snapshot, profile, profile.profileKey, pressureMode, planState, recoveryMode);
           if (selected) {
             const move = selected.move;
             const result = api.movePiece(move.slot, move.cell, move.toSlot, move.toCell);
             attempts += 1;
+            idleDecisionStreak = 0;
             recordMovePlanStats(planState, selected, pressureMode);
             if (selected.mistake) mistakes += 1;
             if (!result.ok) invalidSortAttempts += 1;
+          } else {
+            idleDecisionStreak += 1;
+            planState.stats.idleDecisions += 1;
           }
-          nextSortAt = clock + delay;
+          nextSortAt = clock + (selected ? delay : Math.max(0.2, Math.min(0.75, delay * 0.25)));
           updateMeta();
         }
         requestAnimationFrame(frame);

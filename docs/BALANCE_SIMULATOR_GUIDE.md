@@ -83,6 +83,8 @@ run-balance-simulation.cmd --stage stage-2 --pieces basic_3,scatter_2,sniper_1,b
 - 소팅 횟수는 제한하지 않으며 생존 시간과 평균 소팅 간격에 따른 결과값으로만 기록한다.
 - 당장 완성되는 3-Sort가 없으면 같은 기물 두 개를 모아 다음 소팅을 준비하고, 후속 완성 이동을 `planQueue`에 기억한다.
 - 의미 없는 랜덤 이동은 하지 않는다. 직접 3-Sort, 수리/공격 준비 이동, 또는 다음 매칭을 만드는 의미 있는 이동만 수행한다.
+- `세린/빈칸/도이`에 `세린`을 넣어 `세린/세린/도이`를 만들고, 이후 `도이`를 빼서 `세린/세린/빈칸`으로 정리하는 체인은 의미 있는 계획 이동으로 취급한다.
+- 단, 후보가 모두 막혀 입력이 멈출 때는 `board-unlock` 응급 이동을 1회 허용한다. 이 이동은 사람이 보드를 풀기 위해 하는 최소 이동이며 `boardUnlockCount`, `idleDecisionCount`로 별도 기록한다.
 - 초보자와 중급자는 몬스터가 슬롯에 근접하거나 적이 누적되면 생존 슬롯의 공격 소팅을 우선한다. 압박이 낮아지면 파괴 슬롯 수리를 다시 시도한다.
 - 상급자는 전장 압력, 파괴 슬롯 수, 남은 생존 슬롯 수를 함께 계산해 공격과 수리를 분배한다.
 - 모든 숙련도는 슬롯이 공격받거나 전장 압력이 높아지면 평상시보다 소팅 간격이 짧아진다.
@@ -92,7 +94,7 @@ run-balance-simulation.cmd --stage stage-2 --pieces basic_3,scatter_2,sniper_1,b
 - 자동 플레이 결과는 웹앱을 통해 Google Sheet에만 저장하며 `data_source=simulation`으로 구분한다.
 - 대시보드에서는 `표본` 필터로 `real`과 `simulation`을 분리한다.
 - 실제 플레이 로그는 소팅 완성 수, 평균 소팅 간격, 도달 웨이브, 클리어 여부로 초보자/중급자/상급자를 가볍게 추정한다.
-- 신규 시뮬 로그의 `payload_json.simulation`에는 `plannedSortRatio`, `planFollowupCount`, `planSetupCount`, `planBreakCount`, `reactiveSortRatio`, `averagePlanDepth`가 기록된다.
+- 신규 시뮬 로그의 `payload_json.simulation`에는 `plannedSortRatio`, `planFollowupCount`, `planSetupCount`, `planBreakCount`, `reactiveSortRatio`, `averagePlanDepth`, `boardUnlockCount`, `idleDecisionCount`가 기록된다.
 
 ## 숙련도 기준
 
