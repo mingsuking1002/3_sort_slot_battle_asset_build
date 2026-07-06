@@ -7,7 +7,7 @@
 - 런타임 연결: **기본 실행 모드** (유효한 생성 스냅샷을 항상 적용)
 - 외부 적용: **13개**, 내장 fallback: **3개**
 - 검사 결과: ERROR 0 / WARN 0 / INFO 9
-- 현재 데이터 대비 변경: 523개 행 / 1062개 필드
+- 현재 데이터 대비 변경: 523개 행 / 1058개 필드
 
 ## 테이블 공급 현황
 
@@ -251,10 +251,9 @@
 - `MonsterGroupData.11023.*`: `""` -> ``
 - `MonsterData.4111.MonsterName`: `"Monster_Normal_01"` -> ``
 - `MonsterData.4111.MonsterHp`: `150` -> `60`
-- `MonsterData.4111.MonsterAtk`: `1` -> `62`
-- `MonsterData.4111.MonsterAtkSpeed`: `1.35` -> `1.2`
-- `MonsterData.4111.MonsterAtkRange`: `0` -> `1`
-- `MonsterData.4111.MonsterMoveSpeed`: `34` -> `15`
+- `MonsterData.4111.MonsterAtkSpeed`: `1.35` -> `2`
+- `MonsterData.4111.MonsterAtkRange`: `0` -> `0.1`
+- `MonsterData.4111.MonsterMoveSpeed`: `34` -> `12`
 - `MonsterData.4111.MonsterSprite`: `"assets/images/monsters/기본형.png"` -> ``
 - `MonsterData.4111.Desc`: `"기본형 · 전시 체력 상향"` -> ``
 - `MonsterData.4111.*`: `""` -> ``
@@ -262,10 +261,9 @@
 - `MonsterData.4121.MonsterType`: `2` -> `1`
 - `MonsterData.4121.ExpTypeID`: `82` -> `81`
 - `MonsterData.4121.MonsterHp`: `135` -> `65`
-- `MonsterData.4121.MonsterAtk`: `1` -> `68`
-- `MonsterData.4121.MonsterAtkSpeed`: `1.1` -> `1.2`
-- `MonsterData.4121.MonsterAtkRange`: `0` -> `1`
-- `MonsterData.4121.MonsterMoveSpeed`: `61` -> `15`
+- `MonsterData.4121.MonsterAtkSpeed`: `1.1` -> `2`
+- `MonsterData.4121.MonsterAtkRange`: `0` -> `0.1`
+- `MonsterData.4121.MonsterMoveSpeed`: `61` -> `12`
 - `MonsterData.4121.MonsterSprite`: `"assets/images/monsters/속도형.png"` -> ``
 - `MonsterData.4121.Desc`: `"속도형 · 전시 체력 상향"` -> ``
 - `MonsterData.4121.*`: `""` -> ``
@@ -273,11 +271,13 @@
 - `MonsterData.4131.MonsterType`: `3` -> `1`
 - `MonsterData.4131.ExpTypeID`: `82` -> `81`
 - `MonsterData.4131.MonsterHp`: `720` -> `70`
-- `MonsterData.4131.MonsterAtk`: `1` -> `74`
-- `MonsterData.4131.MonsterAtkSpeed`: `1.55` -> `1.2`
-- `MonsterData.4131.MonsterAtkRange`: `0` -> `1`
-- `MonsterData.4131.MonsterMoveSpeed`: `19` -> `15`
+- `MonsterData.4131.MonsterAtkSpeed`: `1.55` -> `2`
+- `MonsterData.4131.MonsterAtkRange`: `0` -> `0.1`
+- `MonsterData.4131.MonsterMoveSpeed`: `19` -> `12`
 - `MonsterData.4131.MonsterSprite`: `"assets/images/monsters/탱커형.png"` -> ``
+- `MonsterData.4131.Desc`: `"탱커형 · 전시 체력 상향"` -> ``
+- `MonsterData.4131.*`: `""` -> ``
+- `MonsterData.4141.MonsterName`: `"Monster_Ranged_01"` -> ``
 - 변경 상세는 200건까지만 표시했습니다.
 
 ## 계약 메모

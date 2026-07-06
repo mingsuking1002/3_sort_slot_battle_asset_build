@@ -45,6 +45,7 @@
   const MONSTER_COLORS = { normal: "#276dcc", speedy: "#e3a51b", tanker: "#c33d3d" };
   const NEUTRAL = "#8b98a2";
   const PIECE_MAX_LEVEL = 5;
+  const DESIGN_UNITY_RADIUS_UNIT_PX = 128;
   const SKILL_META = {
     beginner: { label: "초보자", color: "#c73b3b", sortMin: 0, sortMax: 18, targetDelay: 5.8 },
     intermediate: { label: "중급자", color: "#e7a91b", sortMin: 19, sortMax: 60, targetDelay: 3.35 },
@@ -93,6 +94,14 @@
     if (value === null || value === undefined || value === "") return fallback;
     const numeric = Number(String(value).replace(/,/g, "").replace("%", ""));
     return Number.isFinite(numeric) ? numeric : fallback;
+  };
+  const normalizeDesignUnityRadius = (value, fallback = 0) => {
+    const raw = number(value);
+    if (!Number.isFinite(raw) || raw <= 0) return fallback;
+    return raw * DESIGN_UNITY_RADIUS_UNIT_PX;
+  };
+  const normalizeDesignProjectileSize = (value, fallback = 0) => {
+    return normalizeDesignUnityRadius(value, fallback);
   };
   const sum = (items, getter) => items.reduce((total, item) => total + number(getter(item)), 0);
   const average = (items, getter) => items.length ? sum(items, getter) / items.length : 0;
@@ -1486,9 +1495,9 @@
       const ammo = number(valueOf(tower, ["TowerMaxAmmo", "MaxAmmo"]));
       const atk = number(valueOf(tower, ["TowerAtk", "ATK"]));
       const rawRange = number(valueOf(tower, ["TowerMaxLange", "TowerMaxRange", "TowerRange"]));
-      const range = rawRange > 0 && rawRange <= 30 ? rawRange * 38 : rawRange;
+      const range = normalizeDesignUnityRadius(rawRange, rawRange);
       const rawProjectileSize = number(tower.ProjectileSize);
-      const projectileSize = rawProjectileSize > 0 && rawProjectileSize <= 2 ? rawProjectileSize * 20 : rawProjectileSize;
+      const projectileSize = normalizeDesignProjectileSize(rawProjectileSize, rawProjectileSize);
       const projectileId = valueOf(tower, "TowerProjectile");
       const projectile = tableRows("ProjectileData").find((row) => String(row.ProjectileID) === String(projectileId)) || {};
       const currentHpRate = normalizePercentValue(valueOf(tower, ["current_hp", "CurrentHp"]));
@@ -1514,7 +1523,7 @@
         projectileType: valueOf(projectile, "ProjectileType", valueOf(tower, "ProjectileType", "normal")),
         projectilePrefab: valueOf(projectile, "ProjectilePrefab"),
         projectileSize,
-        splash: number(tower.SplashRadius),
+        splash: normalizeDesignUnityRadius(tower.SplashRadius, 0),
         piercing: number(tower.PiercingCount),
         bulletSpeed: number(tower.BulletSpeed),
         currentHpRate,

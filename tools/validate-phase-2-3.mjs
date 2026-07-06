@@ -603,17 +603,17 @@ function validateDesignTables(data) {
   const runtimeWavePatterns = data.wavePatterns || {};
   const runtimeMonsterGroups = data.monsterGroups || {};
   const closeTo = (a, b, epsilon = 0.001) => Math.abs(Number(a) - Number(b)) <= epsilon;
-  const designRangeUnitPx = 38;
-  const designProjectileSizeUnitPx = 20;
-  const normalizeDesignTowerRange = (value) => {
-    const raw = Number(value);
-    if (!Number.isFinite(raw) || raw <= 0) return 360;
-    return raw <= 30 ? raw * designRangeUnitPx : raw;
-  };
-  const normalizeDesignProjectileSize = (value, fallback = 0) => {
+  const designUnityRadiusUnitPx = 128;
+  const normalizeDesignUnityRadius = (value, fallback = 0) => {
     const raw = Number(value);
     if (!Number.isFinite(raw) || raw <= 0) return fallback;
-    return raw <= 2 ? raw * designProjectileSizeUnitPx : raw;
+    return raw * designUnityRadiusUnitPx;
+  };
+  const normalizeDesignTowerRange = (value) => {
+    return normalizeDesignUnityRadius(value, 360);
+  };
+  const normalizeDesignProjectileSize = (value, fallback = 0) => {
+    return normalizeDesignUnityRadius(value, fallback);
   };
   const normalizeDesignPercentDamage = (value, fallback = 0) => {
     const raw = Number(value);
@@ -986,7 +986,7 @@ function validateDesignTables(data) {
     const expectedPierceHits = Math.max(0, Math.floor(Number(tower.PiercingCount) || 0));
     if (Number(runtimeTower?.pierceHits) === expectedPierceHits) pass("DESIGN_TABLE", `TowerData ${tower.TowerID} PiercingCount feeds pierceHits`);
     else fail("DESIGN_TABLE", `TowerData ${tower.TowerID} pierceHits mismatch`, `${runtimeTower?.pierceHits} / ${expectedPierceHits}`);
-    const expectedSplashRadius = Math.max(0, Number(tower.SplashRadius) || 0);
+    const expectedSplashRadius = normalizeDesignUnityRadius(tower.SplashRadius, 0);
     if (closeTo(runtimeTower?.splashRadius, expectedSplashRadius, 0.001)) pass("DESIGN_TABLE", `TowerData ${tower.TowerID} SplashRadius feeds splashRadius`);
     else fail("DESIGN_TABLE", `TowerData ${tower.TowerID} splashRadius mismatch`, `${runtimeTower?.splashRadius} / ${expectedSplashRadius}`);
     const expectedBulletSpeed = Number(tower.BulletSpeed);
@@ -1148,7 +1148,7 @@ function validateDesignTables(data) {
     const expectedDamageMult = Number(monster.MonsterAtk) > 0 ? Number(monster.MonsterAtk) : Number(monster.MonsterType) === 99 ? 0.01 : 1;
     const expectedSpeedMult = Number(monster.MonsterMoveSpeed) > 0 ? Number(monster.MonsterMoveSpeed) / 34 : Number(monster.MonsterType) === 99 ? 0.01 : 1;
     const expectedAttackRateMult = Number(monster.MonsterAtkSpeed) > 0 ? Number(monster.MonsterAtkSpeed) / 1.35 : 1;
-    const expectedAttackRange = Number(monster.MonsterAtkRange) > 0 ? Number(monster.MonsterAtkRange) : 0;
+    const expectedAttackRange = normalizeDesignUnityRadius(monster.MonsterAtkRange, 0);
     const statMismatches = [];
     if (Math.abs(Number(runtimeMonster?.hpMult || 0) - expectedHpMult) > 0.0001) statMismatches.push(`hpMult ${runtimeMonster?.hpMult}/${expectedHpMult}`);
     if (Math.abs(Number(runtimeMonster?.damageMult || 0) - expectedDamageMult) > 0.0001) statMismatches.push(`damageMult ${runtimeMonster?.damageMult}/${expectedDamageMult}`);
@@ -1674,17 +1674,17 @@ function validateInternalStatsTableRules(data) {
   const runtimeKey = (tableName, rowId, prefix) => map[tableName]?.[rowId] || map[tableName]?.[String(rowId)] || `${prefix}_${rowId}`;
   const closeTo = (a, b, epsilon = 0.001) => Math.abs(Number(a) - Number(b)) <= epsilon;
   const baseBulletDamage = 24;
-  const designRangeUnitPx = 38;
-  const designProjectileSizeUnitPx = 20;
-  const normalizeDesignTowerRange = (value) => {
-    const raw = Number(value);
-    if (!Number.isFinite(raw) || raw <= 0) return 360;
-    return raw <= 30 ? raw * designRangeUnitPx : raw;
-  };
-  const normalizeDesignProjectileSize = (value, fallback = 0) => {
+  const designUnityRadiusUnitPx = 128;
+  const normalizeDesignUnityRadius = (value, fallback = 0) => {
     const raw = Number(value);
     if (!Number.isFinite(raw) || raw <= 0) return fallback;
-    return raw <= 2 ? raw * designProjectileSizeUnitPx : raw;
+    return raw * designUnityRadiusUnitPx;
+  };
+  const normalizeDesignTowerRange = (value) => {
+    return normalizeDesignUnityRadius(value, 360);
+  };
+  const normalizeDesignProjectileSize = (value, fallback = 0) => {
+    return normalizeDesignUnityRadius(value, fallback);
   };
   const baseMonsterHp = 22;
   const baseMonsterDamage = 1;
@@ -1697,7 +1697,8 @@ function validateInternalStatsTableRules(data) {
     const towerRows = (tables.TowerData || []).filter((towerRow) => String(towerRow.TowerProjectile) === String(projectileRow.ProjectileID));
     const sizeOverride = towerRows.find((towerRow) => Number(towerRow.ProjectileSize) > 0)?.ProjectileSize;
     const pierceOverride = Math.max(0, ...towerRows.map((towerRow) => Number(towerRow.PiercingCount) || 0));
-    const splashOverride = Math.max(0, ...towerRows.map((towerRow) => Number(towerRow.SplashRadius) || 0));
+    const splashOverrideRaw = Math.max(0, ...towerRows.map((towerRow) => Number(towerRow.SplashRadius) || 0));
+    const splashOverride = normalizeDesignUnityRadius(splashOverrideRaw, 0);
 
     if (runtimeProjectile?.design?.fillSource === "ProjectileTypeDefaults") pass("INTERNAL_STATS", `ProjectileData ${projectileRow.ProjectileID} uses type fill defaults`);
     else fail("INTERNAL_STATS", `ProjectileData ${projectileRow.ProjectileID} missing type fill defaults`, String(runtimeProjectile?.design?.fillSource));
@@ -1772,8 +1773,9 @@ function validateInternalStatsTableRules(data) {
     else fail("INTERNAL_STATS", `BossData ${bossRow.BossID} melee mismatch`, `${runtimeBoss?.meleeDamage} / ${monsterRow?.MonsterAtk}`);
     if (monsterRow && closeTo(runtimeBoss?.speed, Number(monsterRow.MonsterMoveSpeed))) pass("INTERNAL_STATS", `BossData ${bossRow.BossID} speed follows MonsterData`);
     else fail("INTERNAL_STATS", `BossData ${bossRow.BossID} speed mismatch`, `${runtimeBoss?.speed} / ${monsterRow?.MonsterMoveSpeed}`);
-    if (monsterRow && closeTo(runtimeBoss?.attackRange, Number(monsterRow.MonsterAtkRange))) pass("INTERNAL_STATS", `BossData ${bossRow.BossID} range follows MonsterData`);
-    else fail("INTERNAL_STATS", `BossData ${bossRow.BossID} range mismatch`, `${runtimeBoss?.attackRange} / ${monsterRow?.MonsterAtkRange}`);
+    const expectedBossRange = monsterRow ? normalizeDesignUnityRadius(monsterRow.MonsterAtkRange, 0) : 0;
+    if (monsterRow && closeTo(runtimeBoss?.attackRange, expectedBossRange)) pass("INTERNAL_STATS", `BossData ${bossRow.BossID} range follows MonsterData`);
+    else fail("INTERNAL_STATS", `BossData ${bossRow.BossID} range mismatch`, `${runtimeBoss?.attackRange} / ${expectedBossRange}`);
   }
 }
 

@@ -76,7 +76,7 @@
 | `MonsterHp` | 기본 체력. |
 | `MonsterAtk` | 슬롯 공격력. |
 | `MonsterAtkSpeed` | 공격 주기. 낮을수록 자주 공격한다. |
-| `MonsterAtkRange` | 공격 사거리. 0이면 근접형으로 본다. |
+| `MonsterAtkRange` | 공격 사거리 반지름. Unity 기본 단위의 Collider Radius 값으로 입력하고, 런타임에서 `1 Unity unit = 128px`로 변환한다. 0이면 근접형으로 본다. |
 | `MonsterMoveSpeed` | 이동 속도. |
 | `MonsterSprite` | 몬스터 스프라이트 리소스 키. |
 
@@ -148,14 +148,14 @@
 | `ProjectileType` | 구형 호환용 선택 열. 비어 있으면 `TowerProjectile`로 연결된 `ProjectileData.ProjectileType`을 사용한다. |
 | `TowerAtk` | 포탑 공격력. 런타임 피해와 리리 회복량의 기준이다. |
 | `TowerAtkSpeed` | 공격 주기. 낮을수록 자주 공격한다. |
-| `TowerMaxLange` | 사거리. 30 이하 값은 보드 단위로 보고 런타임에서 `x38px`로 변환한다. |
+| `TowerMaxLange` | 사거리 반지름. Unity 기본 단위의 Collider Radius 값으로 입력하고, 런타임에서 `1 Unity unit = 128px`로 변환한다. |
 | `TowerMaxAmmo` | 포탑 최대 탄약. |
 | `SkillID` | 스킬 참조 ID. 현재 보조형 식별 메모 성격이 강하다. |
 | `TowerProjectile` | 사용할 `ProjectileData.ProjectileID`. |
 | `ProjectileCount` | 한 번의 공격에서 발사할 탄 수. 샷건은 동시에 퍼지고, 샷건이 아닌 다중 탄은 순차 연사된다. |
-| `ProjectileSize` | 탄 크기. 2 이하 값은 보드 단위로 보고 런타임에서 `x20px`로 변환한다. |
+| `ProjectileSize` | 탄 충돌 반지름. Unity 기본 단위의 Collider Radius 값으로 입력하고, 런타임에서 `1 Unity unit = 128px`로 변환한다. |
 | `PiercingCount` | 관통 가능 횟수. |
-| `SplashRadius` | 폭발/범위 피해 반경. |
+| `SplashRadius` | 폭발/범위 피해 반지름. Unity 기본 단위의 Collider Radius 값으로 입력하고, 런타임에서 `1 Unity unit = 128px`로 변환한다. |
 | `current_hp` / `CurrentHp` | 체력비례 피해 퍼센트. `3`은 3%, `0.03`은 3%, `3%`도 3%로 해석된다. 탱커 대항형처럼 체력비례 추가 피해를 주는 투사체에 사용한다. |
 | `TowerLv` | 포탑 레벨. `PieceData.PieceLv`와 맞춰 보는 표시/검증용 값. |
 | `BulletSpeed` | 투사체 이동 속도 배율. 값이 있으면 투사체 종류의 기본 행동값보다 우선한다. |

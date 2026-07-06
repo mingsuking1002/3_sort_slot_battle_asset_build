@@ -276,8 +276,7 @@ TowerID, TowerName, TowerType, TowerAiType, TargetPriority, ProjectileType, Towe
 - 신규 포탑은 `TowerAiType=basic/basic-non/shotgun/heal`, `TargetPriority=near/far/strong/weak/friendly/cluster`, `ProjectileType=normal/explode/pierce/tank/heal` 조합으로 추가한다. 현재 공식 보조형은 `TowerAiType=heal`, `TargetPriority=near`, `ProjectileType=heal`로 적을 공격하고 명중 시 최저 체력 슬롯을 회복한다.
 - `TowerAtk`는 1발 기준 피해 원천이다. 런타임의 `damageMod`는 `TowerAtk / 24`로 만들어지고, `towerDamageRatio=1`을 곱해 결과 피해가 시트 공격력과 일치한다.
 - `ProjectileCount`는 기본 발사 수 원천이다. 기존 `baseBullets`는 공식 데이터가 없는 fallback 성격이며, 공식 포탑은 시트 발사 수에서 시작한다.
-- `TowerMaxLange`는 보드 단위로 보고 30 이하 값은 `x38px` 변환한다.
-- `ProjectileSize`는 보드 단위로 보고 2 이하 값은 `x20px` 변환한다.
+- `TowerMaxLange`, `ProjectileSize`, `SplashRadius`, `MonsterAtkRange`는 Unity 기본 단위의 Collider Radius 값으로 입력하고 런타임에서 `1 Unity unit = 128px`로 일괄 변환한다.
 - `TowerAtkSpeed`는 0.1까지 허용한다. 가비 Lv5의 0.1이 공식 밸런스 값이다.
 - 전투 중 포탑 생애주기는 데이터 컬럼이 아니라 런타임 `idle/search/attack/destroyed` 상태로 관리한다. 탄약 소진 또는 슬롯 HP 0이 `destroyed` 전환 조건이다.
 - 공격 확정 전 타겟은 `TargetPriority`와 사거리 기준을 모두 만족해야 한다. 유도 투사체는 발사 대상 사망 시 재타겟하지 않고 소멸한다.

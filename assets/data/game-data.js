@@ -2446,19 +2446,24 @@
     support: { projectileCountScale: 1, description: "체력이 낮은 슬롯을 회복하고 주변을 보조합니다." },
   };
 
-  const DESIGN_TOWER_RANGE_UNIT_PX = 38;
-  const DESIGN_PROJECTILE_SIZE_UNIT_PX = 20;
+  const DESIGN_UNITY_RADIUS_UNIT_PX = 128;
+
+  function normalizeDesignUnityRadius(value, fallback = 0) {
+    const raw = Number(value);
+    if (!Number.isFinite(raw) || raw <= 0) return fallback;
+    return raw * DESIGN_UNITY_RADIUS_UNIT_PX;
+  }
 
   function normalizeDesignTowerRange(value) {
-    const raw = Number(value);
-    if (!Number.isFinite(raw) || raw <= 0) return 360;
-    return raw <= 30 ? raw * DESIGN_TOWER_RANGE_UNIT_PX : raw;
+    return normalizeDesignUnityRadius(value, 360);
+  }
+
+  function normalizeDesignSplashRadius(value, fallback = 0) {
+    return normalizeDesignUnityRadius(value, fallback);
   }
 
   function normalizeDesignProjectileSize(value, fallback = 0) {
-    const raw = Number(value);
-    if (!Number.isFinite(raw) || raw <= 0) return fallback;
-    return raw <= 2 ? raw * DESIGN_PROJECTILE_SIZE_UNIT_PX : raw;
+    return normalizeDesignUnityRadius(value, fallback);
   }
 
   function normalizeDesignPercentDamage(value, fallback = 0) {
@@ -2513,7 +2518,8 @@
       const sizeOverrideRaw = towerRows.find((row) => Number(row.ProjectileSize) > 0)?.ProjectileSize;
       const sizeOverride = normalizeDesignProjectileSize(sizeOverrideRaw, fillDefaults.radius);
       const pierceOverride = Math.max(0, ...towerRows.map((row) => Number(row.PiercingCount) || 0));
-      const splashOverride = Math.max(0, ...towerRows.map((row) => Number(row.SplashRadius) || 0));
+      const splashOverrideRaw = Math.max(0, ...towerRows.map((row) => Number(row.SplashRadius) || 0));
+      const splashOverride = normalizeDesignSplashRadius(splashOverrideRaw, 0);
       const projectileName = String(projectileRow.ProjectileName || "").trim() || projectileKey;
       const projectilePrefabKey = String(projectileRow.ProjectilePrefab || "").trim();
       const projectilePrefab = resolveDesignProjectileAsset(projectilePrefabKey);
@@ -2551,7 +2557,8 @@
             projectileSize: Number(sizeOverrideRaw) > 0 ? Number(sizeOverrideRaw) : null,
             projectileSizePx: Number(sizeOverrideRaw) > 0 ? sizeOverride : null,
             pierceHits: pierceOverride > 0 ? pierceOverride : null,
-            splashRadius: splashOverride > 0 ? splashOverride : null,
+            splashRadius: splashOverrideRaw > 0 ? splashOverrideRaw : null,
+            splashRadiusPx: splashOverrideRaw > 0 ? splashOverride : null,
           },
         },
       };
@@ -2574,7 +2581,8 @@
       const projectileDefaults = getProjectileFillDefaults(projectileType, aiType);
       const projectileSize = normalizeDesignProjectileSize(towerRow.ProjectileSize, Number(runtime.projectiles[projectileKey]?.radius || projectileDefaults.radius || 0));
       const pierceHits = Math.max(0, Math.floor(Number(towerRow.PiercingCount) || 0));
-      const splashRadius = Math.max(0, Number(towerRow.SplashRadius) || 0);
+      const splashRadiusRaw = Math.max(0, Number(towerRow.SplashRadius) || 0);
+      const splashRadius = normalizeDesignSplashRadius(splashRadiusRaw, 0);
       const towerRange = normalizeDesignTowerRange(towerRow.TowerMaxLange);
       const bulletSpeed = Number(towerRow.BulletSpeed);
       const percentHpDamage = normalizeDesignPercentDamage(towerRow.current_hp, 0);
@@ -2631,7 +2639,8 @@
           projectileSize: Number(towerRow.ProjectileSize) || 0,
           projectileSizePx: projectileSize,
           pierceHits,
-          splashRadius,
+          splashRadius: splashRadiusRaw,
+          splashRadiusPx: splashRadius,
           towerAiType: towerRow.TowerAiType,
           aiType,
           targetPriority,
@@ -2829,7 +2838,7 @@
       const monsterHp = numberOr(baseMonsterRow?.MonsterHp, baseMonsterHp);
       const monsterAtk = Math.max(0, numberOr(baseMonsterRow?.MonsterAtk, 0));
       const monsterAtkSpeed = Math.max(0.1, numberOr(baseMonsterRow?.MonsterAtkSpeed, 1.15));
-      const monsterAtkRange = Math.max(0, numberOr(baseMonsterRow?.MonsterAtkRange, 0));
+      const monsterAtkRange = normalizeDesignUnityRadius(baseMonsterRow?.MonsterAtkRange, 0);
       const monsterMoveSpeed = Math.max(0, numberOr(baseMonsterRow?.MonsterMoveSpeed, 18));
 
       runtimeBosses[bossKey] = {
@@ -3316,7 +3325,8 @@
       const monsterAtk = Number(monsterRow.MonsterAtk);
       const monsterMoveSpeed = Number(monsterRow.MonsterMoveSpeed);
       const monsterAtkSpeed = Number(monsterRow.MonsterAtkSpeed);
-      const monsterAtkRange = Number(monsterRow.MonsterAtkRange);
+      const monsterAtkRangeRaw = Number(monsterRow.MonsterAtkRange);
+      const monsterAtkRange = normalizeDesignUnityRadius(monsterAtkRangeRaw, 0);
       const isDummy = monsterType === "dummy";
       const expTypeId = String(monsterRow.ExpTypeID || "");
       const expBlockValue = expBlockValueForType(expTypeId);
@@ -3334,7 +3344,7 @@
         speedMult: monsterMoveSpeed > 0 ? monsterMoveSpeed / baseMonsterSpeed : isDummy ? 0.01 : 1,
         attackRateMult: monsterAtkSpeed > 0 ? monsterAtkSpeed / baseMonsterAttackRate : 1,
         radiusAdd: Number(typeDefaults.radiusAdd || 0),
-        attackRange: monsterAtkRange > 0 ? monsterAtkRange : 0,
+        attackRange: monsterAtkRange,
         taunt: Number(typeDefaults.taunt),
         pack: Math.max(1, Math.floor(Number(typeDefaults.pack))),
         weight: Number(typeDefaults.weight || 0),
@@ -3355,6 +3365,7 @@
           monsterAtk: Number(monsterRow.MonsterAtk) || 0,
           monsterAtkSpeed: Number(monsterRow.MonsterAtkSpeed) || 0,
           monsterAtkRange: Number(monsterRow.MonsterAtkRange) || 0,
+          monsterAtkRangePx: monsterAtkRange,
           monsterMoveSpeed: Number(monsterRow.MonsterMoveSpeed) || 0,
           fillSource: "MonsterTypeDefaults",
         },
@@ -3807,7 +3818,7 @@
       },
     ],
     defaultConfig: {
-      slotHp: 420,
+      slotHp: 1000,
       monsterHp: 22,
       monsterDamage: 1,
       monsterSpeed: 34,
