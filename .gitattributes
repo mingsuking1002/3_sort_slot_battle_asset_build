@@ -1,2 +1,8 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+.gitattributes text eol=lf
+
+# Generated data snapshots are loaded directly by the browser and should not
+# churn between LF/CRLF across Windows machines.
+assets/data/generated/*.js text eol=lf
+docs/generated/*.md text eol=lf
