@@ -15,7 +15,7 @@ run-balance-simulation.cmd
 파일에서 이 줄을 찾는다.
 
 ```bat
-if "%ARGS%"=="" set "ARGS=--sessions 9 --speed 50 --mix beginner:2,intermediate:5,advanced:2 --show --stage stage-1 --pieces basic_1,scatter_1,sniper_1,breaker_1,blast_1,support_1"
+if "%ARGS%"=="" set "ARGS=--sessions 9 --speed 50 --mix beginner:2,intermediate:5,advanced:2 --show --stage stage-1 --pieces basic_1_1,scatter_1_1,sniper_1_1,breaker_1_1,blast_1_1,support_1_1"
 ```
 
 이 줄의 `set "ARGS=...` 안쪽만 원하는 실행 조건으로 수정하고 저장하면 된다. 그 다음부터는 `.cmd`를 더블클릭하면 해당 조건으로 바로 실행된다.
@@ -23,25 +23,25 @@ if "%ARGS%"=="" set "ARGS=--sessions 9 --speed 50 --mix beginner:2,intermediate:
 일반 추천값은 아래다.
 
 ```bat
-if "%ARGS%"=="" set "ARGS=--sessions 9 --speed 50 --mix beginner:2,intermediate:5,advanced:2 --stage stage-1 --pieces basic_1,scatter_1,sniper_1,breaker_1,blast_1,support_1"
+if "%ARGS%"=="" set "ARGS=--sessions 9 --speed 50 --mix beginner:2,intermediate:5,advanced:2 --stage stage-1 --pieces basic_1_1,scatter_1_1,sniper_1_1,breaker_1_1,blast_1_1,support_1_1"
 ```
 
 화면을 보면서 실행하고 싶으면 `--show`를 붙인다.
 
 ```bat
-if "%ARGS%"=="" set "ARGS=--sessions 9 --speed 50 --mix beginner:2,intermediate:5,advanced:2 --show --stage stage-1 --pieces basic_1,scatter_1,sniper_1,breaker_1,blast_1,support_1"
+if "%ARGS%"=="" set "ARGS=--sessions 9 --speed 50 --mix beginner:2,intermediate:5,advanced:2 --show --stage stage-1 --pieces basic_1_1,scatter_1_1,sniper_1_1,breaker_1_1,blast_1_1,support_1_1"
 ```
 
 표본을 더 많이 쌓는 일반 실행 예시는 아래다.
 
 ```bat
-if "%ARGS%"=="" set "ARGS=--sessions 30 --speed 50 --mix beginner:2,intermediate:5,advanced:2 --stage stage-1 --pieces basic_1,scatter_1,sniper_1,breaker_1,blast_1,support_1"
+if "%ARGS%"=="" set "ARGS=--sessions 30 --speed 50 --mix beginner:2,intermediate:5,advanced:2 --stage stage-1 --pieces basic_1_1,scatter_1_1,sniper_1_1,breaker_1_1,blast_1_1,support_1_1"
 ```
 
 중급자만 30세션 돌리고 싶으면 아래처럼 바꾼다.
 
 ```bat
-if "%ARGS%"=="" set "ARGS=--sessions 30 --speed 50 --profile intermediate --stage stage-1 --pieces basic_1,scatter_1,sniper_1,breaker_1,blast_1,support_1"
+if "%ARGS%"=="" set "ARGS=--sessions 30 --speed 50 --profile intermediate --stage stage-1 --pieces basic_1_1,scatter_1_1,sniper_1_1,breaker_1_1,blast_1_1,support_1_1"
 ```
 
 중요한 차이:
@@ -68,8 +68,8 @@ run-balance-simulation.cmd --profile intermediate --scenario highRoll --sessions
 스테이지와 출전 기물 6개를 직접 지정해서 실험할 수 있다.
 
 ```powershell
-run-balance-simulation.cmd --stage stage-1 --pieces basic_1,scatter_1,sniper_1,breaker_1,blast_1,support_1 --sessions 30 --speed 50
-run-balance-simulation.cmd --stage stage-2 --pieces basic_3,scatter_2,sniper_1,breaker_4,blast_2,support_1 --profile intermediate --sessions 30
+run-balance-simulation.cmd --stage stage-1 --pieces basic_1_1,scatter_1_1,sniper_1_1,breaker_1_1,blast_1_1,support_1_1 --sessions 30 --speed 50
+run-balance-simulation.cmd --stage stage-2 --pieces basic_1_3,scatter_2_2,sniper_1_1,breaker_3_4,blast_2_2,support_1_1 --profile intermediate --sessions 30
 ```
 
 `--pieces`는 `PieceData`의 기물 ID를 쉼표로 6개 입력한다. 같은 기물 ID를 중복 입력하는 방식은 현재 검증에서 막는다.
@@ -126,7 +126,7 @@ run-balance-simulation.cmd --stage stage-2 --pieces basic_3,scatter_2,sniper_1,b
 | `--profile advanced` | 특정 숙련도만 실행 |
 | `--scenario pressureAttack` | 특정 상황 프리셋만 실행 |
 | `--stage stage-1` | 실행할 StageData key 지정 |
-| `--pieces basic_1,...` | 출전 PieceData key 6개 직접 지정 |
+| `--pieces basic_1_1,...` | 출전 PieceData key 6개 직접 지정. 형식은 `타입_성급_레벨` |
 | `--show` | 브라우저 화면 표시 |
 | `--no-dashboard` | 시트 기록만 하고 대시보드 갱신 생략 |
 | `--dry-run` | 브라우저와 필수 파일만 확인 |
@@ -136,7 +136,7 @@ run-balance-simulation.cmd --stage stage-2 --pieces basic_3,scatter_2,sniper_1,b
 50배속 결과를 믿기 전에 같은 seed를 1배속, 10배속, 50배속으로 돌려 핵심 결과가 같은지 확인할 수 있다. 이 검증은 로컬에서만 비교하고 Google Sheet에는 업로드하지 않는다.
 
 ```powershell
-run-balance-simulation.cmd --speed-check --check-sessions 1 --check-speeds 1,10,50 --seed 20260706 --stage stage-1 --pieces basic_1,scatter_1,sniper_1,breaker_1,blast_1,support_1
+run-balance-simulation.cmd --speed-check --check-sessions 1 --check-speeds 1,10,50 --seed 20260706 --stage stage-1 --pieces basic_1_1,scatter_1_1,sniper_1_1,breaker_1_1,blast_1_1,support_1_1
 ```
 
 검증 기준:

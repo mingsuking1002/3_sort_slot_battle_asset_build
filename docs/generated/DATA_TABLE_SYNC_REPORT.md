@@ -8,7 +8,7 @@
 - 거리/반지름 단위: **데이터 테이블은 Unity unit 원본값으로 파싱**하고, 런타임/대시보드에서만 `u * 128px`로 환산합니다.
 - 외부 적용: **13개**, 내장 fallback: **3개**
 - 검사 결과: ERROR 0 / WARN 1 / INFO 9
-- 현재 데이터 대비 변경: 523개 행 / 1058개 필드
+- 현재 데이터 대비 변경: 583개 행 / 1058개 필드
 
 ## 테이블 공급 현황
 
@@ -22,7 +22,7 @@
 | BossPatternGroupData | excluded | 미제공 | 0 | 1 |
 | BossPatternData | excluded | 미제공 | 0 | 1 |
 | BossData | excluded | 미제공 | 0 | 1 |
-| PieceData | active | Google Sheet | 30 | 0 |
+| PieceData | active | Google Sheet | 90 | 0 |
 | PieceUpgradeData | derived | 내장 fallback | 24 | 0 |
 | UpgradeCostData | excluded | 미제공 | 0 | 3 |
 | TowerData | active | Google Sheet | 90 | 0 |
@@ -43,7 +43,7 @@
 | 등급 | 테이블 | 내용 |
 |---|---|---|
 | INFO | TowerData | TowerLv가 없는 90개 행을 TowerID 마지막 두 자리에서 파생했습니다. |
-| INFO | PieceData | PieceType이 없는 30개 행을 ConnectTower의 TowerData.TowerType에서 파생했습니다. |
+| INFO | PieceData | PieceType이 없는 90개 행을 ConnectTower의 TowerData.TowerType에서 파생했습니다. |
 | INFO | BossPatternGroupData | 테이블 데이터가 아직 제공되지 않았습니다. |
 | INFO | BossPatternData | 테이블 데이터가 아직 제공되지 않았습니다. |
 | INFO | BossData | 테이블 데이터가 아직 제공되지 않았습니다. |
@@ -63,7 +63,7 @@
 | MonsterGroupData | 39 | 2 | 6 |
 | MonsterData | 86 | 2 | 4 |
 | BossData | 0 | 1 | 0 |
-| PieceData | 0 | 0 | 30 |
+| PieceData | 60 | 0 | 30 |
 | PieceUpgradeData | 0 | 0 | 24 |
 | UpgradeCostData | 0 | 24 | 0 |
 | TowerData | 90 | 30 | 0 |

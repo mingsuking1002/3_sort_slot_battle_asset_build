@@ -104,13 +104,13 @@
 | `PieceName` | 기물 표시명. 현재 세린/도이/유진/가비/유은/리리. |
 | `PieceType` | 기물 계열. 공식 값은 `AR`, `Shotgun`, `Lange`, `Tank`, `Wide`, `Buffer`. |
 | `PieceDesc` | 기물 설명. |
-| `PieceGrade` | 등급/별. 현재 기본값은 1. |
+| `PieceGrade` | 등급/별. 현재 1~3성을 지원하며 기본 보유 카드로 지급되고 카드에는 `n성`으로 표시된다. |
 | `PieceLv` | 강화 단계. 게임과 밸런스 대시보드 모두 최대 레벨 5로 고정한다. |
 | `ConnectTower` | 생성할 `TowerData.TowerID`. |
 | `Portrait` | 상세/카드 이미지 경로. |
 | `PieceSprite` | 인게임/카드 스프라이트. `세린` 또는 `세린.png`처럼 파일명만 입력하면 `assets/images/towers/세린.png`를 자동 사용한다. 전체 경로도 허용하며, 이미지가 없거나 로드에 실패하면 `PieceName` 첫 글자를 표시한다. |
 
-새 기물은 `PieceData`, 연결된 `TowerData`와 `ProjectileData` 행을 추가하면 밸런스 빌드의 보유/편성 후보와 대시보드에 자동으로 나타난다. 같은 기물의 레벨 행은 동일한 `PieceName` 또는 `PieceSprite` 값을 사용하고 `PieceLv`를 1~5로 구분한다.
+새 기물은 `PieceData`, 연결된 `TowerData`와 `ProjectileData` 행을 추가하면 밸런스 빌드의 보유/편성 후보와 대시보드에 자동으로 나타난다. 런타임 `PieceData key`는 `타입_성급_레벨` 형식이다. 예: `basic_1_1`, `basic_2_1`, `basic_3_5`. 같은 성급의 레벨 행은 동일한 `PieceName` 또는 `PieceSprite` 값을 사용하고 `PieceLv`를 1~5로 구분한다.
 
 ## PieceUpgradeData
 

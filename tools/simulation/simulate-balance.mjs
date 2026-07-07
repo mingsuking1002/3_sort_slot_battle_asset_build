@@ -383,7 +383,7 @@ async function main() {
     console.log("node tools/simulation/simulate-balance.mjs [--sessions 9] [--speed 50] [--seed <number>]");
     console.log("  [--mix beginner:2,intermediate:5,advanced:2] [--profile beginner|intermediate|advanced]");
     console.log("  [--scenario standard|highRoll|lowRoll|pressureAttack|comboFocus]");
-    console.log("  [--stage stage-1] [--pieces basic_1,scatter_1,sniper_1,breaker_1,blast_1,support_1]");
+    console.log("  [--stage stage-1] [--pieces basic_1_1,scatter_1_1,sniper_1_1,breaker_1_1,blast_1_1,support_1_1]");
     console.log("  [--coverage|--random-mix] [--show] [--no-dashboard] [--dry-run]");
     console.log("  [--speed-check] [--check-speeds 1,10,50] [--check-sessions 1]");
     return;

@@ -1365,6 +1365,11 @@ function validateDataOnlyRuntime(data, html) {
     else fail("DATA_ONLY", `Required table ${key} missing`);
   }
 
+  for (const grade of [1, 2, 3]) {
+    if (data.gradeStats?.[grade]) pass("DATA_ONLY", `GradeStats ${grade} star exists`);
+    else fail("DATA_ONLY", `GradeStats ${grade} star missing`, `gradeStats.${grade}`);
+  }
+
   const requiredHtmlObjectBindings = [
     ["GAME_CONSTANTS", "constants"],
     ["STORAGE_KEYS", "storageKeys"],
@@ -1422,6 +1427,10 @@ function validateDataOnlyRuntime(data, html) {
     ["state.selectedStageKey = STAGES[nextIndex].key", "HTML stage carousel uses StageData runtime table"],
     ["return WAVE_DATA[String(wave)] || WAVE_DATA[wave] || null", "HTML resolves waves through WaveData runtime table"],
     ["BOSS_DATA[bossRef]", "HTML resolves bosses through BossData runtime table"],
+    ["function getStarBadgeHtml", "HTML renders readable star grade labels"],
+    ["selected-loadout-grade", "Selected loadout cards render star grade labels"],
+    ["function getOwnedPieceCardCount", "Lobby counts owned piece cards"],
+    ["const locked = !BALANCE_DATA_ACTIVE", "Balance cards remain inspectable when loadout is full"],
   ];
 
   for (const [needle, label] of runtimeChecks) {
@@ -1526,6 +1535,7 @@ function approxWeightSum(weights = {}) {
 }
 
 function validateCoreGameplayData(data) {
+  const pieces = Object.entries(data.pieces || {});
   for (const [pieceKey, piece] of Object.entries(data.pieces || {})) {
     if (piece.key === pieceKey) pass("CORE", `Piece ${pieceKey} key matches`);
     else fail("CORE", `Piece ${pieceKey} key mismatch`, String(piece.key));
@@ -1535,6 +1545,14 @@ function validateCoreGameplayData(data) {
     else fail("CORE", `Piece ${pieceKey} star missing`);
     if (typeof piece.owned === "boolean") pass("CORE", `Piece ${pieceKey} owned flag exists`);
     else warn("CORE", `Piece ${pieceKey} owned flag missing`, "Lobby ownership defaults may become ambiguous.");
+  }
+
+  const gradeOneToThreePieces = pieces.filter(([, piece]) => Number(piece.star) >= 1 && Number(piece.star) <= 3);
+  const unownedGradeOneToThreePieces = gradeOneToThreePieces.filter(([, piece]) => piece.owned !== true);
+  if (gradeOneToThreePieces.length && unownedGradeOneToThreePieces.length === 0) {
+    pass("CORE", "Grade 1-3 pieces are owned by default", String(gradeOneToThreePieces.length));
+  } else {
+    fail("CORE", "Grade 1-3 pieces must be owned by default", unownedGradeOneToThreePieces.map(([pieceKey]) => pieceKey).join(", "));
   }
 
   for (const [towerKey, tower] of Object.entries(data.towers || {})) {
@@ -2477,7 +2495,7 @@ function loadSyntheticAutoAddGameData() {
   );
   designTables.PieceData.push(
     { PieceID: 7999, PieceName: "PieceName_synthetic_auto_1", PieceType: "Basic", PieceDesc: "PieceDesc_synthetic_auto_1", PieceGrade: 1, PieceLv: 1, ConnectTower: 7999, Portrait: "", PieceSprite: "synthetic_auto", "*": "", Desc: "검증 전용 신규 기물 Lv1" },
-    { PieceID: 8000, PieceName: "PieceName_synthetic_auto_1", PieceType: "Basic", PieceDesc: "PieceDesc_synthetic_auto_1", PieceGrade: 1, PieceLv: 2, ConnectTower: 8000, Portrait: "", PieceSprite: "synthetic_auto", "*": "", Desc: "검증 전용 신규 기물 Lv2" }
+    { PieceID: 8000, PieceName: "PieceName_synthetic_auto_1", PieceType: "Basic", PieceDesc: "PieceDesc_synthetic_auto_1", PieceGrade: 3, PieceLv: 2, ConnectTower: 8000, Portrait: "", PieceSprite: "synthetic_auto", "*": "", Desc: "검증 전용 신규 3성 기물 Lv2" }
   );
   designTables.PieceUpgradeData.push(
     { UpgradeID: 889991, PieceGroupID: "synthetic_auto", FromPieceID: 7999, ToPieceID: 8000, "*": "", Desc: "검증 전용 신규 기물 Lv1 -> Lv2" }
@@ -2542,6 +2560,12 @@ function validateSyntheticAutoAddRules() {
     pass("AUTO_ADD", "New PieceData rows auto-link to new TowerData rows");
   } else {
     fail("AUTO_ADD", "New PieceData rows failed tower link", `${piece?.connectTower} / ${upgradedPiece?.connectTower}`);
+  }
+
+  if (Number(upgradedPiece?.star) === 3) {
+    pass("AUTO_ADD", "New 3-star PieceData row auto-generates runtime piece");
+  } else {
+    fail("AUTO_ADD", "New 3-star PieceData row failed runtime star mapping", String(upgradedPiece?.star));
   }
 
   if (piece?.image === "assets/images/towers/synthetic_auto.png" && piece?.fallbackText) {

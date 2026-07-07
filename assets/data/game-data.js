@@ -657,8 +657,8 @@
   const loadout = {
     maxSlots: 6,
     defaultPieceKeys: [],
-    fallbackPieceKeys: ["basic_1", "scatter_1", "sniper_1", "breaker_1", "blast_1", "support_1"],
-    selectablePieceKeys: ["basic_1", "scatter_1", "sniper_1", "breaker_1", "blast_1", "support_1"],
+    fallbackPieceKeys: ["basic_1_1", "scatter_1_1", "sniper_1_1", "breaker_1_1", "blast_1_1", "support_1_1"],
+    selectablePieceKeys: ["basic_1_1", "scatter_1_1", "sniper_1_1", "breaker_1_1", "blast_1_1", "support_1_1"],
     startDeck: {
       setsPerPiece: 3,
       cellsPerSet: 3,
@@ -1403,6 +1403,7 @@
     })),
   );
   const defaultOwnedPieceIds = new Set(dataTablePieceFamilies.map((family) => family.pieceStart));
+  const DEFAULT_OWNED_MAX_PIECE_GRADE = 3;
 
   // PieceUpgradeData 원본형 행 데이터
   // - UpgradeID: 강화 규칙 고유 ID.
@@ -1539,12 +1540,12 @@
   ).map(applyTowerCombatDefaults);
 
   const generatedPieceRuntimeKeyMap = {
-    8001: "basic_1", 8002: "basic_2", 8003: "basic_3", 8004: "basic_4", 8005: "basic_5",
-    8006: "scatter_1", 8007: "scatter_2", 8008: "scatter_3", 8009: "scatter_4", 8010: "scatter_5",
-    8011: "sniper_1", 8012: "sniper_2", 8013: "sniper_3", 8014: "sniper_4", 8015: "sniper_5",
-    8016: "breaker_1", 8017: "breaker_2", 8018: "breaker_3", 8019: "breaker_4", 8020: "breaker_5",
-    8021: "blast_1", 8022: "blast_2", 8023: "blast_3", 8024: "blast_4", 8025: "blast_5",
-    8026: "support_1", 8027: "support_2", 8028: "support_3", 8029: "support_4", 8030: "support_5",
+    8001: "basic_1_1", 8002: "basic_1_2", 8003: "basic_1_3", 8004: "basic_1_4", 8005: "basic_1_5",
+    8006: "scatter_1_1", 8007: "scatter_1_2", 8008: "scatter_1_3", 8009: "scatter_1_4", 8010: "scatter_1_5",
+    8011: "sniper_1_1", 8012: "sniper_1_2", 8013: "sniper_1_3", 8014: "sniper_1_4", 8015: "sniper_1_5",
+    8016: "breaker_1_1", 8017: "breaker_1_2", 8018: "breaker_1_3", 8019: "breaker_1_4", 8020: "breaker_1_5",
+    8021: "blast_1_1", 8022: "blast_1_2", 8023: "blast_1_3", 8024: "blast_1_4", 8025: "blast_1_5",
+    8026: "support_1_1", 8027: "support_1_2", 8028: "support_1_3", 8029: "support_1_4", 8030: "support_1_5",
   };
 
   const generatedTowerRuntimeKeyMap = {
@@ -2008,9 +2009,10 @@
     const pieceMap = { ...(designRuntimeKeyMap.PieceData || {}) };
     (designTables.PieceData || []).forEach((row) => {
       const runtimeType = designPieceTypeToRuntime(row.PieceType);
+      const grade = Math.max(1, Math.floor(Number(row.PieceGrade) || 1));
       const level = Math.max(1, Math.floor(Number(row.PieceLv) || 1));
       if (runtimeType && row.PieceID !== "" && row.PieceID !== null && row.PieceID !== undefined) {
-        pieceMap[row.PieceID] = `${runtimeType}_${level}`;
+        pieceMap[row.PieceID] = `${runtimeType}_${grade}_${level}`;
       }
     });
     designRuntimeKeyMap.PieceData = pieceMap;
@@ -2473,6 +2475,15 @@
     return (raw * DESIGN_UNITY_RADIUS_UNIT_PX) / 2;
   }
 
+  function resolveDesignProjectileSize(value, projectileType, projectileDefaults = {}, linkedProjectile = {}) {
+    const fallbackRadius = Math.max(0, Number(linkedProjectile.radius || projectileDefaults.radius || 0));
+    const radius = normalizeDesignProjectileSize(value, fallbackRadius);
+    if (projectileType === "explode" && fallbackRadius > 0 && radius > fallbackRadius * 2) {
+      return fallbackRadius;
+    }
+    return radius;
+  }
+
   function resolveDesignSplashRadius(value, projectileDefaults = {}) {
     const raw = Math.max(0, Number(value) || 0);
     const radius = normalizeDesignSplashRadius(raw, 0);
@@ -2600,7 +2611,12 @@
       const aiType = designTowerAiTypeToRuntime(towerRow.TowerAiType, towerRow.TowerType);
       const projectileType = designProjectileTypeToRuntime(towerRow.ProjectileType || projectileRow?.ProjectileType);
       const projectileDefaults = getProjectileFillDefaults(projectileType, aiType);
-      const projectileSize = normalizeDesignProjectileSize(towerRow.ProjectileSize, Number(runtime.projectiles[projectileKey]?.radius || projectileDefaults.radius || 0));
+      const projectileSize = resolveDesignProjectileSize(
+        towerRow.ProjectileSize,
+        projectileType,
+        projectileDefaults,
+        runtime.projectiles[projectileKey],
+      );
       const pierceHits = Math.max(0, Math.floor(Number(towerRow.PiercingCount) || 0));
       const splashInfo = resolveDesignSplashRadius(towerRow.SplashRadius, projectileDefaults);
       const splashRadiusRaw = splashInfo.raw;
@@ -2684,18 +2700,20 @@
       const baseType = towerTypes[runtimeType] || {};
       const name = String(pieceRow.PieceName || "").trim() || baseType.name || pieceKey;
       const sprite = resolveDesignPieceSprite(pieceRow.PieceSprite || pieceRow.Portrait || baseType.image || "");
+      const pieceGrade = Math.max(1, Math.floor(Number(pieceRow.PieceGrade) || 1));
+      const pieceLevel = Math.max(1, Math.floor(Number(pieceRow.PieceLv) || 1));
       runtime.pieces[pieceKey] = {
         key: pieceKey,
         type: runtimeType,
-        star: Math.max(1, Math.floor(Number(pieceRow.PieceGrade) || 1)),
-        level: Math.max(1, Math.floor(Number(pieceRow.PieceLv) || 1)),
+        star: pieceGrade,
+        level: pieceLevel,
         name,
-        mark: `${baseType.mark || ""}${Math.max(1, Math.floor(Number(pieceRow.PieceGrade) || 1))}`,
+        mark: `${baseType.mark || ""}${pieceGrade}`,
         fallbackText: getDesignPieceFallbackText(name, pieceKey),
         connectTower: towerKey,
         image: sprite,
         portrait: sprite,
-        owned: defaultOwnedPieceIds.has(Number(pieceRow.PieceID)) || Math.max(1, Math.floor(Number(pieceRow.PieceLv) || 1)) === 1,
+        owned: defaultOwnedPieceIds.has(Number(pieceRow.PieceID)) || pieceGrade <= DEFAULT_OWNED_MAX_PIECE_GRADE,
         description: localizeDesignKey(pieceRow.PieceDesc, baseType.description || pieceRow.PieceDesc || ""),
         source: "designTables",
         design: {
@@ -2745,7 +2763,7 @@
         piece.prevPieceKey = pieces[index - 1]?.key || null;
         piece.nextPieceKey = Number(piece.level || 1) < 5 ? pieces[index + 1]?.key || null : null;
         piece.upgradeOnly = index > 0;
-        piece.owned = index === 0;
+        piece.owned = piece.owned === true || index === 0;
       });
     }
 
@@ -2758,8 +2776,8 @@
     const ownedSelectableKeys = selectablePieceKeys.filter((pieceKey) => pieceTowerTables.pieces[pieceKey]?.owned === true);
     const legacyFallbackKeys = (loadout.fallbackPieceKeys || []).filter((pieceKey) => selectablePieceKeys.includes(pieceKey));
     const fallbackPieceKeys = [
-      ...ownedSelectableKeys,
-      ...legacyFallbackKeys.filter((pieceKey) => !ownedSelectableKeys.includes(pieceKey)),
+      ...legacyFallbackKeys,
+      ...ownedSelectableKeys.filter((pieceKey) => !legacyFallbackKeys.includes(pieceKey)),
       ...selectablePieceKeys.filter((pieceKey) => !ownedSelectableKeys.includes(pieceKey) && !legacyFallbackKeys.includes(pieceKey)),
     ].slice(0, maxSlots);
 
@@ -3687,7 +3705,7 @@
       version: 1,
       currency: { gold: 1220, ticket: 5 },
       ownedPieces: [],
-      selectedLoadout: ["basic_1", "scatter_1", "sniper_1", "breaker_1", "blast_1", "support_1"],
+      selectedLoadout: ["basic_1_1", "scatter_1_1", "sniper_1_1", "breaker_1_1", "blast_1_1", "support_1_1"],
       selectedStageKey: "stage-1",
       clearedStages: {},
       bestScore: 0,
@@ -3740,6 +3758,8 @@
     pieceDefinitions: runtimePieceTowerTables.pieceDefinitions,
     gradeStats: {
       1: { damage: 1, fireRate: 1, range: 0, bulletBonus: 0 },
+      2: { damage: 1, fireRate: 1, range: 0, bulletBonus: 0 },
+      3: { damage: 1, fireRate: 1, range: 0, bulletBonus: 0 },
     },
     loadout: runtimeLoadout,
     fallbackLoadoutKeys: runtimeLoadout.fallbackPieceKeys,

@@ -2042,6 +2042,18 @@
         -webkit-text-stroke: 1px #050505;
       }
 
+      .selected-loadout-grade {
+        position: absolute;
+        top: 7%;
+        right: 7%;
+        z-index: 2;
+        color: #ffd83d;
+        font-size: var(--ui-font-xxs);
+        font-weight: 900;
+        line-height: 1;
+        -webkit-text-stroke: 1px #050505;
+      }
+
       .selected-loadout-art {
         position: absolute;
         left: 20%;
@@ -2083,11 +2095,11 @@
 
       .loadout-grid {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: clamp(16px, 5.2cqw, 24px) clamp(12px, 3.8cqw, 18px);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: clamp(34px, 9cqw, 46px) clamp(24px, 7cqw, 34px);
         height: 100%;
         overflow-y: auto;
-        padding: 0 clamp(6px, 2.4cqw, 10px) 38px;
+        padding: 0 clamp(16px, 4.8cqw, 24px) 72px;
         -webkit-overflow-scrolling: touch;
       }
 
@@ -2112,7 +2124,7 @@
       .loadout-piece {
         position: relative;
         width: 100%;
-        aspect-ratio: 1 / 1.24;
+        aspect-ratio: 1 / 1.16;
         min-height: 0;
         padding: 0;
         border: 0;
@@ -2231,7 +2243,7 @@
         position: absolute;
         left: 4%;
         right: 4%;
-        bottom: 17%;
+        bottom: 12%;
         z-index: 3;
         color: #fff;
         font-size: var(--ui-font-xs);
@@ -2246,14 +2258,36 @@
       .loadout-stars {
         position: absolute;
         right: 7%;
-        bottom: 31%;
+        bottom: 27%;
         z-index: 3;
-        display: grid;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
         gap: 1px;
         color: #ffd83d;
         font-size: var(--ui-font-xxs);
-        line-height: 0.78;
+        line-height: 1;
         text-shadow: 0 1px 0 #6a3600, 0 0 2px #111;
+      }
+
+      .loadout-star-label {
+        display: grid;
+        place-items: center;
+        min-width: 26px;
+        padding: 2px 4px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.72);
+        color: #fff;
+        font-size: var(--ui-font-xxs);
+        font-weight: 900;
+        line-height: 1;
+        -webkit-text-stroke: 1px #050505;
+      }
+
+      .loadout-star-icons {
+        display: none;
+        gap: 1px;
+        line-height: 0.78;
       }
 
       .loadout-cost {
@@ -2331,6 +2365,132 @@
 
       .loadout-piece.unowned .loadout-unowned {
         display: grid;
+      }
+
+      body.balance-mode .loadout-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 0 clamp(12px, 3.6cqw, 18px) 72px;
+      }
+
+      body.balance-mode .loadout-piece {
+        aspect-ratio: auto;
+        min-height: 64px;
+      }
+
+      body.balance-mode .loadout-piece-card.balance-list-card {
+        position: relative;
+        inset: auto;
+        display: grid;
+        grid-template-columns: 34px 48px minmax(0, 1fr) 58px;
+        align-items: center;
+        gap: 9px;
+        min-height: 64px;
+        padding: 7px 9px;
+        border-radius: 8px;
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 45%),
+          linear-gradient(180deg, #21354f, #101827);
+        overflow: hidden;
+      }
+
+      body.balance-mode .loadout-piece-card.balance-list-card::before,
+      body.balance-mode .loadout-piece-card.balance-list-card::after {
+        display: none;
+      }
+
+      body.balance-mode .loadout-piece.selected .balance-list-card {
+        background:
+          linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 45%),
+          linear-gradient(180deg, #294875, #12213a);
+      }
+
+      .balance-list-check {
+        display: grid;
+        place-items: center;
+        width: 30px;
+        height: 30px;
+        border: 3px solid currentColor;
+        border-radius: 7px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #101820;
+        font-size: 18px;
+        font-weight: 900;
+        line-height: 1;
+      }
+
+      .balance-list-art {
+        position: relative;
+        width: 46px;
+        height: 46px;
+        border: 2px solid rgba(255, 255, 255, 0.72);
+        border-radius: 7px;
+        background: rgba(255, 255, 255, 0.12);
+        overflow: hidden;
+      }
+
+      .balance-list-art .piece-icon {
+        position: absolute;
+        inset: 7%;
+      }
+
+      .balance-list-main {
+        display: grid;
+        gap: 4px;
+        min-width: 0;
+      }
+
+      .balance-list-main strong {
+        color: #fff;
+        font-size: var(--ui-font-sm);
+        line-height: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        -webkit-text-stroke: var(--ui-stroke-xs) #050505;
+      }
+
+      .balance-list-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+      }
+
+      .balance-list-meta span {
+        display: inline-grid;
+        place-items: center;
+        min-height: 18px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.62);
+        color: #fff;
+        font-size: var(--ui-font-xxs);
+        font-weight: 900;
+        line-height: 1;
+        -webkit-text-stroke: 1px #050505;
+      }
+
+      .balance-list-toggle {
+        display: grid;
+        place-items: center;
+        min-height: 42px;
+        border: 2px solid rgba(255, 255, 255, 0.72);
+        border-radius: 8px;
+        background: rgba(17, 40, 64, 0.86);
+        color: #fff;
+        font-size: var(--ui-font-xs);
+        font-weight: 900;
+        line-height: 1;
+        text-align: center;
+        -webkit-text-stroke: 1px #050505;
+      }
+
+      .loadout-piece.selected .balance-list-toggle {
+        background: #ffd83d;
+        color: #101820;
+        -webkit-text-stroke: 0;
       }
 
       #pieceInspectorOverlay {
@@ -4217,8 +4377,84 @@
           }, pieceKey);
           existingLevelByGroup.add(groupLevelKey);
         }
+
+        const balancePieceLevel = (piece) => Math.max(1, Math.floor(Number(piece?.level) || 1));
+        const balancePieceStar = (piece) => Math.max(1, Math.floor(Number(piece?.star) || 1));
+        const templateByTypeLevel = new Map();
+        for (const [pieceKey, piece] of Object.entries(PIECES)) {
+          const level = balancePieceLevel(piece);
+          if (!piece?.type || level > PIECE_MAX_LEVEL) continue;
+          const templateKey = `${piece.type}:${level}`;
+          const current = templateByTypeLevel.get(templateKey);
+          if (!current || balancePieceStar(piece) > balancePieceStar(current.piece)) {
+            templateByTypeLevel.set(templateKey, { key: pieceKey, piece });
+          }
+        }
+
+        const existingByTypeStarLevel = new Map();
+        for (const [pieceKey, piece] of Object.entries(PIECES)) {
+          const level = balancePieceLevel(piece);
+          if (!piece?.type || level > PIECE_MAX_LEVEL) continue;
+          existingByTypeStarLevel.set(`${piece.type}:${balancePieceStar(piece)}:${level}`, pieceKey);
+        }
+
+        for (const [templateKey, { piece: templatePiece }] of templateByTypeLevel.entries()) {
+          const [type, levelText] = templateKey.split(":");
+          const level = Math.max(1, Math.floor(Number(levelText) || 1));
+          for (let star = 1; star <= 3; star += 1) {
+            const groupId = `${type}_star_${star}`;
+            const existingKey = existingByTypeStarLevel.get(`${type}:${star}:${level}`);
+            const pieceKey = existingKey || `balance_${type}_star${star}_lv${level}`;
+            if (!existingKey) {
+              PIECES[pieceKey] = createRuntimePiece({
+                ...templatePiece,
+                key: pieceKey,
+                id: pieceKey,
+                star,
+                level,
+                mark: `${TOWER_TYPES[type]?.mark || templatePiece.mark || ""}${star}`,
+                connectTower: templatePiece.towerId || templatePiece.connectTower,
+                towerId: templatePiece.towerId || templatePiece.connectTower,
+                upgradeGroupId: groupId,
+                nextPieceKey: null,
+                prevPieceKey: null,
+                upgradeOnly: level > 1,
+                owned: true,
+                source: "balance-virtual-star",
+              }, pieceKey);
+            }
+            const piece = PIECES[pieceKey];
+            piece.upgradeGroupId = groupId;
+            piece.owned = true;
+            piece.upgradeOnly = level > 1;
+            piece.prevPieceKey = null;
+            piece.nextPieceKey = null;
+          }
+        }
+
+        const balanceStarGroups = new Map();
+        for (const [pieceKey, piece] of Object.entries(PIECES)) {
+          if (!piece?.upgradeGroupId || !String(piece.upgradeGroupId).includes("_star_")) continue;
+          if (!balanceStarGroups.has(piece.upgradeGroupId)) balanceStarGroups.set(piece.upgradeGroupId, []);
+          balanceStarGroups.get(piece.upgradeGroupId).push(pieceKey);
+        }
+        for (const groupKeys of balanceStarGroups.values()) {
+          groupKeys.sort((a, b) => balancePieceLevel(PIECES[a]) - balancePieceLevel(PIECES[b]));
+          groupKeys.forEach((pieceKey, index) => {
+            PIECES[pieceKey].prevPieceKey = groupKeys[index - 1] || null;
+            PIECES[pieceKey].nextPieceKey = groupKeys[index + 1] || null;
+          });
+        }
       }
       const PIECE_KEYS = Object.keys(PIECES);
+      const PIECE_TYPE_ORDER = (() => {
+        const order = new Map();
+        PIECE_KEYS.forEach((pieceKey) => {
+          const type = PIECES[pieceKey]?.type;
+          if (type && !order.has(type)) order.set(type, order.size);
+        });
+        return order;
+      })();
       const pieceImageCache = new Map();
       const projectileImageCache = new Map();
       const monsterImageCache = new Map();
@@ -4383,12 +4619,17 @@
       const configuredLoadoutGroups = new Set(
         CONFIGURED_SELECTABLE_PIECE_KEYS.map((pieceKey) => PIECES[pieceKey]?.upgradeGroupId || pieceKey),
       );
+      const getPieceDataLevel = (pieceKey) => Math.max(1, Math.floor(finiteNumber(PIECES[pieceKey]?.level, 1)));
+      const getPieceDataStar = (pieceKey) => Math.max(1, Math.floor(finiteNumber(PIECES[pieceKey]?.star, 1)));
       const SELECTABLE_PIECE_KEYS = BALANCE_DATA_ACTIVE
-        ? PIECE_KEYS.filter((pieceKey) => Math.max(1, Math.floor(Number(PIECES[pieceKey]?.level) || 1)) <= PIECE_MAX_LEVEL && configuredLoadoutGroups.has(PIECES[pieceKey]?.upgradeGroupId || pieceKey))
+        ? PIECE_KEYS.filter((pieceKey) => getPieceDataLevel(pieceKey) <= PIECE_MAX_LEVEL && getPieceDataStar(pieceKey) <= 3)
         : CONFIGURED_SELECTABLE_PIECE_KEYS;
+      const isBalanceRosterPiece = (pieceKey) => (
+        !BALANCE_DATA_ACTIVE
+        || (getPieceDataLevel(pieceKey) === 1 && getPieceDataStar(pieceKey) <= 3)
+      );
       const FALLBACK_LOADOUT_KEYS = requirePieceKeyList("loadout.fallbackPieceKeys", LOADOUT_DATA.fallbackPieceKeys);
       const DEFAULT_LOADOUT_KEYS = requirePieceKeyList("loadout.defaultPieceKeys", LOADOUT_DATA.defaultPieceKeys, { allowEmpty: true });
-      const getPieceDataLevel = (pieceKey) => Math.max(1, Math.floor(finiteNumber(PIECES[pieceKey]?.level, 1)));
       const getPieceGroupId = (pieceKey) => PIECES[pieceKey]?.upgradeGroupId || pieceKey;
       const PIECE_GROUPS = (() => {
         const groups = new Map();
@@ -4399,11 +4640,13 @@
           groups.get(groupId).push(pieceKey);
         }
         for (const groupKeys of groups.values()) {
-          groupKeys.sort((a, b) => getPieceDataLevel(a) - getPieceDataLevel(b));
+          groupKeys.sort((a, b) => getPieceDataStar(a) - getPieceDataStar(b) || getPieceDataLevel(a) - getPieceDataLevel(b));
         }
         return groups;
       })();
-      const TOTAL_PIECE_GROUP_COUNT = new Set(SELECTABLE_PIECE_KEYS.map(getPieceGroupId)).size;
+      const TOTAL_SELECTABLE_PIECE_COUNT = BALANCE_DATA_ACTIVE
+        ? SELECTABLE_PIECE_KEYS.filter(isBalanceRosterPiece).length
+        : SELECTABLE_PIECE_KEYS.length;
       const DEFAULT_SLOT_COUNT = requireFiniteDataNumber("constants.slotCount", GAME_CONSTANTS.slotCount);
       const DEFAULT_SLOT_SIZE = requireGameDataValue("constants.slotSize", GAME_CONSTANTS.slotSize, isDataObject, "object");
       requireFiniteDataNumber("constants.slotSize.width", DEFAULT_SLOT_SIZE.width);
@@ -4570,17 +4813,15 @@
       }
 
       function normalizeOwnedPieceKeys(keys, pieceLevels = {}) {
-        const resultByGroup = new Map();
+        const result = new Set();
         for (const pieceKey of normalizePieceKeys(keys, false)) {
           const groupId = getPieceGroupId(pieceKey);
           const savedLevel = finiteNumber(pieceLevels[pieceKey], getPieceDataLevel(pieceKey));
           const leveledKey = getPieceKeyForGroupLevel(groupId, savedLevel) || pieceKey;
-          const current = resultByGroup.get(groupId);
-          if (!current || getPieceDataLevel(leveledKey) > getPieceDataLevel(current)) {
-            resultByGroup.set(groupId, leveledKey);
-          }
+          result.add(pieceKey);
+          if (leveledKey) result.add(leveledKey);
         }
-        return [...resultByGroup.values()];
+        return [...result];
       }
 
       function normalizeLoadoutFromSources(sources, ownedPieceSet) {
@@ -5779,8 +6020,8 @@
         return SELECTABLE_PIECE_KEYS.filter((key) => PIECES[key]?.owned);
       }
 
-      function getOwnedPieceGroupCount() {
-        return new Set(getOwnedSelectablePieceKeys().map(getPieceGroupId)).size;
+      function getOwnedPieceCardCount() {
+        return getOwnedSelectablePieceKeys().filter(isBalanceRosterPiece).length;
       }
 
       function hasOwnedPieceGroup(groupId) {
@@ -5788,13 +6029,21 @@
       }
 
       function getVisibleSelectablePieceKeys() {
-        return SELECTABLE_PIECE_KEYS.filter((pieceKey) => {
+        const visibleKeys = SELECTABLE_PIECE_KEYS.filter((pieceKey) => {
           const piece = PIECES[pieceKey];
           if (!piece) return false;
+          if (!isBalanceRosterPiece(pieceKey)) return false;
           if (piece.owned) return true;
           if (piece.upgradeOnly) return false;
           return !hasOwnedPieceGroup(getPieceGroupId(pieceKey));
         });
+        if (!BALANCE_DATA_ACTIVE) return visibleKeys;
+        return visibleKeys.sort((a, b) => (
+          getPieceDataStar(a) - getPieceDataStar(b)
+          || (PIECE_TYPE_ORDER.get(PIECES[a]?.type) ?? 999) - (PIECE_TYPE_ORDER.get(PIECES[b]?.type) ?? 999)
+          || getPieceDataLevel(a) - getPieceDataLevel(b)
+          || a.localeCompare(b)
+        ));
       }
 
       function getVisibleOwnedPieceKeys() {
@@ -5816,7 +6065,8 @@
 
       function fillLoadoutKeys(keys) {
         const filled = uniqueValidPieceKeys(keys).slice(0, LOADOUT_PIECE_COUNT);
-        for (const key of getOwnedSelectablePieceKeys()) {
+        const fillSource = BALANCE_DATA_ACTIVE ? getVisibleOwnedPieceKeys() : getOwnedSelectablePieceKeys();
+        for (const key of fillSource) {
           if (filled.length >= LOADOUT_PIECE_COUNT) break;
           if (!filled.includes(key)) filled.push(key);
         }
@@ -6015,7 +6265,13 @@
         const active = getLobbyPieceKeys();
         const firstActive = active.find((key) => PIECES[key]?.owned);
         if (firstActive) return firstActive;
-        return getOwnedSelectablePieceKeys()[0] || null;
+        return (BALANCE_DATA_ACTIVE ? getVisibleOwnedPieceKeys() : getOwnedSelectablePieceKeys())[0] || null;
+      }
+
+      function getActivePieceKeyForGroup(pieceKey) {
+        if (!BALANCE_DATA_ACTIVE) return pieceKey;
+        const groupId = getPieceGroupId(pieceKey);
+        return getLobbyPieceKeys().find((key) => getPieceGroupId(key) === groupId && PIECES[key]?.owned) || pieceKey;
       }
 
       function setFocusedPieceKey(pieceKey) {
@@ -6070,6 +6326,11 @@
 
       function getStarStack(star) {
         return Array.from({ length: star }, () => "<span>★</span>").join("");
+      }
+
+      function getStarBadgeHtml(star) {
+        const safeStar = Math.max(1, Math.floor(Number(star) || 1));
+        return `<span class="loadout-star-label">${safeStar}성</span><span class="loadout-star-icons" aria-hidden="true">${getStarStack(safeStar)}</span>`;
       }
 
       function getPieceIconHtml(pieceKey, extraClass = "") {
@@ -6159,7 +6420,7 @@
         const selected = getLobbyPieceKeys().some((key) => getPieceGroupId(key) === getPieceGroupId(pieceKey));
         pieceInspectorArt.innerHTML = getPieceIconHtml(pieceKey, "piece-inspector-icon");
         pieceInspectorName.textContent = piece.name;
-        pieceInspectorType.textContent = `${piece.typeName} · AI ${piece.aiType} · 타겟 ${piece.targetPriority} · 투사체 ${piece.projectileType}`;
+        pieceInspectorType.textContent = `${getPieceStar(pieceKey)}성 · ${piece.typeName} · AI ${piece.aiType} · 타겟 ${piece.targetPriority} · 투사체 ${piece.projectileType}`;
         pieceInspectorLevel.textContent = `Lv${level} / ${maxLevel}`;
         pieceInspectorStats.innerHTML = `
           <p class="piece-inspector-meta">시트 TowerData 기준 기본 스탯</p>
@@ -6204,9 +6465,8 @@
         const groupId = getPieceGroupId(fromKey);
         updatePlayerProgress((save) => {
           const owned = new Set(save.ownedPieces || []);
-          for (const groupKey of getPieceGroupKeys(groupId)) owned.delete(groupKey);
-          owned.add(toKey);
-          save.ownedPieces = [...owned];
+          for (const groupKey of getPieceGroupKeys(groupId)) owned.add(groupKey);
+          save.ownedPieces = [...owned].filter((key) => PIECE_KEYS.includes(key) && SELECTABLE_PIECE_KEYS.includes(key));
           save.pieceLevels = save.pieceLevels || {};
           save.pieceLevels[toKey] = getPieceLevel(toKey);
           save.selectedLoadout = replacePieceByGroup(save.selectedLoadout || state.selectedPieceKeys, fromKey, toKey);
@@ -6253,10 +6513,31 @@
         const level = getPieceLevel(pieceKey);
         const star = getPieceStar(pieceKey);
         const owned = Boolean(piece.owned);
+        const activeKeys = getLobbyPieceKeys();
+        const selected = BALANCE_DATA_ACTIVE
+          ? activeKeys.some((key) => getPieceGroupId(key) === getPieceGroupId(pieceKey))
+          : activeKeys.includes(pieceKey);
+        if (BALANCE_DATA_ACTIVE) {
+          return `
+            <div class="loadout-piece-card balance-list-card">
+              <span class="balance-list-check" aria-hidden="true">${selected ? "✓" : ""}</span>
+              <span class="balance-list-art">${getPieceIconHtml(pieceKey, "loadout-art-icon")}</span>
+              <span class="balance-list-main">
+                <strong class="main-text">${piece.name}</strong>
+                <span class="balance-list-meta">
+                  <span>Lv${level}</span>
+                  <span>${star}성</span>
+                  <span>${typeMark}</span>
+                </span>
+              </span>
+              <span class="balance-list-toggle">${selected ? "해제" : "편성"}</span>
+            </div>
+          `;
+        }
         const upgradeCost = getPieceUpgradeCost(pieceKey);
         const unlockCost = getShopEntry(pieceKey).cost;
         const costText = EXHIBITION_BUILD.hideProgression
-          ? owned ? "기본 제공" : ""
+          ? ""
           : owned
             ? upgradeCost == null ? "MAX" : `${formatCurrency(upgradeCost)} G`
             : formatCost(unlockCost);
@@ -6266,8 +6547,8 @@
             <span class="loadout-type-badge main-text">${typeMark}</span>
             <span class="loadout-art">${getPieceIconHtml(pieceKey, "loadout-art-icon")}</span>
             <strong class="loadout-name main-text">${piece.name}</strong>
-            <span class="loadout-stars" aria-label="${star}성">${getStarStack(star)}</span>
-            <span class="loadout-cost main-text">${costText}</span>
+            <span class="loadout-stars" aria-label="${star}성">${getStarBadgeHtml(star)}</span>
+            ${costText ? `<span class="loadout-cost main-text">${costText}</span>` : ""}
             <span class="loadout-picked main-text">편성중</span>
             <span class="loadout-unowned main-text">보유 하지 않음</span>
           </div>
@@ -6294,6 +6575,7 @@
                 piece
                   ? `<span class="selected-loadout-card main-text" style="color:${piece.color}">
                       <small>Lv${getPieceLevel(pieceKey)}</small>
+                      <span class="selected-loadout-grade">${getPieceStar(pieceKey)}성</span>
                       <span class="selected-loadout-art">${getPieceIconHtml(pieceKey, "selected-loadout-art-icon")}</span>
                       <strong>${piece.name}</strong>
                     </span>`
@@ -6566,7 +6848,7 @@
           if (shopGrid) shopGrid.replaceChildren();
           return;
         }
-        if (shopOwnedText) shopOwnedText.textContent = `보유 ${getOwnedPieceGroupCount()}/${TOTAL_PIECE_GROUP_COUNT}명`;
+        if (shopOwnedText) shopOwnedText.textContent = `보유 ${getOwnedPieceCardCount()}/${TOTAL_SELECTABLE_PIECE_COUNT}명`;
         if (!shopGrid) return;
         shopGrid.replaceChildren(
           ...getShopItems().map(({ pieceKey, entry }) => {
@@ -6637,7 +6919,7 @@
         const focusedKey = getFocusedPieceKey();
         state.focusedPieceKey = focusedKey;
         loadoutCountText.textContent = getLoadoutTitle(activeKeys);
-        const ownedPieceCount = getOwnedPieceGroupCount();
+        const ownedPieceCount = getOwnedPieceCardCount();
         if (ownedCountText) ownedCountText.textContent = `보유한 총알소녀 (${ownedPieceCount}명)`;
         if (enhancePieceButton) {
           const piece = PIECES[focusedKey];
@@ -6685,10 +6967,12 @@
         };
         const createLoadoutPieceButton = (pieceKey) => {
             const piece = PIECES[pieceKey];
-            const selected = activeKeys.includes(pieceKey);
+            const selected = BALANCE_DATA_ACTIVE
+              ? activeKeys.some((key) => getPieceGroupId(key) === getPieceGroupId(pieceKey))
+              : activeKeys.includes(pieceKey);
             const unowned = !piece.owned;
             const affordable = unowned ? canAfford(getShopEntry(pieceKey).cost) : true;
-            const locked = !unowned && (activeKeys.length >= LOADOUT_PIECE_COUNT && !selected);
+            const locked = !BALANCE_DATA_ACTIVE && !unowned && (activeKeys.length >= LOADOUT_PIECE_COUNT && !selected);
             const button = document.createElement("button");
             button.className = `loadout-piece ${selected ? "selected" : ""} ${pieceKey === focusedKey ? "focused" : ""} ${locked || (unowned && !affordable) ? "locked" : ""} ${unowned ? "unowned" : ""}`;
             button.type = "button";
@@ -6696,9 +6980,13 @@
             button.style.color = piece.color;
             button.setAttribute("aria-label", unowned ? `${piece.name} 구매` : BALANCE_DATA_ACTIVE ? `${piece.name} 정보 보기` : `${piece.name} 편성`);
             button.innerHTML = getPieceCardHtml(pieceKey);
-            button.addEventListener("click", () => {
+            button.addEventListener("click", (event) => {
               if (unowned) acquirePiece(pieceKey);
-              else if (BALANCE_DATA_ACTIVE) openPieceInspector(pieceKey);
+              else if (BALANCE_DATA_ACTIVE) {
+                const toggleTarget = event.target instanceof Element && event.target.closest(".balance-list-toggle, .balance-list-check");
+                if (toggleTarget) toggleLoadoutPiece(pieceKey);
+                else openPieceInspector(getActivePieceKeyForGroup(pieceKey));
+              }
               else toggleLoadoutPiece(pieceKey);
             });
             return button;
@@ -6723,9 +7011,14 @@
         }
         setFocusedPieceKey(pieceKey);
         const activeKeys = getLobbyPieceKeys();
-        if (activeKeys.includes(pieceKey)) {
-          state.selectedPieceKeys = activeKeys.filter((key) => key !== pieceKey);
-          if (state.focusedPieceKey === pieceKey) state.focusedPieceKey = state.selectedPieceKeys[0] || pieceKey;
+        const activeGroupKey = BALANCE_DATA_ACTIVE
+          ? activeKeys.find((key) => getPieceGroupId(key) === getPieceGroupId(pieceKey))
+          : null;
+        if (activeKeys.includes(pieceKey) || activeGroupKey) {
+          state.selectedPieceKeys = BALANCE_DATA_ACTIVE
+            ? activeKeys.filter((key) => getPieceGroupId(key) !== getPieceGroupId(pieceKey))
+            : activeKeys.filter((key) => key !== pieceKey);
+          if (state.focusedPieceKey === pieceKey || state.focusedPieceKey === activeGroupKey) state.focusedPieceKey = state.selectedPieceKeys[0] || pieceKey;
         } else {
           if (activeKeys.length >= LOADOUT_PIECE_COUNT) {
             log(`출전 기물은 ${LOADOUT_PIECE_COUNT}개까지입니다. 선택된 기물을 눌러 해제하세요`);
