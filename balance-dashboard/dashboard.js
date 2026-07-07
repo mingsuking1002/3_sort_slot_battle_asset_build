@@ -5,8 +5,11 @@
   const generatedBalance = generated?.valid && generated?.designTables
     ? {
       contractVersion: generated.contractVersion,
+      balanceVersion: generated.balanceVersion || generated.contractVersion,
+      balanceVersionCell: generated.balanceVersionCell || "",
+      balanceVersionSource: generated.balanceVersionSource || "",
       generatedAt: generated.generatedAt,
-      snapshotId: `${generated.contractVersion || "generated"}@${generated.generatedAt || ""}`,
+      snapshotId: `${generated.balanceVersion || generated.contractVersion || "generated"}@${generated.generatedAt || ""}`,
       spreadsheetId: generated.spreadsheetId,
       tables: generated.designTables,
     }
@@ -164,6 +167,11 @@
     return row.balance_snapshot_id || "legacy";
   }
 
+  function sessionBalanceVersion(row) {
+    const payload = safeJson(row.payload_json, {});
+    return row.balance_version || payload.balanceVersion || row.build_version || row.balance_snapshot_id || "unknown";
+  }
+
   function sessionStage(row) {
     return row.bot_stage_key || row.stage_key || "unknown";
   }
@@ -222,7 +230,7 @@
   }
 
   function sessionBuild(row) {
-    return row.build_version || "unknown";
+    return sessionBalanceVersion(row);
   }
 
   function sessionSource(row) {
@@ -433,7 +441,7 @@
   }
 
   function versionKeyOf(row) {
-    return `${sessionBuild(row)}\n${sessionSnapshot(row)}`;
+    return sessionBalanceVersion(row);
   }
 
   function sessionsForVersion(versionRow) {
@@ -817,7 +825,7 @@
   function initControls() {
     fillSelect("#filter-source", unique(sessions.map(sessionSource)), "전체 표본");
     fillSelect("#filter-sim-version", unique(sessions.map(sessionSimulationVersion)), "전체 버전");
-    fillSelect("#filter-build", unique(sessions.map(sessionBuild)), "전체 빌드");
+    fillSelect("#filter-build", unique(sessions.map(sessionBuild)), "전체 밸런스 버전");
     fillSelect("#filter-snapshot", unique(sessions.map(sessionSnapshot)), "전체 스냅샷");
     fillSelect("#filter-stage", unique(sessions.map(sessionStage)), "전체 스테이지");
     fillSelect("#filter-skill-profile", SKILL_KEYS, "전체 숙련도", (value) => SKILL_META[value]?.label || value);
@@ -1179,6 +1187,7 @@
         event_id: event.event_id,
         build_version: event.build_version,
         balance_snapshot_id: event.balance_snapshot_id || "legacy",
+        balance_version: event.balance_version || event.build_version || event.balance_snapshot_id || "legacy",
         stage_key: event.stage_key,
         wave: payload.wave || event.wave,
         wave_ordinal: payload.waveOrdinal || event.wave_ordinal,
@@ -1217,6 +1226,7 @@
         event_id: event.event_id,
         build_version: event.build_version,
         balance_snapshot_id: event.balance_snapshot_id || "legacy",
+        balance_version: event.balance_version || event.build_version || event.balance_snapshot_id || "legacy",
         piece_key: piece.pieceKey || "",
         piece_name: piece.pieceName || "",
         tower_id: piece.towerId || "",
@@ -1237,6 +1247,7 @@
         event_id: event.event_id,
         build_version: event.build_version,
         balance_snapshot_id: event.balance_snapshot_id || "legacy",
+        balance_version: event.balance_version || event.build_version || event.balance_snapshot_id || "legacy",
         stage_key: event.stage_key,
         wave_ordinal: payload.waveOrdinal || event.wave_ordinal,
         piece_key: piece.pieceKey || "",
@@ -1266,6 +1277,7 @@
         event_id: event.event_id,
         build_version: event.build_version,
         balance_snapshot_id: event.balance_snapshot_id || "legacy",
+        balance_version: event.balance_version || event.build_version || event.balance_snapshot_id || "legacy",
         stage_key: event.stage_key,
         wave_ordinal: event.wave_ordinal,
         perk_id: perk.id || "",
@@ -1290,6 +1302,7 @@
         event_id: event.event_id,
         build_version: event.build_version,
         balance_snapshot_id: event.balance_snapshot_id || "legacy",
+        balance_version: event.balance_version || event.build_version || event.balance_snapshot_id || "legacy",
         stage_key: event.stage_key,
         wave_ordinal: payload.waveOrdinal || event.wave_ordinal,
         source,
@@ -2158,13 +2171,13 @@
   function getVersionRows() {
     const groups = new Map();
     for (const row of sessions) {
-      const key = `${sessionBuild(row)}\n${sessionSnapshot(row)}`;
+      const key = sessionBalanceVersion(row);
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(row);
     }
     const rows = [...groups.entries()].map(([key, items]) => ({
       key,
-      build: sessionBuild(items[0]),
+      build: sessionBalanceVersion(items[0]),
       snapshot: sessionSnapshot(items[0]),
       sessions: items.length,
       clearRate: items.filter((row) => row.result === "clear").length / items.length,
@@ -2172,7 +2185,7 @@
       sorts: average(items, (row) => row.sort_successes),
       slotHp: average(items, (row) => row.slot_hp_ratio_avg),
       duration: average(items, (row) => number(row.duration_ms) / 1000),
-    })).sort((a, b) => String(a.snapshot).localeCompare(String(b.snapshot)));
+    })).sort((a, b) => String(a.build).localeCompare(String(b.build), "ko") || String(a.snapshot).localeCompare(String(b.snapshot)));
     rows.forEach((row, index) => {
       const previous = rows[index - 1];
       row.previous = previous || null;
@@ -2239,7 +2252,7 @@
     if (!rows.length) return empty();
     const displayRows = rows.slice().reverse();
     return `<section class="chart-grid">
-      ${chartPanel("버전별 평균 도달 웨이브", "빌드/스냅샷 조합별 비교", horizontalBarChart(displayRows, {
+      ${chartPanel("버전별 평균 도달 웨이브", "밸런스 버전별 비교", horizontalBarChart(displayRows, {
         value: (item) => item.wave,
         label: (item) => item.build,
         color: () => "#276dcc",
@@ -2277,8 +2290,8 @@
         labelLength: 18,
       }), "wide-chart")}
     </section>
-    <section class="section">${sectionTitle("빌드·밸런스 스냅샷 비교", "필터와 무관한 전체 버전")}
-      <div class="table-wrap"><table><thead><tr><th>빌드</th><th>스냅샷</th><th>세션</th><th>클리어율</th><th>Δ 클리어율</th><th>평균 도달</th><th>Δ 도달</th><th>평균 소팅</th><th>Δ 소팅</th><th>종료 슬롯 체력</th><th>Δ 슬롯 체력</th><th>플레이 시간</th></tr></thead><tbody>
+    <section class="section">${sectionTitle("밸런스 버전 비교", "필터와 무관한 전체 버전")}
+      <div class="table-wrap"><table><thead><tr><th>밸런스 버전</th><th>스냅샷</th><th>세션</th><th>클리어율</th><th>Δ 클리어율</th><th>평균 도달</th><th>Δ 도달</th><th>평균 소팅</th><th>Δ 소팅</th><th>종료 슬롯 체력</th><th>Δ 슬롯 체력</th><th>플레이 시간</th></tr></thead><tbody>
       ${displayRows.map((row) => `<tr><td>${escape(row.build)}</td><td>${escape(row.snapshot)}</td><td>${row.sessions}</td><td>${percent(row.clearRate)}</td><td class="${row.clearDelta > 0 ? "positive" : row.clearDelta < 0 ? "negative" : ""}">${row.previous ? percent(row.clearDelta) : "-"}</td><td>${format(row.wave, 1)}</td><td class="${row.waveDelta > 0 ? "positive" : row.waveDelta < 0 ? "negative" : ""}">${row.previous ? `${row.waveDelta >= 0 ? "+" : ""}${format(row.waveDelta, 2)}` : "-"}</td><td>${format(row.sorts, 1)}</td><td>${row.previous ? `${row.sortDelta >= 0 ? "+" : ""}${format(row.sortDelta, 2)}` : "-"}</td><td>${percent(row.slotHp)}</td><td>${row.previous ? percent(row.slotHpDelta) : "-"}</td><td>${format(row.duration, 1)}초</td></tr>`).join("")}
       </tbody></table></div></section>
     <section class="section">${sectionTitle("최신 데이터 테이블 변경 상세", changes.before ? `${changes.rows.length}개 변경 · 최근 ${changes.history.length}개 스냅샷 보관` : "스냅샷 2개부터 자동 표시")}
@@ -2371,8 +2384,8 @@
       }))}
     </section>
     <section class="section">${sectionTitle("플레이 세션", `${rows.length}건`)}
-      <div class="table-wrap"><table><thead><tr><th>종료 시각</th><th>세션 ID</th><th>표본</th><th>숙련/시나리오</th><th>스테이지</th><th>조합</th><th>결과</th><th>빌드</th><th>도달</th><th>소팅</th><th>최대 콤보</th><th>피해량</th><th>슬롯 체력</th><th>기물</th><th>특전</th></tr></thead><tbody>
-      ${rows.map((row) => `<tr><td>${escape(row.event_at || row.received_at)}</td><td>${escape(String(row.session_id || "").slice(0, 12))}</td><td>${escape(sessionSource(row))}</td><td>${escape(sessionSkillDisplay(row))}</td><td>${escape(sessionStage(row))}</td><td>${escape(clip(sessionLoadoutLabel(row), 42))}</td><td>${escape(row.result)}</td><td>${escape(row.build_version)}</td><td>${format(row.reached_wave)}</td><td>${format(row.sort_successes)} / ${format(row.sort_attempts)}${Number.isFinite(sessionSortInterval(row)) ? ` · ${format(sessionSortInterval(row), 2)}초` : ""}</td><td>${format(row.max_combo)}</td><td>${format(row.damage_done)}</td><td>${percent(row.slot_hp_ratio_avg)}</td><td>${escape(row.selected_pieces)}</td><td>${escape(row.picked_perks)}</td></tr>`).join("")}
+      <div class="table-wrap"><table><thead><tr><th>종료 시각</th><th>세션 ID</th><th>표본</th><th>숙련/시나리오</th><th>스테이지</th><th>조합</th><th>결과</th><th>밸런스 버전</th><th>도달</th><th>소팅</th><th>최대 콤보</th><th>피해량</th><th>슬롯 체력</th><th>기물</th><th>특전</th></tr></thead><tbody>
+      ${rows.map((row) => `<tr><td>${escape(row.event_at || row.received_at)}</td><td>${escape(String(row.session_id || "").slice(0, 12))}</td><td>${escape(sessionSource(row))}</td><td>${escape(sessionSkillDisplay(row))}</td><td>${escape(sessionStage(row))}</td><td>${escape(clip(sessionLoadoutLabel(row), 42))}</td><td>${escape(row.result)}</td><td>${escape(sessionBalanceVersion(row))}</td><td>${format(row.reached_wave)}</td><td>${format(row.sort_successes)} / ${format(row.sort_attempts)}${Number.isFinite(sessionSortInterval(row)) ? ` · ${format(sessionSortInterval(row), 2)}초` : ""}</td><td>${format(row.max_combo)}</td><td>${format(row.damage_done)}</td><td>${percent(row.slot_hp_ratio_avg)}</td><td>${escape(row.selected_pieces)}</td><td>${escape(row.picked_perks)}</td></tr>`).join("")}
       </tbody></table></div></section>`;
   }
 

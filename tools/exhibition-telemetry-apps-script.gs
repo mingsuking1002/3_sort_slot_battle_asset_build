@@ -75,6 +75,7 @@ const EVENT_HEADERS = [
   "invalid_sort_attempts",
   "sort_interval_avg",
   "sort_interval_stddev",
+  "balance_version",
 ];
 
 const EVENT_DESCRIPTIONS = [
@@ -146,6 +147,7 @@ const EVENT_DESCRIPTIONS = [
   "실행되지 못한 소팅 명령 횟수",
   "실제 소팅 시도 사이 평균 간격(게임 진행 초)",
   "소팅 시도 간격의 표준편차(초)",
+  "데이터 테이블 T69에서 읽은 밸런스 버전",
 ];
 
 const SESSION_HEADERS = [
@@ -217,6 +219,7 @@ const SESSION_HEADERS = [
   "invalid_sort_attempts",
   "sort_interval_avg",
   "sort_interval_stddev",
+  "balance_version",
 ];
 
 const SESSION_DESCRIPTIONS = [
@@ -288,6 +291,7 @@ const SESSION_DESCRIPTIONS = [
   "실행되지 못한 소팅 명령 횟수",
   "실제 소팅 시도 사이 평균 간격(게임 진행 초)",
   "소팅 시도 간격의 표준편차(초)",
+  "데이터 테이블 T69에서 읽은 밸런스 버전",
 ];
 
 const PIECE_DAMAGE_HEADERS = [
@@ -316,6 +320,7 @@ const PIECE_DAMAGE_HEADERS = [
   "hits",
   "healing_done",
   "overdrive_damage",
+  "balance_version",
 ];
 
 const PIECE_DAMAGE_DESCRIPTIONS = [
@@ -344,6 +349,7 @@ const PIECE_DAMAGE_DESCRIPTIONS = [
   "이 기물의 명중 횟수",
   "이 기물의 실제 회복량",
   "탄배출로 준 피해량",
+  "데이터 테이블 T69에서 읽은 밸런스 버전",
 ];
 
 const WAVE_STATS_HEADERS = [
@@ -352,7 +358,7 @@ const WAVE_STATS_HEADERS = [
   "enemy_defeated", "remaining_enemy_count", "sort_attempts", "sort_successes",
   "sort_failures", "repair_count", "repair_heal_total", "slot_damage_taken", "max_combo",
   "piece_damage", "system_damage", "alive_slot_count", "destroyed_slot_count",
-  "slot_hp_total", "slot_hp_ratio_avg", "tower_composition", "payload_json",
+  "slot_hp_total", "slot_hp_ratio_avg", "tower_composition", "payload_json", "balance_version",
 ];
 const WAVE_STATS_DESCRIPTIONS = [
   "서버 수신 시각", "플레이 세션 ID", "원본 웨이브 종료 이벤트 ID", "빌드 버전", "밸런스 스냅샷 ID",
@@ -361,40 +367,45 @@ const WAVE_STATS_DESCRIPTIONS = [
   "해당 웨이브 소팅 시도", "해당 웨이브 소팅 성공", "해당 웨이브 소팅 실패", "해당 웨이브 수리 소팅",
   "해당 웨이브 수리 회복량", "해당 웨이브 슬롯 피격 피해", "당시 세션 최대 콤보", "기물 피해 합계",
   "시스템 피해 합계", "생존 슬롯 수", "파괴 슬롯 수", "슬롯 체력 합", "슬롯 평균 체력 비율",
-  "웨이브 종료 시 포탑 구성", "웨이브 상세 원본 JSON",
+  "웨이브 종료 시 포탑 구성", "웨이브 상세 원본 JSON", "데이터 테이블 T69에서 읽은 밸런스 버전",
 ];
 
 const PIECE_WAVE_STATS_HEADERS = [
   "received_at", "session_id", "event_id", "build_version", "balance_snapshot_id", "stage_key",
   "wave_ordinal", "piece_key", "piece_name", "tower_id", "tower_type", "tower_level",
   "tower_created", "tower_queued", "active_sec", "attacks_fired", "projectiles_fired",
-  "hits", "damage_done", "healing_done", "overdrive_damage",
+  "hits", "damage_done", "healing_done", "overdrive_damage", "balance_version",
 ];
 const PIECE_WAVE_STATS_DESCRIPTIONS = [
   "서버 수신 시각", "플레이 세션 ID", "원본 웨이브 종료 이벤트 ID", "빌드 버전", "밸런스 스냅샷 ID",
   "스테이지 키", "스테이지 기준 웨이브 순서", "기물 키", "기물 이름", "TowerData ID", "TowerType",
   "플레이 당시 레벨", "웨이브 포탑 생성", "웨이브 포탑 대기열 등록", "웨이브 가동 초", "웨이브 공격 횟수",
   "웨이브 투사체 수", "웨이브 명중 수", "웨이브 피해", "웨이브 회복", "웨이브 탄배출 피해",
+  "데이터 테이블 T69에서 읽은 밸런스 버전",
 ];
 
 const PERK_OPTIONS_HEADERS = [
   "received_at", "session_id", "event_id", "build_version", "balance_snapshot_id", "stage_key",
   "wave_ordinal", "perk_id", "perk_title", "rarity", "target_type", "label", "selected",
+  "balance_version",
 ];
 const PERK_OPTIONS_DESCRIPTIONS = [
   "서버 수신 시각", "플레이 세션 ID", "특전 선택 이벤트 ID", "빌드 버전", "밸런스 스냅샷 ID",
   "스테이지 키", "제시 당시 웨이브", "특전 ID", "특전 이름", "희귀도", "적용 대상", "효과 요약",
   "이 선택지의 실제 선택 여부",
+  "데이터 테이블 T69에서 읽은 밸런스 버전",
 ];
 
 const SYSTEM_STATS_HEADERS = [
   "received_at", "session_id", "event_id", "build_version", "balance_snapshot_id", "stage_key",
   "wave_ordinal", "source", "activation_count", "projectiles", "ammo_spent", "damage_done",
+  "balance_version",
 ];
 const SYSTEM_STATS_DESCRIPTIONS = [
   "서버 수신 시각", "플레이 세션 ID", "원본 웨이브 종료 이벤트 ID", "빌드 버전", "밸런스 스냅샷 ID",
   "스테이지 키", "스테이지 기준 웨이브 순서", "시스템 공격 종류", "사용 횟수", "생성 투사체 수",
   "소모 탄약", "해당 웨이브 시스템 피해",
+  "데이터 테이블 T69에서 읽은 밸런스 버전",
 ];
 
 function doGet() {
@@ -496,7 +507,13 @@ function parseRequestPayload_(e) {
 }
 
 function normalizeEvents_(payload) {
-  if (Array.isArray(payload && payload.events)) return payload.events.filter(Boolean);
+  if (Array.isArray(payload && payload.events)) {
+    return payload.events.filter(Boolean).map((event) => ({
+      ...event,
+      buildVersion: event.buildVersion || payload.buildVersion,
+      balanceVersion: event.balanceVersion || payload.balanceVersion,
+    }));
+  }
   if (payload && payload.eventType) return [payload];
   return [];
 }
@@ -541,6 +558,11 @@ function getEventContext_(event) {
     text_(event.balanceSnapshotId),
     text_(event.stageKey),
   ];
+}
+
+function balanceVersion_(event) {
+  const payload = event.payload || {};
+  return text_(event.balanceVersion || payload.balanceVersion || event.buildVersion || event.balanceSnapshotId);
 }
 
 function toEventRow_(event, receivedAt) {
@@ -614,6 +636,7 @@ function toEventRow_(event, receivedAt) {
     number_(event.invalidSortAttempts),
     number_(event.sortIntervalAvg),
     number_(event.sortIntervalStddev),
+    balanceVersion_(event),
   ];
 }
 
@@ -692,6 +715,7 @@ function toSessionRow_(event, receivedAt) {
     number_(event.invalidSortAttempts),
     number_(event.sortIntervalAvg),
     number_(event.sortIntervalStddev),
+    balanceVersion_(event),
   ];
 }
 
@@ -741,6 +765,7 @@ function toPieceDamageRows_(event, receivedAt) {
       number_(pieceStats.hits),
       number_(pieceStats.healingDone),
       number_(pieceStats.overdriveDamage),
+      balanceVersion_(event),
     ];
   });
 }
@@ -773,6 +798,7 @@ function toWaveStatsRow_(event, receivedAt) {
     number_(slotHp.slotHpRatioAvg),
     formatTowerComposition_(payload.towerComposition),
     json_(payload),
+    balanceVersion_(event),
   ];
 }
 
@@ -796,6 +822,7 @@ function toPieceWaveStatsRows_(event, receivedAt) {
     number_(piece.damageDone),
     number_(piece.healingDone),
     number_(piece.overdriveDamage),
+    balanceVersion_(event),
   ]);
 }
 
@@ -813,6 +840,7 @@ function toPerkOptionRows_(event, receivedAt) {
     text_(perk.targetType),
     text_(perk.label),
     text_(perk.id) === pickedId,
+    balanceVersion_(event),
   ]);
 }
 
@@ -834,6 +862,7 @@ function toSystemStatsRows_(event, receivedAt) {
     number_(activations[source] && activations[source].projectiles),
     number_(activations[source] && activations[source].ammoSpent),
     number_(damage[source]),
+    balanceVersion_(event),
   ]);
 }
 

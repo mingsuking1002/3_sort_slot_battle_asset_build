@@ -6,6 +6,7 @@ import { GAME_DATA_SCHEMA, GAME_DATA_TABLE_ORDER } from "./game-data-schema.mjs"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, "..");
+const BALANCE_VERSION_CELL = "T69";
 
 function parseArgs(argv) {
   const options = {
@@ -270,6 +271,61 @@ function parseSpreadsheetId(value) {
   return spreadsheetId;
 }
 
+function normalizeBalanceVersion(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const semverMatch = raw.match(/\d+(?:\.\d+){1,3}/);
+  if (semverMatch) return semverMatch[0];
+  return raw.replace(/^밸런스\s*버전\s*/i, "").trim();
+}
+
+function extractBalanceVersionFromCsv(csvText) {
+  const rows = parseCsv(csvText);
+  const direct = normalizeBalanceVersion(rows[0]?.[0]);
+  if (direct) return direct;
+  const t69 = normalizeBalanceVersion(rows[68]?.[19]);
+  if (t69) return t69;
+  for (const row of rows) {
+    for (const cell of row) {
+      const normalized = normalizeBalanceVersion(cell);
+      if (/밸런스\s*버전/i.test(String(cell || "")) && normalized) return normalized;
+    }
+  }
+  return "";
+}
+
+async function fetchGoogleSheetBalanceMetadata(sheetUrl, issues) {
+  const spreadsheetId = parseSpreadsheetId(sheetUrl);
+  const urls = [
+    `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&range=${encodeURIComponent(BALANCE_VERSION_CELL)}`,
+    `https://docs.google.com/spreadsheets/d/${spreadsheetId}/gviz/tq?tqx=out:csv&gid=0&range=${encodeURIComponent(BALANCE_VERSION_CELL)}`,
+  ];
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, { redirect: "follow" });
+      if (!response.ok) continue;
+      const csvText = await response.text();
+      if (/^\s*<!doctype html/i.test(csvText) || /^\s*<html/i.test(csvText)) continue;
+      const balanceVersion = extractBalanceVersionFromCsv(csvText);
+      if (balanceVersion) {
+        return {
+          balanceVersion,
+          balanceVersionCell: BALANCE_VERSION_CELL,
+          balanceVersionSource: `Google Sheet ${BALANCE_VERSION_CELL}`,
+        };
+      }
+    } catch {
+      // Table sync still has enough information to proceed without this metadata.
+    }
+  }
+  issues.push({
+    severity: "WARN",
+    table: "metadata",
+    message: `밸런스 버전 셀(${BALANCE_VERSION_CELL})을 읽지 못했습니다. 로그는 계약 버전으로 fallback됩니다.`,
+  });
+  return { balanceVersion: "", balanceVersionCell: BALANCE_VERSION_CELL, balanceVersionSource: "" };
+}
+
 async function fetchGoogleSheetTables(sheetUrl, issues) {
   const spreadsheetId = parseSpreadsheetId(sheetUrl);
   const sheetSource = Object.values(GAME_DATA_SCHEMA.sources || {}).find(
@@ -344,6 +400,7 @@ async function buildCandidate(gameData, options, issues) {
   const candidate = { schemaVersion: GAME_DATA_SCHEMA.version };
   const sourceInfo = {};
   const parsedByTable = new Map();
+  let metadata = { balanceVersion: "", balanceVersionCell: "", balanceVersionSource: "" };
 
   if (options.inputDir) {
     const tableFiles = new Map();
@@ -378,6 +435,7 @@ async function buildCandidate(gameData, options, issues) {
   if (options.sheetUrl) {
     const sheetTables = await fetchGoogleSheetTables(options.sheetUrl, issues);
     for (const [tableName, parsed] of sheetTables) parsedByTable.set(tableName, parsed);
+    metadata = await fetchGoogleSheetBalanceMetadata(options.sheetUrl, issues);
   }
 
   for (const tableName of GAME_DATA_TABLE_ORDER) {
@@ -419,7 +477,7 @@ async function buildCandidate(gameData, options, issues) {
     };
   }
 
-  return { candidate, sourceInfo };
+  return { candidate, sourceInfo, metadata };
 }
 
 function applyBalanceProfileAdapters(candidate, sourceInfo, issues) {
@@ -850,7 +908,7 @@ function markdownCell(value) {
   return String(value ?? "").replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
 }
 
-function renderReport({ options, candidate, sourceInfo, issues, tableSummaries, diff }) {
+function renderReport({ options, candidate, sourceInfo, metadata, issues, tableSummaries, diff }) {
   const counts = issues.reduce((result, issue) => {
     result[issue.severity] = (result[issue.severity] || 0) + 1;
     return result;
@@ -866,6 +924,7 @@ function renderReport({ options, candidate, sourceInfo, issues, tableSummaries, 
     `- 계약 버전: \`${GAME_DATA_SCHEMA.version}\``,
     `- 데이터 프로필: \`${GAME_DATA_SCHEMA.profile}\` (밸런스 허용 목록)`,
     `- 데이터 버전: \`${candidate.schemaVersion}\``,
+    `- 밸런스 버전: \`${metadata?.balanceVersion || "fallback"}\`${metadata?.balanceVersionCell ? ` (${metadata.balanceVersionCell})` : ""}`,
     `- 실행 모드: \`${modeLabel}\``,
     "- 런타임 연결: **기본 실행 모드** (유효한 생성 스냅샷을 항상 적용)",
     "- 거리/반지름 단위: **데이터 테이블은 Unity unit 원본값으로 파싱**하고, 런타임/대시보드에서만 `u * 128px`로 환산합니다.",
@@ -960,10 +1019,13 @@ function getGeneratedBalanceTables(candidate) {
   return output;
 }
 
-function renderGeneratedJs(candidate, sourceInfo) {
+function renderGeneratedJs(candidate, sourceInfo, metadata = {}) {
   const source = getGeneratedSourceMetadata(sourceInfo);
   const payload = {
     contractVersion: GAME_DATA_SCHEMA.version,
+    balanceVersion: metadata.balanceVersion || GAME_DATA_SCHEMA.version,
+    balanceVersionCell: metadata.balanceVersionCell || "",
+    balanceVersionSource: metadata.balanceVersionSource || "",
     dataProfile: GAME_DATA_SCHEMA.profile,
     valid: true,
     runtimeEnabled: true,
@@ -974,10 +1036,13 @@ function renderGeneratedJs(candidate, sourceInfo) {
   return `(function (global) {\n  "use strict";\n  // AUTO-GENERATED by tools/sync-game-data.mjs. Do not edit by hand.\n  // Loaded by index.html and applied whenever the generated snapshot is valid.\n  global.GENERATED_GAME_DATA = ${JSON.stringify(payload, null, 2)};\n})(typeof window !== "undefined" ? window : globalThis);\n`;
 }
 
-function renderInvalidGeneratedJs(sourceInfo, issues) {
+function renderInvalidGeneratedJs(sourceInfo, issues, metadata = {}) {
   const source = getGeneratedSourceMetadata(sourceInfo);
   const payload = {
     contractVersion: GAME_DATA_SCHEMA.version,
+    balanceVersion: metadata.balanceVersion || GAME_DATA_SCHEMA.version,
+    balanceVersionCell: metadata.balanceVersionCell || "",
+    balanceVersionSource: metadata.balanceVersionSource || "",
     dataProfile: GAME_DATA_SCHEMA.profile,
     valid: false,
     runtimeEnabled: false,
@@ -1006,13 +1071,13 @@ if (options.help) {
 const issues = [];
 const gameData = loadCurrentGameData();
 const currentTables = gameData.designTables || {};
-const { candidate, sourceInfo } = await buildCandidate(gameData, options, issues);
+const { candidate, sourceInfo, metadata } = await buildCandidate(gameData, options, issues);
 projectCandidateToBalanceColumns(candidate);
 applyBalanceProfileAdapters(candidate, sourceInfo, issues);
 validateBalanceSemantics(candidate, sourceInfo, issues);
 const tableSummaries = validateContract(candidate, sourceInfo, options, issues);
 const diff = compareTables(currentTables, candidate);
-const report = renderReport({ options, candidate, sourceInfo, issues, tableSummaries, diff });
+const report = renderReport({ options, candidate, sourceInfo, metadata, issues, tableSummaries, diff });
 
 if (!options.checkOnly) {
   ensureParent(options.reportPath);
@@ -1020,8 +1085,8 @@ if (!options.checkOnly) {
 
   ensureParent(options.outputPath);
   const generatedOutput = issues.some((issue) => issue.severity === "ERROR")
-    ? renderInvalidGeneratedJs(sourceInfo, issues)
-    : renderGeneratedJs(candidate, sourceInfo);
+    ? renderInvalidGeneratedJs(sourceInfo, issues, metadata)
+    : renderGeneratedJs(candidate, sourceInfo, metadata);
   fs.writeFileSync(options.outputPath, generatedOutput, "utf8");
 }
 

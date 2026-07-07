@@ -99,10 +99,14 @@ function loadBalanceSnapshot() {
   const snapshot = context.window.GENERATED_GAME_DATA;
   if (!snapshot?.valid || !snapshot?.designTables) throw new Error("유효한 생성 밸런스 스냅샷이 없습니다.");
   const wanted = ["StageData", "WaveData", "WavePatternData", "MonsterGroupData", "MonsterData", "PieceData", "TowerData", "ProjectileData", "RarityData", "EffectData", "PerkData", "LevelData", "ExpData"];
+  const balanceVersion = snapshot.balanceVersion || snapshot.contractVersion || "generated";
   return {
     contractVersion: snapshot.contractVersion,
+    balanceVersion,
+    balanceVersionCell: snapshot.balanceVersionCell || "",
+    balanceVersionSource: snapshot.balanceVersionSource || "",
     generatedAt: snapshot.generatedAt,
-    snapshotId: `${snapshot.contractVersion}@${snapshot.generatedAt}`,
+    snapshotId: `${balanceVersion}@${snapshot.generatedAt}`,
     spreadsheetId: snapshot.spreadsheetId,
     tables: Object.fromEntries(wanted.map((name) => [name, snapshot.designTables[name] || []])),
   };
@@ -158,6 +162,7 @@ function deriveNormalizedLogs(logs) {
         event_id: event.event_id,
         build_version: event.build_version,
         balance_snapshot_id: event.balance_snapshot_id || "legacy",
+        balance_version: event.balance_version || event.build_version || event.balance_snapshot_id || "legacy",
         stage_key: event.stage_key,
         wave: payload.wave || event.wave,
         wave_ordinal: payload.waveOrdinal || event.wave_ordinal,
@@ -190,6 +195,7 @@ function deriveNormalizedLogs(logs) {
       return (payload.pieceStats || []).map((piece) => ({
         received_at: event.received_at, session_id: event.session_id, event_id: event.event_id,
         build_version: event.build_version, balance_snapshot_id: event.balance_snapshot_id || "legacy",
+        balance_version: event.balance_version || event.build_version || event.balance_snapshot_id || "legacy",
         stage_key: event.stage_key, wave_ordinal: payload.waveOrdinal || event.wave_ordinal,
         ...toSnakePieceStats(piece),
       }));
@@ -202,6 +208,7 @@ function deriveNormalizedLogs(logs) {
       return (payload.offered || []).map((perk) => ({
         received_at: event.received_at, session_id: event.session_id, event_id: event.event_id,
         build_version: event.build_version, balance_snapshot_id: event.balance_snapshot_id || "legacy",
+        balance_version: event.balance_version || event.build_version || event.balance_snapshot_id || "legacy",
         stage_key: event.stage_key, wave_ordinal: event.wave_ordinal, perk_id: perk.id || "",
         perk_title: perk.title || "", rarity: perk.rarity || "", target_type: perk.targetType || "",
         label: perk.label || "", selected: String(perk.id || "") === picked ? "TRUE" : "FALSE",
@@ -216,6 +223,7 @@ function deriveNormalizedLogs(logs) {
       return [...new Set([...Object.keys(activations), ...Object.keys(damage)])].map((source) => ({
         received_at: event.received_at, session_id: event.session_id, event_id: event.event_id,
         build_version: event.build_version, balance_snapshot_id: event.balance_snapshot_id || "legacy",
+        balance_version: event.balance_version || event.build_version || event.balance_snapshot_id || "legacy",
         stage_key: event.stage_key, wave_ordinal: payload.waveOrdinal || event.wave_ordinal, source,
         activation_count: activations[source]?.count || 0, projectiles: activations[source]?.projectiles || 0,
         ammo_spent: activations[source]?.ammoSpent || 0, damage_done: damage[source] || 0,
@@ -256,6 +264,7 @@ function simulationEventRow(event) {
     event_type: event.eventType || "",
     build_version: event.buildVersion || "",
     balance_snapshot_id: event.balanceSnapshotId || "",
+    balance_version: event.balanceVersion || event.buildVersion || event.balanceSnapshotId || "",
     stage_key: event.stageKey || "",
     stage_title: event.stageTitle || "",
     wave: event.wave ?? "",

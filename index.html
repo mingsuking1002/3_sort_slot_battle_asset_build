@@ -4753,8 +4753,10 @@
       const EXHIBITION_BUILD = BUILD_PROFILE;
       const TELEMETRY_SCHEMA_VERSION = "2.0.0";
       const BALANCE_CONTRACT_VERSION = String(GAME_DATA.balanceDataStatus?.contractVersion || "embedded");
+      const BALANCE_DATA_VERSION = String(GAME_DATA.balanceDataStatus?.balanceVersion || BALANCE_CONTRACT_VERSION || "embedded");
       const BALANCE_GENERATED_AT = String(GAME_DATA.balanceDataStatus?.generatedAt || "");
-      const BALANCE_SNAPSHOT_ID = `${BALANCE_CONTRACT_VERSION}@${BALANCE_GENERATED_AT || "embedded"}`;
+      const BALANCE_SNAPSHOT_ID = `${BALANCE_DATA_VERSION}@${BALANCE_GENERATED_AT || "embedded"}`;
+      const TELEMETRY_BUILD_VERSION = BALANCE_DATA_VERSION;
       const TELEMETRY_QUEUE_STORAGE_KEY = "3sort_exhibition_telemetry_queue_v1";
       const TELEMETRY_OFFLINE_STORAGE_KEY = "3sort_exhibition_telemetry_offline_v1";
       const TELEMETRY_MAX_QUEUED_EVENTS = 240;
@@ -5252,7 +5254,8 @@
         const batch = queue.slice(0, TELEMETRY_MAX_BATCH_EVENTS);
         const remaining = queue.slice(batch.length);
         const body = JSON.stringify({
-          buildVersion: EXHIBITION_BUILD.buildVersion,
+          buildVersion: TELEMETRY_BUILD_VERSION,
+          balanceVersion: BALANCE_DATA_VERSION,
           sentAt: new Date().toISOString(),
           events: batch,
         });
@@ -5561,8 +5564,9 @@
           eventId: `${state.telemetrySessionId || "no-session"}-${state.telemetryEventSeq}`,
           sessionId: state.telemetrySessionId,
           eventAt: new Date().toISOString(),
-          buildVersion: EXHIBITION_BUILD.buildVersion,
+          buildVersion: TELEMETRY_BUILD_VERSION,
           logSchemaVersion: TELEMETRY_SCHEMA_VERSION,
+          balanceVersion: BALANCE_DATA_VERSION,
           balanceContractVersion: BALANCE_CONTRACT_VERSION,
           balanceGeneratedAt: BALANCE_GENERATED_AT,
           balanceSnapshotId: BALANCE_SNAPSHOT_ID,

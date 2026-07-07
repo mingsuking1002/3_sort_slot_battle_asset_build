@@ -3,12 +3,13 @@
 - 계약 버전: `2026-07-02-combat-balance-profile-v12`
 - 데이터 프로필: `balance` (밸런스 허용 목록)
 - 데이터 버전: `2026-07-02-combat-balance-profile-v12`
+- 밸런스 버전: `1.0.0` (T69)
 - 실행 모드: `Google Sheets 링크 동기화`
 - 런타임 연결: **기본 실행 모드** (유효한 생성 스냅샷을 항상 적용)
 - 거리/반지름 단위: **데이터 테이블은 Unity unit 원본값으로 파싱**하고, 런타임/대시보드에서만 `u * 128px`로 환산합니다.
 - 외부 적용: **13개**, 내장 fallback: **3개**
 - 검사 결과: ERROR 0 / WARN 1 / INFO 9
-- 현재 데이터 대비 변경: 583개 행 / 1058개 필드
+- 현재 데이터 대비 변경: 583개 행 / 1062개 필드
 
 ## 테이블 공급 현황
 
@@ -47,7 +48,7 @@
 | INFO | BossPatternGroupData | 테이블 데이터가 아직 제공되지 않았습니다. |
 | INFO | BossPatternData | 테이블 데이터가 아직 제공되지 않았습니다. |
 | INFO | BossData | 테이블 데이터가 아직 제공되지 않았습니다. |
-| WARN | PieceData | 계약에 없는 CSV 헤더: Pieceportrait |
+| WARN | PieceData | 계약에 없는 CSV 헤더: PiecePortrait |
 | INFO | UpgradeCostData | 테이블 데이터가 아직 제공되지 않았습니다. |
 | INFO | TriggerData | 테이블 데이터가 아직 제공되지 않았습니다. |
 | INFO | Resource | 테이블 데이터가 아직 제공되지 않았습니다. |
@@ -253,6 +254,7 @@
 - `MonsterGroupData.11023.*`: `""` -> ``
 - `MonsterData.4111.MonsterName`: `"Monster_Normal_01"` -> ``
 - `MonsterData.4111.MonsterHp`: `150` -> `60`
+- `MonsterData.4111.MonsterAtk`: `1` -> `4`
 - `MonsterData.4111.MonsterAtkSpeed`: `1.35` -> `3`
 - `MonsterData.4111.MonsterAtkRange`: `0` -> `0.4`
 - `MonsterData.4111.MonsterMoveSpeed`: `34` -> `15`
@@ -263,6 +265,7 @@
 - `MonsterData.4121.MonsterType`: `2` -> `1`
 - `MonsterData.4121.ExpTypeID`: `82` -> `81`
 - `MonsterData.4121.MonsterHp`: `135` -> `65`
+- `MonsterData.4121.MonsterAtk`: `1` -> `4`
 - `MonsterData.4121.MonsterAtkSpeed`: `1.1` -> `3`
 - `MonsterData.4121.MonsterAtkRange`: `0` -> `0.4`
 - `MonsterData.4121.MonsterMoveSpeed`: `61` -> `15`
@@ -273,13 +276,11 @@
 - `MonsterData.4131.MonsterType`: `3` -> `1`
 - `MonsterData.4131.ExpTypeID`: `82` -> `81`
 - `MonsterData.4131.MonsterHp`: `720` -> `70`
+- `MonsterData.4131.MonsterAtk`: `1` -> `4`
 - `MonsterData.4131.MonsterAtkSpeed`: `1.55` -> `3`
 - `MonsterData.4131.MonsterAtkRange`: `0` -> `0.4`
 - `MonsterData.4131.MonsterMoveSpeed`: `19` -> `15`
 - `MonsterData.4131.MonsterSprite`: `"assets/images/monsters/탱커형.png"` -> ``
-- `MonsterData.4131.Desc`: `"탱커형 · 전시 체력 상향"` -> ``
-- `MonsterData.4131.*`: `""` -> ``
-- `MonsterData.4141.MonsterName`: `"Monster_Ranged_01"` -> ``
 - 변경 상세는 200건까지만 표시했습니다.
 
 ## 계약 메모

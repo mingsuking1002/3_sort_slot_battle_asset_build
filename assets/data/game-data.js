@@ -1924,6 +1924,9 @@
     valid: generatedBalancePayload?.valid === true,
     profile: generatedBalancePayload?.dataProfile || "",
     contractVersion: generatedBalancePayload?.contractVersion || "",
+    balanceVersion: generatedBalancePayload?.balanceVersion || generatedBalancePayload?.contractVersion || "",
+    balanceVersionCell: generatedBalancePayload?.balanceVersionCell || "",
+    balanceVersionSource: generatedBalancePayload?.balanceVersionSource || "",
     generatedAt: generatedBalancePayload?.generatedAt || "",
     spreadsheetId: generatedBalancePayload?.spreadsheetId || "",
     importedTables: [...(generatedBalancePayload?.importedTables || [])],
@@ -3861,7 +3864,7 @@
       },
     ],
     defaultConfig: {
-      slotHp: 1000,
+      slotHp: 800,
       monsterHp: 22,
       monsterDamage: 1,
       monsterSpeed: 34,
