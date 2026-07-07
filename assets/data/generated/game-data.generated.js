@@ -10,7 +10,7 @@
   "dataProfile": "balance",
   "valid": true,
   "runtimeEnabled": true,
-  "generatedAt": "2026-07-07T06:59:43.271Z",
+  "generatedAt": "2026-07-07T15:40:19.829Z",
   "sourceMode": "google-sheet-overrides",
   "spreadsheetId": "13GmSWRxvcBWgMDpW0ypgrPBkkb3zXRAefZBM2W-YA0g",
   "csvTables": [],
@@ -609,7 +609,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 10,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 3,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -619,7 +619,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 10,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 3,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -629,7 +629,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 10,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 3,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -639,7 +639,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 13,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 2.85,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -649,7 +649,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 13,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 2.85,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -659,7 +659,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 13,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 2.85,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -669,7 +669,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 17,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 2.7,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -679,7 +679,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 17,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 2.7,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -689,7 +689,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 17,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 2.7,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -699,7 +699,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 22,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 2.55,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -709,7 +709,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 22,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 2.55,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -719,7 +719,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 22,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 2.55,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -729,7 +729,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 28,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 2.4,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -739,7 +739,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 28,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 2.4,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -749,7 +749,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 28,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 2.4,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -759,7 +759,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 50,
-        "MonsterAtk": 3,
+        "MonsterAtk": 4,
         "MonsterAtkSpeed": 2.4,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -769,7 +769,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 50,
-        "MonsterAtk": 3,
+        "MonsterAtk": 4,
         "MonsterAtkSpeed": 2.4,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -779,7 +779,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 50,
-        "MonsterAtk": 3,
+        "MonsterAtk": 4,
         "MonsterAtkSpeed": 2.4,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -789,7 +789,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 60,
-        "MonsterAtk": 3,
+        "MonsterAtk": 4,
         "MonsterAtkSpeed": 2.3,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -799,7 +799,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 60,
-        "MonsterAtk": 3,
+        "MonsterAtk": 4,
         "MonsterAtkSpeed": 2.3,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -809,7 +809,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 60,
-        "MonsterAtk": 3,
+        "MonsterAtk": 4,
         "MonsterAtkSpeed": 2.3,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -819,7 +819,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 70,
-        "MonsterAtk": 3,
+        "MonsterAtk": 4,
         "MonsterAtkSpeed": 2.2,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -829,7 +829,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 70,
-        "MonsterAtk": 3,
+        "MonsterAtk": 4,
         "MonsterAtkSpeed": 2.2,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -839,7 +839,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 70,
-        "MonsterAtk": 3,
+        "MonsterAtk": 4,
         "MonsterAtkSpeed": 2.2,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -849,7 +849,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 80,
-        "MonsterAtk": 3,
+        "MonsterAtk": 4,
         "MonsterAtkSpeed": 2.1,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -859,7 +859,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 80,
-        "MonsterAtk": 3,
+        "MonsterAtk": 4,
         "MonsterAtkSpeed": 2.1,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -869,7 +869,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 80,
-        "MonsterAtk": 3,
+        "MonsterAtk": 4,
         "MonsterAtkSpeed": 2.1,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -879,7 +879,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 90,
-        "MonsterAtk": 3,
+        "MonsterAtk": 4,
         "MonsterAtkSpeed": 2,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -889,7 +889,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 90,
-        "MonsterAtk": 3,
+        "MonsterAtk": 4,
         "MonsterAtkSpeed": 2,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -899,7 +899,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 90,
-        "MonsterAtk": 3,
+        "MonsterAtk": 4,
         "MonsterAtkSpeed": 2,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -909,7 +909,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 170,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 2,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -919,7 +919,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 170,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 2,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -929,7 +929,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 170,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 2,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -939,7 +939,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 190,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 1.95,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -949,7 +949,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 190,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 1.95,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -959,7 +959,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 190,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 1.95,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -969,7 +969,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 210,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 1.9,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -979,7 +979,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 210,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 1.9,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -989,7 +989,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 210,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 1.9,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -999,7 +999,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 230,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 1.85,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -1009,7 +1009,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 230,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 1.85,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -1019,7 +1019,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 230,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 1.85,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -1029,7 +1029,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 250,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 1.8,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -1039,7 +1039,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 250,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 1.8,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -1049,7 +1049,7 @@
         "MonsterType": 1,
         "ExpTypeID": 81,
         "MonsterHp": 250,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 1.8,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 15
@@ -1059,50 +1059,50 @@
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 10,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 2.4,
         "MonsterAtkRange": 0.4,
-        "MonsterMoveSpeed": 30
+        "MonsterMoveSpeed": 35
       },
       {
         "MonsterID": 4024,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 13,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 2.3,
         "MonsterAtkRange": 0.4,
-        "MonsterMoveSpeed": 30
+        "MonsterMoveSpeed": 35
       },
       {
         "MonsterID": 4034,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 16,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 2.2,
         "MonsterAtkRange": 0.4,
-        "MonsterMoveSpeed": 30
+        "MonsterMoveSpeed": 35
       },
       {
         "MonsterID": 4044,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 19,
-        "MonsterAtk": 2,
+        "MonsterAtk": 3,
         "MonsterAtkSpeed": 2.1,
         "MonsterAtkRange": 0.4,
-        "MonsterMoveSpeed": 30
+        "MonsterMoveSpeed": 35
       },
       {
         "MonsterID": 4054,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 22,
-        "MonsterAtk": 2,
-        "MonsterAtkSpeed": 2,
+        "MonsterAtk": 3,
+        "MonsterAtkSpeed": 1.9,
         "MonsterAtkRange": 0.4,
-        "MonsterMoveSpeed": 30
+        "MonsterMoveSpeed": 35
       },
       {
         "MonsterID": 4064,
@@ -1112,104 +1112,104 @@
         "MonsterAtk": 3,
         "MonsterAtkSpeed": 1.9,
         "MonsterAtkRange": 0.4,
-        "MonsterMoveSpeed": 30
+        "MonsterMoveSpeed": 35
       },
       {
         "MonsterID": 4074,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 60,
-        "MonsterAtk": 3,
+        "MonsterAtk": 4,
         "MonsterAtkSpeed": 1.8,
         "MonsterAtkRange": 0.4,
-        "MonsterMoveSpeed": 30
+        "MonsterMoveSpeed": 35
       },
       {
         "MonsterID": 4084,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 70,
-        "MonsterAtk": 3,
-        "MonsterAtkSpeed": 1.7,
+        "MonsterAtk": 4,
+        "MonsterAtkSpeed": 1.8,
         "MonsterAtkRange": 0.4,
-        "MonsterMoveSpeed": 30
+        "MonsterMoveSpeed": 35
       },
       {
         "MonsterID": 4094,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 80,
-        "MonsterAtk": 3,
-        "MonsterAtkSpeed": 1.6,
+        "MonsterAtk": 4,
+        "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 0.4,
-        "MonsterMoveSpeed": 30
+        "MonsterMoveSpeed": 35
       },
       {
         "MonsterID": 4104,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 90,
-        "MonsterAtk": 3,
-        "MonsterAtkSpeed": 1.5,
+        "MonsterAtk": 4,
+        "MonsterAtkSpeed": 1.7,
         "MonsterAtkRange": 0.4,
-        "MonsterMoveSpeed": 30
+        "MonsterMoveSpeed": 35
       },
       {
         "MonsterID": 4114,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 170,
-        "MonsterAtk": 4,
-        "MonsterAtkSpeed": 1.4,
+        "MonsterAtk": 5,
+        "MonsterAtkSpeed": 1.6,
         "MonsterAtkRange": 0.4,
-        "MonsterMoveSpeed": 30
+        "MonsterMoveSpeed": 35
       },
       {
         "MonsterID": 4124,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 190,
-        "MonsterAtk": 4,
-        "MonsterAtkSpeed": 1.3,
+        "MonsterAtk": 5,
+        "MonsterAtkSpeed": 1.6,
         "MonsterAtkRange": 0.4,
-        "MonsterMoveSpeed": 30
+        "MonsterMoveSpeed": 35
       },
       {
         "MonsterID": 4134,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 210,
-        "MonsterAtk": 4,
-        "MonsterAtkSpeed": 1.2,
+        "MonsterAtk": 5,
+        "MonsterAtkSpeed": 1.5,
         "MonsterAtkRange": 0.4,
-        "MonsterMoveSpeed": 30
+        "MonsterMoveSpeed": 35
       },
       {
         "MonsterID": 4144,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 230,
-        "MonsterAtk": 4,
-        "MonsterAtkSpeed": 1.1,
+        "MonsterAtk": 5,
+        "MonsterAtkSpeed": 1.5,
         "MonsterAtkRange": 0.4,
-        "MonsterMoveSpeed": 30
+        "MonsterMoveSpeed": 35
       },
       {
         "MonsterID": 4154,
         "MonsterType": 2,
         "ExpTypeID": 82,
         "MonsterHp": 250,
-        "MonsterAtk": 4,
-        "MonsterAtkSpeed": 1,
+        "MonsterAtk": 5,
+        "MonsterAtkSpeed": 1.4,
         "MonsterAtkRange": 0.4,
-        "MonsterMoveSpeed": 30
+        "MonsterMoveSpeed": 35
       },
       {
         "MonsterID": 4015,
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 30,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 4,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 8
@@ -1219,7 +1219,7 @@
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 37,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 3.75,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 8
@@ -1229,7 +1229,7 @@
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 44,
-        "MonsterAtk": 4,
+        "MonsterAtk": 5,
         "MonsterAtkSpeed": 3.5,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 8
@@ -1239,8 +1239,8 @@
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 51,
-        "MonsterAtk": 4,
-        "MonsterAtkSpeed": 3.25,
+        "MonsterAtk": 5,
+        "MonsterAtkSpeed": 3.5,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 8
       },
@@ -1249,8 +1249,8 @@
         "MonsterType": 3,
         "ExpTypeID": 82,
         "MonsterHp": 58,
-        "MonsterAtk": 4,
-        "MonsterAtkSpeed": 3,
+        "MonsterAtk": 5,
+        "MonsterAtkSpeed": 3.25,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 8
       },
@@ -1260,7 +1260,7 @@
         "ExpTypeID": 82,
         "MonsterHp": 150,
         "MonsterAtk": 6,
-        "MonsterAtkSpeed": 2.85,
+        "MonsterAtkSpeed": 3.25,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 8
       },
@@ -1270,7 +1270,7 @@
         "ExpTypeID": 82,
         "MonsterHp": 170,
         "MonsterAtk": 6,
-        "MonsterAtkSpeed": 2.7,
+        "MonsterAtkSpeed": 3,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 8
       },
@@ -1280,7 +1280,7 @@
         "ExpTypeID": 82,
         "MonsterHp": 190,
         "MonsterAtk": 6,
-        "MonsterAtkSpeed": 2.55,
+        "MonsterAtkSpeed": 3,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 8
       },
@@ -1290,7 +1290,7 @@
         "ExpTypeID": 82,
         "MonsterHp": 210,
         "MonsterAtk": 6,
-        "MonsterAtkSpeed": 2.4,
+        "MonsterAtkSpeed": 2.75,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 8
       },
@@ -1300,7 +1300,7 @@
         "ExpTypeID": 82,
         "MonsterHp": 230,
         "MonsterAtk": 6,
-        "MonsterAtkSpeed": 2.25,
+        "MonsterAtkSpeed": 2.75,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 8
       },
@@ -1310,7 +1310,7 @@
         "ExpTypeID": 82,
         "MonsterHp": 500,
         "MonsterAtk": 8,
-        "MonsterAtkSpeed": 2.1,
+        "MonsterAtkSpeed": 2.5,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 8
       },
@@ -1320,7 +1320,7 @@
         "ExpTypeID": 82,
         "MonsterHp": 540,
         "MonsterAtk": 8,
-        "MonsterAtkSpeed": 2,
+        "MonsterAtkSpeed": 2.5,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 8
       },
@@ -1330,7 +1330,7 @@
         "ExpTypeID": 82,
         "MonsterHp": 580,
         "MonsterAtk": 8,
-        "MonsterAtkSpeed": 1.9,
+        "MonsterAtkSpeed": 2.25,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 8
       },
@@ -1340,7 +1340,7 @@
         "ExpTypeID": 82,
         "MonsterHp": 620,
         "MonsterAtk": 8,
-        "MonsterAtkSpeed": 1.8,
+        "MonsterAtkSpeed": 2.25,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 8
       },
@@ -1350,7 +1350,7 @@
         "ExpTypeID": 82,
         "MonsterHp": 660,
         "MonsterAtk": 8,
-        "MonsterAtkSpeed": 1.7,
+        "MonsterAtkSpeed": 2,
         "MonsterAtkRange": 0.4,
         "MonsterMoveSpeed": 8
       },
@@ -3618,7 +3618,7 @@
         "ProjectileCount": 1,
         "ProjectileSize": 0.75,
         "PiercingCount": 0,
-        "SplashRadius": 0.25,
+        "SplashRadius": 0.325,
         "current_hp": 0,
         "BulletSpeed": 0.5,
         "TowerLv": 1
@@ -3637,7 +3637,7 @@
         "ProjectileCount": 1,
         "ProjectileSize": 0.75,
         "PiercingCount": 0,
-        "SplashRadius": 0.25,
+        "SplashRadius": 0.325,
         "current_hp": 0,
         "BulletSpeed": 0.5,
         "TowerLv": 2
@@ -3656,7 +3656,7 @@
         "ProjectileCount": 1,
         "ProjectileSize": 0.75,
         "PiercingCount": 0,
-        "SplashRadius": 0.25,
+        "SplashRadius": 0.325,
         "current_hp": 0,
         "BulletSpeed": 0.5,
         "TowerLv": 3
@@ -3675,7 +3675,7 @@
         "ProjectileCount": 1,
         "ProjectileSize": 0.75,
         "PiercingCount": 0,
-        "SplashRadius": 0.25,
+        "SplashRadius": 0.325,
         "current_hp": 0,
         "BulletSpeed": 0.5,
         "TowerLv": 4
@@ -3694,7 +3694,7 @@
         "ProjectileCount": 1,
         "ProjectileSize": 0.75,
         "PiercingCount": 0,
-        "SplashRadius": 0.25,
+        "SplashRadius": 0.325,
         "current_hp": 0,
         "BulletSpeed": 0.5,
         "TowerLv": 5
@@ -3713,7 +3713,7 @@
         "ProjectileCount": 1,
         "ProjectileSize": 0.75,
         "PiercingCount": 0,
-        "SplashRadius": 0.5,
+        "SplashRadius": 0.55,
         "current_hp": 0,
         "BulletSpeed": 0.5,
         "TowerLv": 6
@@ -3732,7 +3732,7 @@
         "ProjectileCount": 1,
         "ProjectileSize": 0.75,
         "PiercingCount": 0,
-        "SplashRadius": 0.5,
+        "SplashRadius": 0.55,
         "current_hp": 0,
         "BulletSpeed": 0.5,
         "TowerLv": 7
@@ -3751,7 +3751,7 @@
         "ProjectileCount": 1,
         "ProjectileSize": 0.75,
         "PiercingCount": 0,
-        "SplashRadius": 0.5,
+        "SplashRadius": 0.55,
         "current_hp": 0,
         "BulletSpeed": 0.5,
         "TowerLv": 8
@@ -3770,7 +3770,7 @@
         "ProjectileCount": 1,
         "ProjectileSize": 0.75,
         "PiercingCount": 0,
-        "SplashRadius": 0.5,
+        "SplashRadius": 0.55,
         "current_hp": 0,
         "BulletSpeed": 0.5,
         "TowerLv": 9
@@ -3789,7 +3789,7 @@
         "ProjectileCount": 1,
         "ProjectileSize": 0.75,
         "PiercingCount": 0,
-        "SplashRadius": 0.5,
+        "SplashRadius": 0.55,
         "current_hp": 0,
         "BulletSpeed": 0.5,
         "TowerLv": 10
@@ -3808,7 +3808,7 @@
         "ProjectileCount": 1,
         "ProjectileSize": 0.75,
         "PiercingCount": 0,
-        "SplashRadius": 0.75,
+        "SplashRadius": 0.8,
         "current_hp": 0,
         "BulletSpeed": 0.5,
         "TowerLv": 11
@@ -3827,7 +3827,7 @@
         "ProjectileCount": 1,
         "ProjectileSize": 0.75,
         "PiercingCount": 0,
-        "SplashRadius": 0.75,
+        "SplashRadius": 0.8,
         "current_hp": 0,
         "BulletSpeed": 0.5,
         "TowerLv": 12
@@ -3846,7 +3846,7 @@
         "ProjectileCount": 1,
         "ProjectileSize": 0.75,
         "PiercingCount": 0,
-        "SplashRadius": 0.75,
+        "SplashRadius": 0.8,
         "current_hp": 0,
         "BulletSpeed": 0.5,
         "TowerLv": 13
@@ -3865,7 +3865,7 @@
         "ProjectileCount": 1,
         "ProjectileSize": 0.75,
         "PiercingCount": 0,
-        "SplashRadius": 0.75,
+        "SplashRadius": 0.8,
         "current_hp": 0,
         "BulletSpeed": 0.5,
         "TowerLv": 14
@@ -3884,7 +3884,7 @@
         "ProjectileCount": 1,
         "ProjectileSize": 0.75,
         "PiercingCount": 0,
-        "SplashRadius": 0.75,
+        "SplashRadius": 0.8,
         "current_hp": 0,
         "BulletSpeed": 0.5,
         "TowerLv": 15

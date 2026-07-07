@@ -9,7 +9,7 @@
 - 거리/반지름 단위: **데이터 테이블은 Unity unit 원본값으로 파싱**하고, 런타임/대시보드에서만 `u * 128px`로 환산합니다.
 - 외부 적용: **13개**, 내장 fallback: **3개**
 - 검사 결과: ERROR 0 / WARN 1 / INFO 9
-- 현재 데이터 대비 변경: 583개 행 / 1062개 필드
+- 현재 데이터 대비 변경: 569개 행 / 1062개 필드
 
 ## 테이블 공급 현황
 
@@ -58,11 +58,11 @@
 
 | 테이블 | 추가 | 삭제 | 수정 |
 |---|---:|---:|---:|
-| StageData | 13 | 1 | 2 |
-| WaveData | 0 | 2 | 1 |
-| WavePatternData | 0 | 9 | 9 |
-| MonsterGroupData | 39 | 2 | 6 |
-| MonsterData | 86 | 2 | 4 |
+| StageData | 13 | 0 | 2 |
+| WaveData | 0 | 1 | 1 |
+| WavePatternData | 0 | 0 | 9 |
+| MonsterGroupData | 39 | 1 | 6 |
+| MonsterData | 86 | 1 | 4 |
 | BossData | 0 | 1 | 0 |
 | PieceData | 60 | 0 | 30 |
 | PieceUpgradeData | 0 | 0 | 24 |
@@ -77,7 +77,7 @@
 | LevelData | 20 | 6 | 0 |
 | ExpData | 0 | 2 | 2 |
 | Resource | 0 | 2 | 0 |
-| LocalizeData | 0 | 10 | 0 |
+| LocalizeData | 0 | 9 | 0 |
 
 ### 필드 변경 상세
 
@@ -254,7 +254,7 @@
 - `MonsterGroupData.11023.*`: `""` -> ``
 - `MonsterData.4111.MonsterName`: `"Monster_Normal_01"` -> ``
 - `MonsterData.4111.MonsterHp`: `150` -> `170`
-- `MonsterData.4111.MonsterAtk`: `1` -> `4`
+- `MonsterData.4111.MonsterAtk`: `1` -> `5`
 - `MonsterData.4111.MonsterAtkSpeed`: `1.35` -> `2`
 - `MonsterData.4111.MonsterAtkRange`: `0` -> `0.4`
 - `MonsterData.4111.MonsterMoveSpeed`: `34` -> `15`
@@ -265,7 +265,7 @@
 - `MonsterData.4121.MonsterType`: `2` -> `1`
 - `MonsterData.4121.ExpTypeID`: `82` -> `81`
 - `MonsterData.4121.MonsterHp`: `135` -> `190`
-- `MonsterData.4121.MonsterAtk`: `1` -> `4`
+- `MonsterData.4121.MonsterAtk`: `1` -> `5`
 - `MonsterData.4121.MonsterAtkSpeed`: `1.1` -> `1.95`
 - `MonsterData.4121.MonsterAtkRange`: `0` -> `0.4`
 - `MonsterData.4121.MonsterMoveSpeed`: `61` -> `15`
@@ -276,7 +276,7 @@
 - `MonsterData.4131.MonsterType`: `3` -> `1`
 - `MonsterData.4131.ExpTypeID`: `82` -> `81`
 - `MonsterData.4131.MonsterHp`: `720` -> `210`
-- `MonsterData.4131.MonsterAtk`: `1` -> `4`
+- `MonsterData.4131.MonsterAtk`: `1` -> `5`
 - `MonsterData.4131.MonsterAtkSpeed`: `1.55` -> `1.9`
 - `MonsterData.4131.MonsterAtkRange`: `0` -> `0.4`
 - `MonsterData.4131.MonsterMoveSpeed`: `19` -> `15`

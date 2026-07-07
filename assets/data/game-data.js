@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   /*
    * 데이터 수정 빠른 지도
    * - 전투 난이도 전체감: defaultConfig, monsters, monsterGroups, wavePatterns
@@ -727,31 +727,7 @@
         clearImage: "assets/images/ui/Main/Clear Stage.png",
       },
     },
-    {
-      key: "stage-test-dummy",
-      title: "테스트 스테이지",
-      subtitle: "허수아비 타격장",
-      description: "이동과 공격을 하지 않는 허수아비가 계속 등장하는 포탑/특전/탄약 테스트용 스테이지입니다.",
-      testStage: true,
-      testMode: "targetDummy",
-      firstWave: 101,
-      waveIds: [101, 102, 103, 104, 105, 106, 107, 108, 109, 110],
-      bossIds: [],
-      loadoutKey: "default",
-      clearReward: {
-        gold: 0,
-        ticket: 0,
-      },
-      config: {
-        totalWaves: 10,
-        waveDuration: 40,
-        enemyCap: 80,
-      },
-      ui: {
-        mainImage: "assets/images/ui/Main/Image_Stage_1 5.png",
-        clearImage: "assets/images/ui/Main/Clear Stage.png",
-      },
-    },
+
   ];
 
   const specialProjectiles = {
@@ -1685,8 +1661,8 @@
   };
 
   const designRuntimeKeyMap = {
-    StageData: { 1001: "stage-1", 1002: "stage-2", 1901: "stage-test-dummy" },
-    WaveData: { 2001: "stage-1", 2002: "stage-2", 2901: "stage-test-dummy" },
+    StageData: { 1001: "stage-1", 1002: "stage-2", 1003: "stage-3", 1004: "stage-4", 1005: "stage-5", 1006: "stage-6", 1007: "stage-7", 1008: "stage-8", 1009: "stage-9", 1010: "stage-10", 1011: "stage-11", 1012: "stage-12", 1013: "stage-13", 1014: "stage-14", 1015: "stage-15" },
+    WaveData: { 2001: "stage-1", 2002: "stage-2", 2003: "stage-3", 2004: "stage-4", 2005: "stage-5", 2006: "stage-6", 2007: "stage-7", 2008: "stage-8", 2009: "stage-9", 2010: "stage-10", 2011: "stage-11", 2012: "stage-12", 2013: "stage-13", 2014: "stage-14", 2015: "stage-15" },
     WavePatternData: {
       3001: 1,
       3002: 2,
@@ -1697,15 +1673,7 @@
       3007: 7,
       3008: 8,
       3009: 9,
-      3901: 101,
-      3902: 102,
-      3903: 103,
-      3904: 104,
-      3905: 105,
-      3906: 106,
-      3907: 107,
-      3908: 108,
-      3909: 109,
+
     },
     MonsterData: { 4111: "basic", 4121: "speed", 4131: "tank", 4141: "ranged", 4191: "finalBoss", 4991: "dummy" },
     BossData: { 9001: "final_boss_1" },
@@ -1723,7 +1691,7 @@
     StageData: [
       { StageID: 1001, StageName: "StageName_1", WaveDataID: 2001, MonsterGroupID_Normal: 11011, MonsterGroupID_Speedy: 11012, MonsterGroupID_Tanker: 11013, BossID: 9001, WaveReward: 5, StageReward: 1220, BGID: "assets/images/ui/Main/Image_Stage_1 5.png", WaveDuration: 40, Desc: "1 스테이지 관계자의 출입금지" },
       { StageID: 1002, StageName: "StageName_2", WaveDataID: 2002, MonsterGroupID_Normal: 11021, MonsterGroupID_Speedy: 11022, MonsterGroupID_Tanker: 11023, BossID: 9001, WaveReward: 5, StageReward: 1600, BGID: "assets/images/ui/Main/Image_Stage_1 5.png", Desc: "2 스테이지 임시 데이터" },
-      { StageID: 1901, StageName: "StageName_TestDummy", WaveDataID: 2901, MonsterGroupID_Normal: 11901, MonsterGroupID_Speedy: 11901, MonsterGroupID_Tanker: 11901, BossID: 0, WaveReward: 0, StageReward: 0, BGID: "assets/images/ui/Main/Image_Stage_1 5.png", Desc: "허수아비 타격 테스트 스테이지" },
+
     ],
 
     // ============================================================
@@ -1732,7 +1700,7 @@
     WaveData: [
       { WaveID: 2001, WavePattern_1: 3001, WavePattern_2: 3002, WavePattern_3: 3003, WavePattern_4: 3004, WavePattern_5: 3005, WavePattern_6: 3006, WavePattern_7: 3007, WavePattern_8: 3008, WavePattern_9: 3009, Desc: "1스테이지 1~9웨이브 패턴" },
       { WaveID: 2002, WavePattern_1: 3001, WavePattern_2: 3002, WavePattern_3: 3003, WavePattern_4: 3004, WavePattern_5: 3005, WavePattern_6: 3006, WavePattern_7: 3007, WavePattern_8: 3008, WavePattern_9: 3009, Desc: "2스테이지 임시 재사용 패턴" },
-      { WaveID: 2901, WavePattern_1: 3901, WavePattern_2: 3902, WavePattern_3: 3903, WavePattern_4: 3904, WavePattern_5: 3905, WavePattern_6: 3906, WavePattern_7: 3907, WavePattern_8: 3908, WavePattern_9: 3909, Desc: "허수아비 테스트 패턴" },
+
     ],
 
     // ============================================================
@@ -1748,15 +1716,7 @@
       { WavePatternID: 3007, WaveType: "Normal", Normal_Count: 84, Speedy_Count: 36, Tanker_Count: 20, "몬스터 총합": 140, Desc: "속도 압박" },
       { WavePatternID: 3008, WaveType: "Rush", Normal_Count: 98, Speedy_Count: 44, Tanker_Count: 24, "몬스터 총합": 166, Desc: "대형 러시" },
       { WavePatternID: 3009, WaveType: "Normal", Normal_Count: 100, Speedy_Count: 48, Tanker_Count: 30, "몬스터 총합": 178, Desc: "최종 전 압박" },
-      { WavePatternID: 3901, WaveType: "Test", Normal_Count: 18, Speedy_Count: 0, Tanker_Count: 0, "몬스터 총합": 18, Desc: "허수아비 테스트 1" },
-      { WavePatternID: 3902, WaveType: "Test", Normal_Count: 18, Speedy_Count: 0, Tanker_Count: 0, "몬스터 총합": 18, Desc: "허수아비 테스트 2" },
-      { WavePatternID: 3903, WaveType: "Test", Normal_Count: 18, Speedy_Count: 0, Tanker_Count: 0, "몬스터 총합": 18, Desc: "허수아비 테스트 3" },
-      { WavePatternID: 3904, WaveType: "Test", Normal_Count: 18, Speedy_Count: 0, Tanker_Count: 0, "몬스터 총합": 18, Desc: "허수아비 테스트 4" },
-      { WavePatternID: 3905, WaveType: "Test", Normal_Count: 18, Speedy_Count: 0, Tanker_Count: 0, "몬스터 총합": 18, Desc: "허수아비 테스트 5" },
-      { WavePatternID: 3906, WaveType: "Test", Normal_Count: 18, Speedy_Count: 0, Tanker_Count: 0, "몬스터 총합": 18, Desc: "허수아비 테스트 6" },
-      { WavePatternID: 3907, WaveType: "Test", Normal_Count: 18, Speedy_Count: 0, Tanker_Count: 0, "몬스터 총합": 18, Desc: "허수아비 테스트 7" },
-      { WavePatternID: 3908, WaveType: "Test", Normal_Count: 18, Speedy_Count: 0, Tanker_Count: 0, "몬스터 총합": 18, Desc: "허수아비 테스트 8" },
-      { WavePatternID: 3909, WaveType: "Test", Normal_Count: 18, Speedy_Count: 0, Tanker_Count: 0, "몬스터 총합": 18, Desc: "허수아비 테스트 9" },
+
     ],
 
     // ============================================================
@@ -1769,7 +1729,7 @@
       { MonsterGroupID: 11021, MonsterID_1: 4111, MonsterID_2: 0, MonsterID_3: 0, NormalRate_1: 1, NormalRate_2: 0, NormalRate_3: 0, Desc: "2스테이지 일반 후보군" },
       { MonsterGroupID: 11022, MonsterID_1: 4121, MonsterID_2: 0, MonsterID_3: 0, NormalRate_1: 0, NormalRate_2: 0, NormalRate_3: 0, Desc: "2스테이지 속도 후보군" },
       { MonsterGroupID: 11023, MonsterID_1: 4131, MonsterID_2: 0, MonsterID_3: 0, NormalRate_1: 0, NormalRate_2: 0, NormalRate_3: 0, Desc: "2스테이지 탱커 후보군" },
-      { MonsterGroupID: 11901, MonsterID_1: 4991, MonsterID_2: 0, MonsterID_3: 0, NormalRate_1: 0, NormalRate_2: 0, NormalRate_3: 0, Desc: "허수아비 후보군" },
+
       { MonsterGroupID: 19001, MonsterID_1: 4121, MonsterID_2: 4111, MonsterID_3: 0, NormalRate_1: 0, NormalRate_2: 0, NormalRate_3: 0, Desc: "보스 소환 후보군" },
     ],
 
@@ -1782,7 +1742,7 @@
       { MonsterID: 4131, MonsterName: "Monster_Tank_01", MonsterType: 3, ExpTypeID: 82, MonsterHp: 720, MonsterAtk: 1, MonsterAtkSpeed: 1.55, MonsterAtkRange: 0, MonsterMoveSpeed: 19, MonsterSprite: "assets/images/monsters/탱커형.png", Desc: "탱커형 · 전시 체력 상향" },
       { MonsterID: 4141, MonsterName: "Monster_Ranged_01", MonsterType: 4, ExpTypeID: 82, MonsterHp: 90, MonsterAtk: 1, MonsterAtkSpeed: 1.95, MonsterAtkRange: 126, MonsterMoveSpeed: 27, MonsterSprite: "monster_ranged_1", Desc: "원거리형 · 비활성 예비값" },
       { MonsterID: 4191, MonsterName: "Monster_FinalBoss_01", MonsterType: 9, ExpTypeID: 83, MonsterHp: 6500, MonsterAtk: 10, MonsterAtkSpeed: 1.05, MonsterAtkRange: 172, MonsterMoveSpeed: 21, MonsterSprite: "monster_final_boss_1", Desc: "최종보스 · 전시 체력 상향" },
-      { MonsterID: 4991, MonsterName: "Monster_TestDummy_01", MonsterType: 99, ExpTypeID: 84, MonsterHp: 1200, MonsterAtk: 0, MonsterAtkSpeed: 0, MonsterAtkRange: 0, MonsterMoveSpeed: 0, MonsterSprite: "monster_test_dummy_1", Desc: "허수아비 · 고체력 측정용" },
+
     ],
 
     // ============================================================
@@ -1915,7 +1875,7 @@
     LocalizeData: [
       { Key: "StageName_1", Id: 100001, "Shared Comments": "", "English(en)": "Stage 1", "English(en) Comments": "", "Korean(ko)": "1 스테이지", "Korean(ko) Comments": "" },
       { Key: "StageName_2", Id: 100002, "Shared Comments": "", "English(en)": "Stage 2", "English(en) Comments": "", "Korean(ko)": "2 스테이지", "Korean(ko) Comments": "" },
-      { Key: "StageName_TestDummy", Id: 100003, "Shared Comments": "", "English(en)": "Target Dummy Stage", "English(en) Comments": "", "Korean(ko)": "허수아비 스테이지", "Korean(ko) Comments": "" },
+
       { Key: "PieceName_basic_1", Id: 101001, "Shared Comments": "", "English(en)": "Serin", "English(en) Comments": "", "Korean(ko)": "세린", "Korean(ko) Comments": "" },
       { Key: "PieceName_scatter_1", Id: 101002, "Shared Comments": "", "English(en)": "Doi", "English(en) Comments": "", "Korean(ko)": "도이", "Korean(ko) Comments": "" },
       { Key: "PieceName_sniper_1", Id: 101003, "Shared Comments": "", "English(en)": "Yujin", "English(en) Comments": "", "Korean(ko)": "유진", "Korean(ko) Comments": "" },
@@ -2187,14 +2147,12 @@
 
   function getDesignRuntimeWaveId(stageKey, stageIndex, waveOrdinal) {
     if (stageKey === "stage-1") return waveOrdinal;
-    if (stageKey === "stage-test-dummy") return 100 + waveOrdinal;
     return (stageIndex + 1) * 100 + waveOrdinal;
   }
 
   function getDesignPatternId(stageKey, stageId, waveOrdinal, waveType) {
     if (waveType === "boss") return null;
     if (stageKey === "stage-1") return `wp_w${waveOrdinal}`;
-    if (stageKey === "stage-test-dummy") return `wp_test_dummy_w${waveOrdinal}`;
     return `wp_stage_${stageId}_w${waveOrdinal}`;
   }
 
@@ -3627,45 +3585,6 @@
           },
         };
         waveIds.push(bossWaveId);
-      } else if (stageKey === "stage-test-dummy") {
-        const patternIdValue = waveData?.WavePattern_9;
-        const patternRow = patternById.get(String(patternIdValue));
-        if (patternRow) {
-          const waveOrdinal = 10;
-          const runtimeWaveId = getDesignRuntimeWaveId(stageKey, stageIndex, waveOrdinal);
-          const runtimePatternId = getDesignPatternId(stageKey, stageRow.StageID, waveOrdinal, "test");
-          stageWaveRuntimeTables.wavePatterns[runtimePatternId] = {
-            id: runtimePatternId,
-            source: "designTables",
-            design: {
-              stageId: stageRow.StageID,
-              wavePatternId: patternRow.WavePatternID,
-              reusedForTestWave10: true,
-            },
-            events: buildDesignPatternEvents({
-              stageRow,
-              patternRow,
-              patternId: runtimePatternId,
-              waveOrdinal,
-            }),
-          };
-          stageWaveRuntimeTables.waves[runtimeWaveId] = {
-            id: runtimeWaveId,
-            label: "허수아비 테스트 10",
-            type: "test",
-            duration: getRuntimeWaveDuration(stageRow, patternRow),
-            patternId: runtimePatternId,
-            source: "designTables",
-            design: {
-              stageId: stageRow.StageID,
-              waveDataId: stageRow.WaveDataID,
-              wavePatternId: patternRow.WavePatternID,
-              waveOrdinal,
-              generatedTestWave: true,
-            },
-          };
-          waveIds.push(runtimeWaveId);
-        }
       }
 
       stageWaveRuntimeTables.stages.push({

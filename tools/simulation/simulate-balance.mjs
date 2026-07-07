@@ -174,7 +174,7 @@ async function waitForSheetSessions(sessionIds, timeoutMs = 90000) {
 async function uploadTelemetryEvents(events) {
   const source = Array.isArray(events) ? events : [];
   if (!source.length) throw new Error("업로드할 시뮬레이션 이벤트가 없습니다.");
-  const batchSize = 30;
+  const batchSize = 150;
   const batchTotal = Math.ceil(source.length / batchSize);
   for (let offset = 0; offset < source.length; offset += batchSize) {
     const batch = source.slice(offset, offset + batchSize);
