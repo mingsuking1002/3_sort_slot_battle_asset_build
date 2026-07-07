@@ -327,7 +327,7 @@
 |---|---|
 | `LevelID` | 레벨 행 고유 ID. |
 | `GoalLevel` | 도달 레벨. |
-| `RequiredXP` | 누적 필요 경험치. 런타임은 레벨별 필요량으로 변환한다. |
+| `RequiredXP` | 해당 `GoalLevel`에 도달하기 위해 이전 레벨에서 필요한 경험치. 예: `GoalLevel=2`, `RequiredXP=293`이면 Lv1에서 Lv2가 되는 비용이 293이다. 런타임은 경험치를 차감하고 남은 경험치를 다음 레벨로 이월한다. |
 | `IsMaxLevel` | 최대 레벨 여부. |
 | `PerkEventType` | 레벨업 시 특전 이벤트 유형. |
 

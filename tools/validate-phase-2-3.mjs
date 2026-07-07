@@ -304,6 +304,7 @@ function validateDataReferences(data) {
     "loadout",
     "perks",
     "levelData",
+    "expData",
     "shop",
     "progression",
     "phonePresets",
@@ -443,6 +444,7 @@ function validateAuthoringGuide(data) {
     "loadout",
     "perks",
     "levelData",
+    "expData",
     "progression",
     "shop",
     "designTables",
@@ -1238,8 +1240,7 @@ function validateDesignTables(data) {
   for (let index = 0; index < sortedLevelRows.length - 1; index += 1) {
     const from = sortedLevelRows[index];
     const to = sortedLevelRows[index + 1];
-    const levelGap = Math.max(1, Number(to.GoalLevel) - Number(from.GoalLevel));
-    const expectedCost = Math.max(1, Math.ceil((Number(to.RequiredXP) - Number(from.RequiredXP)) / levelGap));
+    const expectedCost = Math.max(1, Number(to.RequiredXP) || Number(from.RequiredXP) || 1);
     const runtimeCost = Number(data.levelData?.xpCostByLevel?.[String(from.GoalLevel)] ?? data.levelData?.xpCostByLevel?.[from.GoalLevel]);
     if (runtimeCost === expectedCost) pass("DESIGN_TABLE", `LevelData ${from.GoalLevel}->${to.GoalLevel} feeds xpCost`, String(runtimeCost));
     else fail("DESIGN_TABLE", `LevelData ${from.GoalLevel}->${to.GoalLevel} xpCost mismatch`, `${runtimeCost} / ${expectedCost}`);
@@ -1512,7 +1513,7 @@ function validateDataOnlyRuntime(data, html) {
   assertAllRowsFromDesignTables("projectiles", Object.values(data.projectiles || {}));
   assertAllRowsFromDesignTables("stages", data.stages || []);
 
-  for (const [tableName, tableValue] of [["loadout", data.loadout], ["shop", data.shop], ["levelData", data.levelData]]) {
+  for (const [tableName, tableValue] of [["loadout", data.loadout], ["shop", data.shop], ["levelData", data.levelData], ["expData", data.expData]]) {
     if (tableValue?.source === "designTables") pass("DATA_ONLY", `${tableName} runtime table is generated from designTables`);
     else fail("DATA_ONLY", `${tableName} runtime table is not generated from designTables`, String(tableValue?.source));
   }
@@ -2230,6 +2231,11 @@ function validatePhase5GrowthPerkComboRules(data, html) {
     pass("PHASE5", "LevelData table-driven XP costs exist", String(Object.keys(levelData.xpCostByLevel || {}).length));
   } else {
     fail("PHASE5", "LevelData table-driven XP costs missing", String(levelData.source));
+  }
+  if (data.expData?.source === "designTables" && Object.keys(data.expData?.byExpType || {}).length > 0) {
+    pass("PHASE5", "ExpData runtime table is exposed", String(Object.keys(data.expData.byExpType).length));
+  } else {
+    fail("PHASE5", "ExpData runtime table missing", String(data.expData?.source));
   }
   if (levelData.pendingPerkOnly === true) pass("PHASE5", "Perks are pending-only by data");
   else fail("PHASE5", "LevelData pendingPerkOnly should be true", String(levelData.pendingPerkOnly));

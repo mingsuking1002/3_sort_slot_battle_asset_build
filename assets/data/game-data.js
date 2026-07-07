@@ -119,6 +119,11 @@
         editWhen: "레벨업 속도, 콤보 유지 시간, 콤보 특수탄 연결 ID를 바꿀 때",
         hotFields: ["xpBase", "xpLevelGrowth", "comboWindow", "comboSpecialProjectileId"],
       },
+      expData: {
+        label: "경험치 블럭",
+        editWhen: "MonsterData.ExpTypeID별 획득 경험치 블럭 값을 바꿀 때",
+        hotFields: ["ExpTypeID", "ExpAmount", "BlockSpriteKey"],
+      },
       progression: {
         label: "로비 성장",
         editWhen: "기물 강화 연결과 강화 비용을 바꿀 때",
@@ -780,6 +785,12 @@
     comboWindow: 5,
     comboSpecialProjectileId: "combo_pierce",
     comboFeverEnabled: false,
+  };
+
+  const expData = {
+    rows: [],
+    byExpType: {},
+    source: "fallback",
   };
 
   // 특전 테이블: 레벨업 후 정비 시간에 고르는 강화 선택지입니다.
@@ -1869,7 +1880,7 @@
     ],
 
     // ============================================================
-    // LevelData - 레벨별 누적 경험치와 특전 이벤트
+    // LevelData - 레벨별 필요 경험치와 특전 이벤트
     // ============================================================
     LevelData: [
       { LevelID: 101, GoalLevel: 1, RequiredXP: 0, IsMaxLevel: 0, Description: "시작 레벨", PerkEventType: "Normal" },
@@ -2821,9 +2832,17 @@
       return Number.isFinite(parsed) ? parsed : fallback;
     };
     const monsterById = indexDesignRows("MonsterData", "MonsterID");
-    const expAmountByExpType = Object.fromEntries(
-      (designTables.ExpData || []).map((row) => [String(row.ExpTypeID), Math.max(0, Math.floor(Number(row.ExpAmount) || 0))])
-    );
+    const expRows = (designTables.ExpData || []).map((row) => {
+      const expTypeId = String(row.ExpTypeID || "").trim();
+      return {
+        expTypeId,
+        expAmount: Math.max(0, Math.floor(Number(row.ExpAmount) || 0)),
+        blockSpriteKey: row.BlockSpriteKey || "",
+        description: row.Description || "",
+        source: "designTables",
+      };
+    }).filter((row) => row.expTypeId);
+    const expAmountByExpType = Object.fromEntries(expRows.map((row) => [row.expTypeId, row.expAmount]));
     const expBlockValueForType = (expTypeId) => {
       const key = String(expTypeId || "").trim();
       if (!key || key === "0") return 0;
@@ -3317,10 +3336,12 @@
       const from = levelRows[index];
       const to = levelRows[index + 1];
       const levelGap = Math.max(1, to.goalLevel - from.goalLevel);
-      const xpGap = Math.max(1, to.requiredXp - from.requiredXp);
-      const perLevel = Math.max(1, Math.ceil(xpGap / levelGap));
+      const fromCost = Math.max(1, Number(to.requiredXp) || Number(from.requiredXp) || 1);
+      const nextRow = levelRows[index + 2] || null;
+      const toCost = Math.max(1, Number(nextRow?.requiredXp) || fromCost);
       for (let level = from.goalLevel; level < to.goalLevel; level += 1) {
-        xpCostByLevel[level] = perLevel;
+        const t = levelGap <= 1 ? 0 : (level - from.goalLevel) / levelGap;
+        xpCostByLevel[level] = Math.max(1, Math.ceil(fromCost + (toCost - fromCost) * t));
       }
     }
 
@@ -3332,9 +3353,17 @@
     const secondCost = Number(xpCostByLevel[2] || xpBase);
     const xpLevelGrowth = Math.max(0, secondCost - xpBase || Number(levelData.xpLevelGrowth) || 0);
 
-    const expAmountByExpType = Object.fromEntries(
-      (designTables.ExpData || []).map((row) => [String(row.ExpTypeID), Math.max(0, Math.floor(Number(row.ExpAmount) || 0))])
-    );
+    const expRows = (designTables.ExpData || []).map((row) => {
+      const expTypeId = String(row.ExpTypeID || "").trim();
+      return {
+        expTypeId,
+        expAmount: Math.max(0, Math.floor(Number(row.ExpAmount) || 0)),
+        blockSpriteKey: row.BlockSpriteKey || "",
+        description: row.Description || "",
+        source: "designTables",
+      };
+    }).filter((row) => row.expTypeId);
+    const expAmountByExpType = Object.fromEntries(expRows.map((row) => [row.expTypeId, row.expAmount]));
     const expBlockValueForType = (expTypeId) => {
       const key = String(expTypeId || "").trim();
       if (!key || key === "0") return 0;
@@ -3445,6 +3474,7 @@
       },
       monsters: runtimeMonsters,
       expData: {
+        rows: expRows,
         byExpType: expAmountByExpType,
         source: "designTables",
       },
@@ -3729,6 +3759,7 @@
       pieceLevelAmmoBonusEvery: 999,
     },
     levelData: runtimeLevelExpTables.levelData,
+    expData: runtimeLevelExpTables.expData || expData,
     specialProjectiles,
     effectData: {
       pieceLevelDamageBonus: { type: "deprecated", stat: "damageMultiplier", perLevel: 0 },

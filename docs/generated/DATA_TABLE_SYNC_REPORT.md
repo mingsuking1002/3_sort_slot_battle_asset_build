@@ -253,9 +253,9 @@
 - `MonsterGroupData.11023.Desc`: `"2스테이지 탱커 후보군"` -> ``
 - `MonsterGroupData.11023.*`: `""` -> ``
 - `MonsterData.4111.MonsterName`: `"Monster_Normal_01"` -> ``
-- `MonsterData.4111.MonsterHp`: `150` -> `60`
+- `MonsterData.4111.MonsterHp`: `150` -> `170`
 - `MonsterData.4111.MonsterAtk`: `1` -> `4`
-- `MonsterData.4111.MonsterAtkSpeed`: `1.35` -> `3`
+- `MonsterData.4111.MonsterAtkSpeed`: `1.35` -> `2`
 - `MonsterData.4111.MonsterAtkRange`: `0` -> `0.4`
 - `MonsterData.4111.MonsterMoveSpeed`: `34` -> `15`
 - `MonsterData.4111.MonsterSprite`: `"assets/images/monsters/기본형.png"` -> ``
@@ -264,9 +264,9 @@
 - `MonsterData.4121.MonsterName`: `"Monster_Speed_01"` -> ``
 - `MonsterData.4121.MonsterType`: `2` -> `1`
 - `MonsterData.4121.ExpTypeID`: `82` -> `81`
-- `MonsterData.4121.MonsterHp`: `135` -> `65`
+- `MonsterData.4121.MonsterHp`: `135` -> `190`
 - `MonsterData.4121.MonsterAtk`: `1` -> `4`
-- `MonsterData.4121.MonsterAtkSpeed`: `1.1` -> `3`
+- `MonsterData.4121.MonsterAtkSpeed`: `1.1` -> `1.95`
 - `MonsterData.4121.MonsterAtkRange`: `0` -> `0.4`
 - `MonsterData.4121.MonsterMoveSpeed`: `61` -> `15`
 - `MonsterData.4121.MonsterSprite`: `"assets/images/monsters/속도형.png"` -> ``
@@ -275,9 +275,9 @@
 - `MonsterData.4131.MonsterName`: `"Monster_Tank_01"` -> ``
 - `MonsterData.4131.MonsterType`: `3` -> `1`
 - `MonsterData.4131.ExpTypeID`: `82` -> `81`
-- `MonsterData.4131.MonsterHp`: `720` -> `70`
+- `MonsterData.4131.MonsterHp`: `720` -> `210`
 - `MonsterData.4131.MonsterAtk`: `1` -> `4`
-- `MonsterData.4131.MonsterAtkSpeed`: `1.55` -> `3`
+- `MonsterData.4131.MonsterAtkSpeed`: `1.55` -> `1.9`
 - `MonsterData.4131.MonsterAtkRange`: `0` -> `0.4`
 - `MonsterData.4131.MonsterMoveSpeed`: `19` -> `15`
 - `MonsterData.4131.MonsterSprite`: `"assets/images/monsters/탱커형.png"` -> ``
